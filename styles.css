@@ -425,12 +425,16 @@ main:focus {
 
 @media (min-width: 1051px) {
   .sidebar-collapsed .content-wrap:not(.narrow) {
-    width: min(1280px, calc(100% - 72px));
+    width: min(1440px, calc(100% - 40px));
   }
 
   .sidebar-collapsed .lesson-page {
-    grid-template-columns: minmax(0, 880px) 200px;
-    gap: 96px;
+    grid-template-columns: minmax(0, 1144px) 200px;
+    gap: 144px;
+  }
+
+  .sidebar-collapsed .content-wrap.lesson-wrap {
+    width: min(1680px, calc(100% - 40px));
   }
 }
 
@@ -1048,13 +1052,13 @@ pre {
 /* Lesson */
 .lesson-page {
   display: grid;
-  grid-template-columns: minmax(0, 800px) 200px;
+  grid-template-columns: minmax(0, 1040px) 200px;
   justify-content: space-between;
-  gap: 72px;
+  gap: 108px;
 }
 
 .lesson-wrap {
-  width: min(1180px, calc(100% - 56px));
+  width: min(1500px, calc(100% - 40px));
 }
 
 .lesson-copy {
