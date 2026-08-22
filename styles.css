@@ -1360,6 +1360,9 @@ pre {
   font-size: 17px;
 }
 
+.compact-reference-hero { margin-bottom: 34px; }
+.compact-reference-hero .source-note { margin-top: 7px; }
+
 .source-note {
   display: inline-flex;
   align-items: center;
@@ -1512,6 +1515,11 @@ pre {
   overflow: hidden;
 }
 
+.api-module {
+  --module-color: var(--violet);
+  border-left: 3px solid var(--module-color);
+}
+
 .pattern-card summary,
 .api-module summary,
 .tool-manual summary { list-style: none; cursor: pointer; }
@@ -1560,13 +1568,19 @@ pre {
 .api-module[open] summary,
 .tool-manual[open] summary { border-bottom: 1px solid var(--line); background: rgba(255,255,255,.015); }
 
+.api-module[open] summary { background: color-mix(in srgb, var(--module-color) 6%, transparent); }
+.api-module:hover { border-color: color-mix(in srgb, var(--module-color) 58%, var(--line)); border-left-color: var(--module-color); }
+
 .api-module-title { display: grid; gap: 4px; }
 .api-module-title code,
-.tool-manual summary code { color: var(--violet); font: 650 14px/1.4 "Cascadia Code", Consolas, monospace; }
+.tool-manual summary code { font: 650 14px/1.4 "Cascadia Code", Consolas, monospace; }
+.api-module-title code { color: var(--module-color); }
+.tool-manual summary code { color: var(--violet); }
 .api-module-title > span { color: var(--muted); font-size: 11px; }
 
 .api-summary-meta { display: flex; align-items: center; gap: 18px; color: var(--muted-2); font-size: 10px; white-space: nowrap; }
 .details-chevron { color: var(--violet); font-size: 20px; transition: transform .18s ease; }
+.api-module .details-chevron { color: var(--module-color); }
 [open] > summary .details-chevron { transform: rotate(180deg); }
 
 .api-module-body,
@@ -1576,9 +1590,12 @@ pre {
 .api-purpose strong { color: var(--blue); }
 .api-context { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 7px; }
 .api-context span { padding: 5px 8px; border: 1px solid var(--line); border-radius: 6px; color: var(--muted-2); font-size: 9px; }
+.api-module .api-context span:first-child { border-color: color-mix(in srgb, var(--module-color) 32%, var(--line)); color: var(--module-color); }
 
 .constant-strip { margin-bottom: 20px; padding: 13px 15px; border-left: 2px solid var(--blue); background: rgba(96,165,250,.045); }
 .constant-strip > strong { display: block; margin-bottom: 10px; color: var(--blue); font-size: 10px; text-transform: uppercase; letter-spacing: .06em; }
+.api-module .constant-strip { border-left-color: var(--module-color); background: color-mix(in srgb, var(--module-color) 5%, transparent); }
+.api-module .constant-strip > strong { color: var(--module-color); }
 
 .feature-table { border: 1px solid var(--line); border-radius: 9px; overflow: hidden; }
 .feature-row { display: grid; grid-template-columns: minmax(170px, .8fr) minmax(190px, 1fr) minmax(300px, 2fr) 34px; }

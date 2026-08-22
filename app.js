@@ -351,10 +351,27 @@ user = <span class="code-function">win32api.GetUserName</span>()
     return module.features.filter((feature) => containsEveryToken(`${moduleSearchText(module)} ${feature.name} ${feature.task} ${feature.detail}`, query));
   }
 
+  function moduleAccent(category) {
+    return ({
+      Core: "violet",
+      Processes: "blue",
+      Synchronisation: "pink",
+      "Files and I/O": "green",
+      IPC: "teal",
+      Security: "rose",
+      Management: "amber",
+      Observation: "cyan",
+      Desktop: "orange",
+      Networking: "cyan",
+      Automation: "pink",
+      "Low-level companion": "orange"
+    })[category] || "violet";
+  }
+
   function pywin32ModuleCard(module, query) {
     const features = matchingFeatures(module, query);
     return `
-      <details class="api-module" ${query ? "open" : ""}>
+      <details class="api-module" style="--module-color: var(--${moduleAccent(module.category)})" ${query ? "open" : ""}>
         <summary>
           <span class="api-module-title"><code>${escapeHtml(module.name)}</code><span>${escapeHtml(module.label)}</span></span>
           <span class="api-summary-meta"><span>${features.length} ${features.length === 1 ? "entry" : "entries"}</span><span class="details-chevron">⌄</span></span>
@@ -378,21 +395,14 @@ user = <span class="code-function">win32api.GetUserName</span>()
     const query = filter.trim().toLowerCase();
     const modules = referenceData.pywin32Modules.filter((module) => matchingFeatures(module, query).length);
     const featureCount = modules.reduce((count, module) => count + matchingFeatures(module, query).length, 0);
-    const totalFeatures = referenceData.pywin32Modules.reduce((count, module) => count + module.features.length, 0);
 
     main.innerHTML = `
       <div class="content-wrap reference-width">
         <div class="breadcrumb"><span><a href="#/">Course</a></span><span>pywin32 guide</span></div>
-        <header class="reference-hero">
+        <header class="reference-hero compact-reference-hero">
           <h1>Find the Windows capability you need.</h1>
-          <p>Search by outcome, API name, module, constant, or Windows concept. Select any entry to inspect its parameters, Python types, output, and failure behavior.</p>
           <span class="source-note">Cross-checked with <a href="https://timgolden.me.uk/pywin32-docs/win32_modules.html" target="_blank" rel="noreferrer">the pywin32 module reference ↗</a></span>
         </header>
-        <section class="reference-stats" aria-label="Guide coverage">
-          <div><strong>${referenceData.pywin32Modules.length}</strong><span>modules and companions</span></div>
-          <div><strong>${totalFeatures}</strong><span>searchable APIs and concepts</span></div>
-          <div><strong>Task-first</strong><span>search “start a service” or “inherit a handle”</span></div>
-        </section>
         <section class="reference-patterns" aria-label="Patterns used throughout the guide">
           ${referenceData.pywin32Patterns.map((pattern) => `<details class="pattern-card"><summary>${escapeHtml(pattern.title)}<span>+</span></summary><p>${escapeHtml(pattern.summary)}</p><pre><code>${escapeHtml(pattern.code)}</code></pre></details>`).join("")}
         </section>
