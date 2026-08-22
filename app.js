@@ -29,31 +29,10 @@
       <div class="content-wrap">
         <section class="hero">
           <h1>Understand what Windows is actually doing.</h1>
-          <p class="hero-lead">
-            A clear, practical path from processes and memory to security, IPC, and hooking, taught with Python, the Win32 API, and the tools that let you see the operating system at work.
-          </p>
           <div class="hero-actions">
             <a class="button primary" href="#/lesson/os-foundations">Start the first lesson ${icons.arrow}</a>
             <a class="button" href="#/lessons">View all lessons</a>
           </div>
-        </section>
-
-        <section class="principle-grid" aria-label="How lessons work">
-          <article class="principle">
-            <span class="principle-number">01</span>
-            <h3>Build the model</h3>
-            <p>Start with a visual explanation of the mechanism and the problem it exists to solve.</p>
-          </article>
-          <article class="principle">
-            <span class="principle-number">02</span>
-            <h3>Inspect Windows</h3>
-            <p>Use Sysinternals to connect abstract ideas to live processes, objects, memory, and events.</p>
-          </article>
-          <article class="principle">
-            <span class="principle-number">03</span>
-            <h3>Control it with Python</h3>
-            <p>Reach Windows through pywin32 first, then use ctypes when the lower-level details matter.</p>
-          </article>
         </section>
 
         <section id="course-outline">
@@ -460,20 +439,13 @@ user = <span class="code-function">win32api.GetUserName</span>()
   function renderToolbox(filter = "") {
     const query = filter.trim().toLowerCase();
     const tools = referenceData.sysinternalsTools.filter((tool) => toolboxMatches(tool, query));
-    const totalCapabilities = referenceData.sysinternalsTools.reduce((count, tool) => count + tool.capabilities.length, 0);
     main.innerHTML = `
       <div class="content-wrap reference-width">
         <div class="breadcrumb"><span><a href="#/">Course</a></span><span>Sysinternals toolbox</span></div>
-        <header class="reference-hero">
+        <header class="reference-hero compact-reference-hero">
           <h1>Choose the right view into Windows.</h1>
-          <p>Search by the question you are trying to answer, then follow a concrete workflow. The toolbox connects every course practice to the evidence Windows can show you.</p>
           <span class="source-note">Cross-checked with <a href="https://learn.microsoft.com/en-us/sysinternals/downloads/" target="_blank" rel="noreferrer">Microsoft Sysinternals documentation ↗</a></span>
         </header>
-        <section class="reference-stats" aria-label="Toolbox coverage">
-          <div><strong>${referenceData.sysinternalsTools.length}</strong><span>tools</span></div>
-          <div><strong>${totalCapabilities}</strong><span>investigation capabilities</span></div>
-          <div><strong>Practice-ready</strong><span>steps, commands, cautions, and exercises</span></div>
-        </section>
         <div class="reference-filter sticky-filter">
           <input id="tool-filter" type="search" value="${escapeHtml(filter)}" placeholder="Try: find a DLL, trace file access, inspect memory, discover a pipe…" aria-label="Search the Sysinternals toolbox" autocomplete="off" />
           <span class="reference-count">${tools.length} tools</span>
