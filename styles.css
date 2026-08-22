@@ -423,6 +423,17 @@ main:focus {
   width: min(860px, calc(100% - 80px));
 }
 
+@media (min-width: 1051px) {
+  .sidebar-collapsed .content-wrap:not(.narrow) {
+    width: min(1280px, calc(100% - 72px));
+  }
+
+  .sidebar-collapsed .lesson-page {
+    grid-template-columns: minmax(0, 880px) 200px;
+    gap: 96px;
+  }
+}
+
 h1,
 h2,
 h3,
@@ -1037,9 +1048,17 @@ pre {
 /* Lesson */
 .lesson-page {
   display: grid;
-  grid-template-columns: minmax(0, 760px) 230px;
-  justify-content: center;
+  grid-template-columns: minmax(0, 800px) 200px;
+  justify-content: space-between;
   gap: 72px;
+}
+
+.lesson-wrap {
+  width: min(1180px, calc(100% - 56px));
+}
+
+.lesson-copy {
+  min-width: 0;
 }
 
 .lesson-page h1 {
@@ -1085,6 +1104,7 @@ pre {
 .lesson-aside {
   position: sticky;
   top: 102px;
+  width: 200px;
   align-self: start;
 }
 

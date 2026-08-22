@@ -186,7 +186,7 @@ handle = <span class="code-function">win32process.GetCurrentProcess</span>()
 
   function renderLesson() {
     main.innerHTML = `
-      <div class="content-wrap">
+      <div class="content-wrap lesson-wrap">
         <div class="lesson-page">
           <article class="lesson-copy">
             <div class="breadcrumb"><span><a href="#/">Course</a></span><span><a href="#/module/foundations">OS foundations</a></span><span>Lesson 1</span></div>
