@@ -2,6 +2,7 @@
   "use strict";
 
   const data = window.ILOVEOS_DATA;
+  const referenceData = window.ILOVEOS_REFERENCE;
   const main = document.querySelector("#main-content");
   const sidebar = document.querySelector("#sidebar");
   const scrim = document.querySelector("#sidebar-scrim");
@@ -323,83 +324,161 @@ user = <span class="code-function">win32api.GetUserName</span>()
     });
   }
 
+  function moduleSearchText(module) {
+    return [module.name, module.category, module.label, module.description, module.useWhen, module.course, ...(module.constants || [])].join(" ").toLowerCase();
+  }
+
+  function searchTokens(query) {
+    return query.trim().toLowerCase().replace(/[^a-z0-9_]+/g, " ").split(/\s+/).filter(Boolean);
+  }
+
+  function containsEveryToken(text, query) {
+    const searchable = text.toLowerCase().replace(/[^a-z0-9_]+/g, " ");
+    return searchTokens(query).every((token) => searchable.includes(token));
+  }
+
+  function matchingFeatures(module, query) {
+    if (!query || containsEveryToken(moduleSearchText(module), query)) return module.features;
+    return module.features.filter((feature) => containsEveryToken(`${moduleSearchText(module)} ${feature.name} ${feature.task} ${feature.detail}`, query));
+  }
+
+  function pywin32ModuleCard(module, query) {
+    const features = matchingFeatures(module, query);
+    return `
+      <details class="api-module" ${query ? "open" : ""}>
+        <summary>
+          <span class="api-module-title"><code>${escapeHtml(module.name)}</code><span>${escapeHtml(module.label)}</span></span>
+          <span class="api-summary-meta"><span>${features.length} ${features.length === 1 ? "entry" : "entries"}</span><span class="details-chevron">⌄</span></span>
+        </summary>
+        <div class="api-module-body">
+          <div class="api-purpose">
+            <p>${escapeHtml(module.description)}</p>
+            <p><strong>Use it when:</strong> ${escapeHtml(module.useWhen)}</p>
+            <div class="api-context"><span>${escapeHtml(module.category)}</span><span>${escapeHtml(module.course)}</span></div>
+          </div>
+          ${(module.constants || []).length ? `<div class="constant-strip"><strong>Constants you will meet</strong><div class="call-chips">${module.constants.map((constant) => `<code class="call-chip">${escapeHtml(constant)}</code>`).join("")}</div></div>` : ""}
+          <div class="feature-table" role="table" aria-label="${escapeHtml(module.name)} functions and concepts">
+            <div class="feature-row feature-head" role="row"><span>API / concept</span><span>What you use it for</span><span>What to know</span></div>
+            ${features.map((feature) => `<div class="feature-row" role="row"><code>${escapeHtml(feature.name)}</code><strong>${escapeHtml(feature.task)}</strong><span>${escapeHtml(feature.detail)}</span></div>`).join("")}
+          </div>
+        </div>
+      </details>`;
+  }
+
   function renderPywin32(filter = "") {
     const query = filter.trim().toLowerCase();
-    const filtered = data.pywin32.filter((item) => JSON.stringify(item).toLowerCase().includes(query));
+    const modules = referenceData.pywin32Modules.filter((module) => matchingFeatures(module, query).length);
+    const featureCount = modules.reduce((count, module) => count + matchingFeatures(module, query).length, 0);
+    const totalFeatures = referenceData.pywin32Modules.reduce((count, module) => count + module.features.length, 0);
 
     main.innerHTML = `
-      <div class="content-wrap narrow">
-        <div class="breadcrumb"><span><a href="#/">Course</a></span><span>Reference</span></div>
+      <div class="content-wrap reference-width">
+        <div class="breadcrumb"><span><a href="#/">Course</a></span><span>pywin32 guide</span></div>
         <header class="reference-hero">
-          <h1>pywin32, explained by purpose.</h1>
-          <p>The official-style index tells you what exists. This guide tells you why you would use it, how the modules fit together, and where each one appears in the course.</p>
-          <span class="source-note">Coverage informed by <a href="https://timgolden.me.uk/pywin32-docs/win32_modules.html" target="_blank" rel="noreferrer">Tim Golden's pywin32 module reference ↗</a></span>
+          <h1>Find the Windows capability you need.</h1>
+          <p>Search by outcome, API name, module, constant, or Windows concept. Each entry explains what it does, when it belongs in your solution, and the detail that usually causes mistakes.</p>
+          <span class="source-note">Cross-checked with <a href="https://timgolden.me.uk/pywin32-docs/win32_modules.html" target="_blank" rel="noreferrer">the pywin32 module reference ↗</a></span>
         </header>
-
-        <div class="reference-filter">
-          <input id="module-filter" type="search" value="${escapeHtml(filter)}" placeholder="Filter by module, task, or API call" aria-label="Filter pywin32 modules" />
-          <span class="reference-count">${filtered.length} modules</span>
+        <section class="reference-stats" aria-label="Guide coverage">
+          <div><strong>${referenceData.pywin32Modules.length}</strong><span>modules and companions</span></div>
+          <div><strong>${totalFeatures}</strong><span>searchable APIs and concepts</span></div>
+          <div><strong>Task-first</strong><span>search “start a service” or “inherit a handle”</span></div>
+        </section>
+        <section class="reference-patterns" aria-label="Patterns used throughout the guide">
+          ${referenceData.pywin32Patterns.map((pattern) => `<details class="pattern-card"><summary>${escapeHtml(pattern.title)}<span>+</span></summary><p>${escapeHtml(pattern.summary)}</p><pre><code>${escapeHtml(pattern.code)}</code></pre></details>`).join("")}
+        </section>
+        <div class="reference-filter sticky-filter">
+          <input id="module-filter" type="search" value="${escapeHtml(filter)}" placeholder="Try: create process, named pipe, token privilege, VirtualAllocEx…" aria-label="Search the pywin32 guide" autocomplete="off" />
+          <span class="reference-count">${modules.length} modules · ${featureCount} entries</span>
         </div>
-        <section class="reference-list" id="reference-list">
-          ${filtered.length ? filtered.map(pywin32Card).join("") : '<div class="search-empty">No module matches that search.</div>'}
+        <section class="reference-list" id="reference-list" aria-live="polite">
+          ${modules.length ? modules.map((module) => pywin32ModuleCard(module, query)).join("") : '<div class="search-empty">No exact entry found. Try the Windows object, outcome, module, API, or constant name.</div>'}
         </section>
       </div>`;
-
-    const input = document.querySelector("#module-filter");
-    input.addEventListener("input", () => updateReferenceList(input.value));
+    document.querySelector("#module-filter").addEventListener("input", (event) => updatePywin32Results(event.target.value));
   }
 
-  function updateReferenceList(filter) {
+  function updatePywin32Results(filter) {
     const query = filter.trim().toLowerCase();
-    const filtered = data.pywin32.filter((item) => JSON.stringify(item).toLowerCase().includes(query));
-    document.querySelector("#reference-list").innerHTML = filtered.length ? filtered.map(pywin32Card).join("") : '<div class="search-empty">No module matches that search.</div>';
-    document.querySelector(".reference-count").textContent = `${filtered.length} modules`;
+    const modules = referenceData.pywin32Modules.filter((module) => matchingFeatures(module, query).length);
+    const featureCount = modules.reduce((count, module) => count + matchingFeatures(module, query).length, 0);
+    document.querySelector("#reference-list").innerHTML = modules.length ? modules.map((module) => pywin32ModuleCard(module, query)).join("") : '<div class="search-empty">No exact entry found. Try the Windows object, outcome, module, API, or constant name.</div>';
+    document.querySelector(".reference-count").textContent = `${modules.length} modules · ${featureCount} entries`;
   }
 
-  function pywin32Card(item) {
+  function manualList(items) {
+    return `<ol class="manual-list">${items.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ol>`;
+  }
+
+  function toolManual(tool, query) {
     return `
-      <article class="reference-card">
-        <div class="reference-card-head">
-          <div><code>${item.name}</code><h2>${item.label}</h2></div>
-          <span class="lesson-tag">${item.lesson}</span>
+      <details class="tool-manual" ${query ? "open" : ""}>
+        <summary>
+          <span><code>${escapeHtml(tool.exe)}</code><strong>${escapeHtml(tool.name)}</strong><small>${escapeHtml(tool.short)}</small></span>
+          <span class="api-summary-meta"><span>${tool.capabilities.length} capabilities</span><span class="details-chevron">⌄</span></span>
+        </summary>
+        <div class="tool-manual-body">
+          <div class="tool-intro"><p>${escapeHtml(tool.description)}</p><div class="api-context"><span>${escapeHtml(tool.category)}</span><span>Course: ${escapeHtml(tool.modules)}</span></div></div>
+          <section class="manual-section"><h2>Start here</h2>${manualList(tool.firstSteps)}</section>
+          <section class="manual-section"><h2>What it can answer</h2><div class="capability-list">${tool.capabilities.map(([name, detail]) => `<div><strong>${escapeHtml(name)}</strong><span>${escapeHtml(detail)}</span></div>`).join("")}</div></section>
+          <section class="manual-section"><h2>Repeatable workflow</h2>${manualList(tool.workflow)}</section>
+          ${(tool.commands || []).length ? `<section class="manual-section"><h2>Useful commands</h2><div class="command-list">${tool.commands.map(([command, detail]) => `<div><code>${escapeHtml(command)}</code><span>${escapeHtml(detail)}</span></div>`).join("")}</div></section>` : ""}
+          <section class="manual-section"><h2>Use it in the practices</h2><ul class="manual-list">${tool.practice.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul></section>
+          <aside class="caution-box"><strong>Be careful</strong><ul>${tool.cautions.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul></aside>
+          <a class="official-link" href="${tool.source}" target="_blank" rel="noreferrer">Official ${escapeHtml(tool.name)} documentation ↗</a>
         </div>
-        <p>${item.description}</p>
-        <p class="when-line"><strong>Reach for it when:</strong> ${item.useWhen}</p>
-        <div class="call-chips">${item.calls.map((call) => `<span class="call-chip">${call}</span>`).join("")}</div>
-      </article>`;
+      </details>`;
   }
 
-  function renderToolbox() {
+  function toolboxMatches(tool, query) {
+    return !query || containsEveryToken(JSON.stringify(tool), query);
+  }
+
+  function renderToolbox(filter = "") {
+    const query = filter.trim().toLowerCase();
+    const tools = referenceData.sysinternalsTools.filter((tool) => toolboxMatches(tool, query));
+    const totalCapabilities = referenceData.sysinternalsTools.reduce((count, tool) => count + tool.capabilities.length, 0);
     main.innerHTML = `
-      <div class="content-wrap">
-        <div class="breadcrumb"><span><a href="#/">Course</a></span><span>Toolbox</span></div>
+      <div class="content-wrap reference-width">
+        <div class="breadcrumb"><span><a href="#/">Course</a></span><span>Sysinternals toolbox</span></div>
         <header class="reference-hero">
-          <h1>Use the right lens.</h1>
-          <p>Each tool reveals a different part of Windows. The course introduces one only when it helps answer a concrete question.</p>
+          <h1>Choose the right view into Windows.</h1>
+          <p>Search by the question you are trying to answer, then follow a concrete workflow. The toolbox connects every course practice to the evidence Windows can show you.</p>
+          <span class="source-note">Cross-checked with <a href="https://learn.microsoft.com/en-us/sysinternals/downloads/" target="_blank" rel="noreferrer">Microsoft Sysinternals documentation ↗</a></span>
         </header>
-        <section class="tool-grid">
-          ${data.tools.map((tool, index) => `
-            <article class="tool-card" ${accentStyle(tool.color, "--tool-color")}>
-              <span class="tool-glyph">${String(index + 1).padStart(2, "0")}</span>
-              <h2>${tool.name}</h2>
-              <p class="tool-short">${tool.short}</p>
-              <p>${tool.description}</p>
-              <span class="tool-modules">Appears in modules ${tool.modules}</span>
-            </article>`).join("")}
+        <section class="reference-stats" aria-label="Toolbox coverage">
+          <div><strong>${referenceData.sysinternalsTools.length}</strong><span>tools</span></div>
+          <div><strong>${totalCapabilities}</strong><span>investigation capabilities</span></div>
+          <div><strong>Practice-ready</strong><span>steps, commands, cautions, and exercises</span></div>
+        </section>
+        <div class="reference-filter sticky-filter">
+          <input id="tool-filter" type="search" value="${escapeHtml(filter)}" placeholder="Try: find a DLL, trace file access, inspect memory, discover a pipe…" aria-label="Search the Sysinternals toolbox" autocomplete="off" />
+          <span class="reference-count">${tools.length} tools</span>
+        </div>
+        <section class="tool-manuals" id="tool-list" aria-live="polite">
+          ${tools.length ? tools.map((tool) => toolManual(tool, query)).join("") : '<div class="search-empty">No matching tool. Try the artifact, symptom, question, command, or tool name.</div>'}
         </section>
       </div>`;
+    document.querySelector("#tool-filter").addEventListener("input", (event) => {
+      const nextQuery = event.target.value.trim().toLowerCase();
+      const matches = referenceData.sysinternalsTools.filter((tool) => toolboxMatches(tool, nextQuery));
+      document.querySelector("#tool-list").innerHTML = matches.length ? matches.map((tool) => toolManual(tool, nextQuery)).join("") : '<div class="search-empty">No matching tool. Try the artifact, symptom, question, command, or tool name.</div>';
+      document.querySelector(".reference-count").textContent = `${matches.length} tools`;
+    });
   }
 
   function route() {
     const hash = window.location.hash || "#/";
-    const parts = hash.replace(/^#\//, "").split("/");
+    const [path, queryString = ""] = hash.replace(/^#\//, "").split("?");
+    const parts = path.split("/");
+    const params = new URLSearchParams(queryString);
     const root = parts[0];
 
     if (root === "module") renderModule(parts[1]);
     else if (root === "lessons") renderLessons();
     else if (root === "lesson") renderLesson();
-    else if (root === "reference" && parts[1] === "pywin32") renderPywin32();
-    else if (root === "toolbox") renderToolbox();
+    else if (root === "reference" && parts[1] === "pywin32") renderPywin32(params.get("q") || "");
+    else if (root === "toolbox") renderToolbox(params.get("q") || "");
     else renderHome();
 
     updateActiveNav(root);
@@ -464,14 +543,26 @@ user = <span class="code-function">win32api.GetUserName</span>()
         kind: "Lesson",
         href: module.id === "foundations" && index === 0 ? "#/lesson/os-foundations" : "#/lessons"
       }))),
-      ...data.pywin32.map((item) => ({ title: item.name, detail: item.label, kind: "pywin32", href: "#/reference/pywin32" })),
-      ...data.tools.map((item) => ({ title: item.name, detail: item.short, kind: "Tool", href: "#/toolbox" }))
+      ...referenceData.pywin32Modules.map((item) => ({ title: item.name, detail: `${item.label} · ${item.useWhen}`, kind: "pywin32 module", href: `#/reference/pywin32?q=${encodeURIComponent(item.name)}` })),
+      ...referenceData.pywin32Modules.flatMap((module) => module.features.map((feature) => ({
+        title: feature.name,
+        detail: `${module.name} · ${feature.task} · ${feature.detail}`,
+        kind: "pywin32 API",
+        href: `#/reference/pywin32?q=${encodeURIComponent(feature.name)}`
+      }))),
+      ...referenceData.sysinternalsTools.map((item) => ({ title: item.name, detail: `${item.short} · ${item.description}`, kind: "Tool", href: `#/toolbox?q=${encodeURIComponent(item.name)}` })),
+      ...referenceData.sysinternalsTools.flatMap((tool) => tool.capabilities.map(([name, detail]) => ({
+        title: name,
+        detail: `${tool.name} · ${detail}`,
+        kind: "Tool capability",
+        href: `#/toolbox?q=${encodeURIComponent(name)}`
+      })))
     ];
   }
 
   function updateSearch(query = "") {
     const term = query.trim().toLowerCase();
-    const items = allSearchItems().filter((item) => !term || `${item.title} ${item.detail} ${item.kind}`.toLowerCase().includes(term)).slice(0, 10);
+    const items = allSearchItems().filter((item) => !term || containsEveryToken(`${item.title} ${item.detail} ${item.kind}`, term)).slice(0, 10);
     searchResults.innerHTML = items.length ? items.map((item) => `
       <a class="search-result" href="${item.href}">
         <span><strong>${item.title}</strong><small>${item.detail}</small></span>
