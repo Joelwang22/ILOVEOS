@@ -165,7 +165,7 @@ window.ILOVEOS_DATA = {
         "Events and waitable objects",
         "Deadlocks, starvation, and safe design"
       ],
-      time: "100 min",
+      time: "300 min",
       accent: "pink",
       topics: ["Atomicity", "Race conditions", "Mutexes", "Semaphores", "Events", "Deadlocks"],
       tools: ["Process Explorer", "WinObj"],
@@ -185,7 +185,7 @@ window.ILOVEOS_DATA = {
         "File mappings and shared memory",
         "Choosing an IPC mechanism"
       ],
-      time: "85 min",
+      time: "300 min",
       accent: "teal",
       topics: ["Anonymous pipes", "Named pipes", "File mappings", "Shared memory", "Sockets"],
       tools: ["Process Explorer", "Handle", "Process Monitor"],

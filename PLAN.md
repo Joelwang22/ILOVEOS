@@ -646,6 +646,8 @@ Status: completed on 22 August 2026.
 
 ### Stage 5: Synchronisation and IPC
 
+Status: completed on 22 August 2026.
+
 - Deepen Modules 8 and 9.
 - Add race-condition interleavings, wait-result decision trees, object state diagrams, pipe endpoint ownership maps, blocking timelines, and message-framing examples.
 - Fully integrate `inviter.py`, `invitee.py`, `party.py`, `pipe_one.py`, `pipe_two.py`, and `whats_my_name.py`.
