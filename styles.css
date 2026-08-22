@@ -1689,10 +1689,21 @@ pre {
 .return-card > * { padding: 12px 14px; }
 .return-card code { color: #9ad6c3; font: 600 11px/1.5 "Cascadia Code", Consolas, monospace; overflow-wrap: anywhere; }
 .return-card span { border-left: 1px solid var(--line); color: var(--muted); font-size: 10px; }
-.api-error-note { display: grid; gap: 5px; margin-top: 26px; padding: 14px 16px; border-left: 2px solid var(--amber); background: rgba(245,196,81,.04); }
-.api-error-note strong { color: var(--amber); font-size: 10px; }
-.api-error-note span { color: var(--muted); font-size: 10px; }
-.api-error-note code { color: #e7c96f; }
+.result-guide { margin-top: 26px; border: 1px solid rgba(245,196,81,.18); border-radius: 9px; background: rgba(245,196,81,.035); overflow: hidden; }
+.result-guide summary { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 13px 15px; list-style: none; cursor: pointer; }
+.result-guide summary::-webkit-details-marker { display: none; }
+.result-guide summary > span:first-child { display: grid; gap: 2px; }
+.result-guide summary strong { color: #e7c96f; font-size: 11px; }
+.result-guide summary small { color: var(--muted-2); font-size: 9px; }
+.result-guide .details-chevron { color: var(--amber); }
+.result-guide-body { padding: 16px; border-top: 1px solid rgba(245,196,81,.14); }
+.result-guide-body > p { margin-bottom: 13px; color: var(--muted); font-size: 11px; }
+.result-guide-body > p code, .result-note code { color: #e7c96f; }
+.result-guide-body pre { margin: 0; padding: 14px 16px; border: 1px solid var(--line); border-radius: 8px; background: #090d13; overflow: auto; }
+.result-guide-body pre code { color: #cbd5e1; white-space: pre; }
+.result-note { display: grid; gap: 4px; margin-top: 13px; padding: 11px 13px; border-left: 2px solid var(--amber); background: rgba(0,0,0,.13); }
+.result-note strong { color: var(--amber); font-size: 9px; }
+.result-note span { color: var(--muted); font-size: 10px; }
 .api-source-links { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 16px; }
 .api-source-links a { color: var(--violet); font-size: 10px; }
 

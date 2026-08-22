@@ -559,6 +559,126 @@ user = <span class="code-function">win32api.GetUserName</span>()
     return "Windows API concept or configuration value";
   }
 
+  function resultHandlingGuide(module, feature, hasSignatures) {
+    if (!hasSignatures && module.name !== "winerror") return "";
+
+    if (module.name === "winerror") {
+      return `
+        <details class="result-guide">
+          <summary><span><strong>How to use this error code</strong><small>Open for a practical exception example</small></span><span class="details-chevron">⌄</span></summary>
+          <div class="result-guide-body">
+            <p>Compare this constant with <code>error.winerror</code> when you want to handle this one Windows error differently. Re-raise errors you did not expect.</p>
+            <pre><code>${escapeHtml(`import pywintypes
+import winerror
+
+try:
+    result = some_win32_call()
+except pywintypes.error as error:
+    if error.winerror == winerror.${feature.name}:
+        print("Handled the expected condition")
+    else:
+        raise`)}</code></pre>
+          </div>
+        </details>`;
+    }
+
+    const isWait = module.name === "win32event" && feature.name.startsWith("Wait");
+    if (isWait) {
+      return `
+        <details class="result-guide">
+          <summary><span><strong>How to handle wait results</strong><small>Open for WAIT_OBJECT_0, timeout, and abandoned-mutex examples</small></span><span class="details-chevron">⌄</span></summary>
+          <div class="result-guide-body">
+            <p>A wait completing normally does not always mean the object was signalled. Compare the returned status with the documented <code>WAIT_*</code> constants, then handle every state your program permits.</p>
+            <pre><code>${escapeHtml(`result = win32event.WaitForSingleObject(handle, 1_000)
+
+if result == win32event.WAIT_OBJECT_0:
+    print("The object was signalled")
+elif result == win32event.WAIT_TIMEOUT:
+    print("Nothing was signalled within one second")
+elif result == win32event.WAIT_ABANDONED:
+    # Applies when waiting for a mutex.
+    # You own it now, but the previous owner exited unexpectedly.
+    repair_or_discard_shared_state()
+else:
+    raise RuntimeError(f"Unexpected wait result: {result}")`)}</code></pre>
+            <div class="result-note"><strong>Why timeout is not an exception</strong><span>The wait function worked correctly. It is reporting that its time limit expired. An invalid handle or an actual API failure can still raise <code>pywintypes.error</code>.</span></div>
+          </div>
+        </details>`;
+    }
+
+    const isCtypes = module.name.startsWith("ctypes") || feature.detail.toLowerCase().includes("through ctypes");
+    if (isCtypes) {
+      return `
+        <details class="result-guide">
+          <summary><span><strong>How to check this ctypes call</strong><small>Open for return-value and last-error handling</small></span><span class="details-chevron">⌄</span></summary>
+          <div class="result-guide-body">
+            <p>ctypes knows the native return type, but it does not automatically know which value means failure. Check the sentinel documented for the function immediately after the call.</p>
+            <pre><code>${escapeHtml(`success = function(...)
+
+if not success:
+    error_code = ctypes.get_last_error()
+    raise ctypes.WinError(error_code)`)}</code></pre>
+            <div class="result-note"><strong>Important</strong><span>Some APIs use <code>NULL</code>, zero, or <code>INVALID_HANDLE_VALUE</code> for failure. Use the specific rule documented for the selected function rather than assuming every ctypes call uses <code>False</code>.</span></div>
+          </div>
+        </details>`;
+    }
+
+    if (module.name.startsWith("winreg")) {
+      return `
+        <details class="result-guide">
+          <summary><span><strong>How to handle a Registry error</strong><small>Open for missing-key and access-denied examples</small></span><span class="details-chevron">⌄</span></summary>
+          <div class="result-guide-body">
+            <p><code>winreg</code> uses Python's standard <code>OSError</code> subclasses. Catch a narrow exception when that outcome is expected, and let other failures surface.</p>
+            <pre><code>${escapeHtml(`try:
+    result = winreg.${feature.name}(...)
+except FileNotFoundError:
+    print("The Registry key or value does not exist")
+except PermissionError:
+    print("The requested Registry access was denied")`)}</code></pre>
+          </div>
+        </details>`;
+    }
+
+    if (module.name.startsWith("win32com")) {
+      return `
+        <details class="result-guide">
+          <summary><span><strong>How to handle a COM error</strong><small>Open for an HRESULT example</small></span><span class="details-chevron">⌄</span></summary>
+          <div class="result-guide-body">
+            <p>COM failures raise <code>pythoncom.com_error</code>. The HRESULT identifies the COM failure, while the exception may also contain source and description details.</p>
+            <pre><code>${escapeHtml(`import pythoncom
+
+try:
+    result = ${feature.name}(...)
+except pythoncom.com_error as error:
+    print(f"HRESULT: 0x{error.hresult & 0xFFFFFFFF:08X}")
+    print(error)
+    raise`)}</code></pre>
+          </div>
+        </details>`;
+    }
+
+    const callableName = feature.name.split(" / ")[0].split(".").at(-1);
+    const moduleName = module.name.split(" / ")[0].replace(" (standard library companion)", "");
+    return `
+      <details class="result-guide">
+        <summary><span><strong>How to handle a pywin32 error</strong><small>Open for a try/except example</small></span><span class="details-chevron">⌄</span></summary>
+        <div class="result-guide-body">
+          <p>Most pywin32 wrappers raise <code>pywintypes.error</code> instead of returning an invalid result. Handle errors you expect and can recover from. Re-raise unexpected errors.</p>
+          <pre><code>${escapeHtml(`import pywintypes
+import winerror
+
+try:
+    result = ${moduleName}.${callableName}(...)
+except pywintypes.error as error:
+    if error.winerror == winerror.ERROR_ACCESS_DENIED:
+        print("The operation needs different access rights")
+    else:
+        raise`)}</code></pre>
+          <div class="result-note"><strong>Useful fields</strong><span><code>error.winerror</code> is the numeric Windows code, <code>error.funcname</code> identifies the failed function, and <code>error.strerror</code> contains readable text.</span></div>
+        </div>
+      </details>`;
+  }
+
   function openApiDetails(moduleName, featureName) {
     const module = referenceData.pywin32Modules.find((item) => item.name === moduleName);
     const feature = module?.features.find((item) => item.name === featureName);
@@ -585,7 +705,7 @@ user = <span class="code-function">win32api.GetUserName</span>()
             <h3>Value type</h3>
             <div class="return-card"><code>${escapeHtml(conceptType(module, feature))}</code><span>This entry is a concept, constant, attribute, structure, or wrapper rather than a directly callable function, so function parameters and a return value do not apply.</span></div>
           </section>`}
-        <aside class="api-error-note"><strong>Failure behavior</strong><span>Most pywin32 wrappers raise <code>pywintypes.error</code> when the underlying Win32 call fails. Functions that return status codes, sentinels, or partial results are called out in their description. ctypes calls require explicit failure checks.</span></aside>
+        ${resultHandlingGuide(module, feature, Boolean(signatures.length))}
         ${detail?.sources?.length ? `<div class="api-source-links">${detail.sources.map((source, index) => `<a href="${source}" target="_blank" rel="noreferrer">${index ? "Additional type source" : "Type signature source"} ↗</a>`).join("")}</div>` : ""}
       </div>`;
     apiDetailContent.querySelector(".api-dialog-close").addEventListener("click", () => apiDialog.close());
