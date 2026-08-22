@@ -363,22 +363,6 @@ kbd,
   font-size: 10px;
 }
 
-.topbar-actions {
-  display: flex;
-  align-items: center;
-  gap: 18px;
-}
-
-.topbar-link {
-  color: var(--muted);
-  font-size: 12px;
-}
-
-.topbar-link:hover {
-  color: var(--text);
-}
-
-.github-link,
 .icon-button {
   display: grid;
   width: 36px;
@@ -390,15 +374,9 @@ kbd,
   cursor: pointer;
 }
 
-.github-link svg,
 .icon-button svg {
   width: 18px;
   height: 18px;
-}
-
-.github-link svg {
-  fill: currentColor;
-  stroke: none;
 }
 
 .mobile-only {
@@ -1779,7 +1757,6 @@ pre {
   .mobile-only { display: grid; flex: 0 0 36px; }
   .search-trigger { width: 100%; min-width: 0; }
   .search-trigger kbd { display: none; }
-  .topbar-actions { display: none; }
   .content-wrap, .content-wrap.narrow, .content-wrap.reference-width, .sidebar-collapsed .content-wrap.reference-width, .site-footer { width: calc(100% - 34px); }
   .content-wrap { padding-top: 48px; }
   h1 { font-size: 43px; }
