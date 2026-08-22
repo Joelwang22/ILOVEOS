@@ -27,7 +27,7 @@
         <section class="hero">
           <h1>Understand what Windows is actually doing.</h1>
           <p class="hero-lead">
-            A clear, practical path from processes and memory to security, IPC, and hooking—taught with Python, the Win32 API, and the tools that let you see the operating system at work.
+            A clear, practical path from processes and memory to security, IPC, and hooking, taught with Python, the Win32 API, and the tools that let you see the operating system at work.
           </p>
           <div class="hero-actions">
             <a class="button primary" href="#/lesson/os-foundations">Start the first lesson ${icons.arrow}</a>
@@ -232,7 +232,7 @@ handle = <span class="code-function">win32process.GetCurrentProcess</span>()
             <section id="windows-boundary">
               <h2>The Windows boundary</h2>
               <p>Modern Windows separates execution into <strong>user mode</strong> and <strong>kernel mode</strong>. Applications normally run in user mode with restricted access. Core operating-system code and drivers run in kernel mode with the ability to access protected memory and hardware.</p>
-              <p>When an application needs a protected operation—such as opening a file—it calls a Windows API. If kernel work is required, that request eventually crosses the boundary through a system call. Windows checks the request and performs the operation on the application's behalf.</p>
+              <p>When an application needs a protected operation, such as opening a file, it calls a Windows API. If kernel work is required, that request eventually crosses the boundary through a system call. Windows checks the request and performs the operation on the application's behalf.</p>
               <div class="callout warning">
                 <span class="callout-label">Important distinction</span>
                 <p>A Win32 API call and a system call are not synonymous. Some Win32 functions operate entirely in user mode; others eventually invoke the Native API and cross into the kernel.</p>

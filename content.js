@@ -255,7 +255,7 @@ window.ILOVEOS_DATA = {
     {
       name: "win32security",
       label: "Tokens, identities, and permissions",
-      description: "The main security module. Use it to inspect access tokens, SIDs, privileges, ACLs, and security descriptors—and to understand why an operation is allowed or denied.",
+      description: "The main security module. Use it to inspect access tokens, SIDs, privileges, ACLs, and security descriptors, and to understand why an operation is allowed or denied.",
       useWhen: "You need to ask who a process represents, what it may do, or how an object is protected.",
       calls: ["OpenProcessToken", "GetTokenInformation", "LookupPrivilegeValue", "AdjustTokenPrivileges", "GetNamedSecurityInfo"],
       lesson: "Windows security"
