@@ -3,6 +3,7 @@
 
   const data = window.ILOVEOS_DATA;
   const referenceData = window.ILOVEOS_REFERENCE;
+  const apiSignatures = window.ILOVEOS_API_SIGNATURES || {};
   const main = document.querySelector("#main-content");
   const sidebar = document.querySelector("#sidebar");
   const scrim = document.querySelector("#sidebar-scrim");
@@ -11,6 +12,8 @@
   const searchDialog = document.querySelector("#search-dialog");
   const searchInput = document.querySelector("#search-input");
   const searchResults = document.querySelector("#search-results");
+  const apiDialog = document.querySelector("#api-detail-dialog");
+  const apiDetailContent = document.querySelector("#api-detail-content");
 
   const icons = {
     arrow: '<svg aria-hidden="true" viewBox="0 0 24 24"><path d="M5 12h14m-5-5 5 5-5 5"/></svg>',
@@ -364,14 +367,14 @@ user = <span class="code-function">win32api.GetUserName</span>()
           </div>
           ${(module.constants || []).length ? `<div class="constant-strip"><strong>Constants you will meet</strong><div class="call-chips">${module.constants.map((constant) => `<code class="call-chip">${escapeHtml(constant)}</code>`).join("")}</div></div>` : ""}
           <div class="feature-table" role="table" aria-label="${escapeHtml(module.name)} functions and concepts">
-            <div class="feature-row feature-head" role="row"><span>API / concept</span><span>What you use it for</span><span>What to know</span></div>
-            ${features.map((feature) => `<div class="feature-row" role="row"><code>${escapeHtml(feature.name)}</code><strong>${escapeHtml(feature.task)}</strong><span>${escapeHtml(feature.detail)}</span></div>`).join("")}
+            <div class="feature-row feature-head" role="row"><span>API / concept</span><span>What you use it for</span><span>What to know</span><span></span></div>
+            ${features.map((feature) => `<button class="feature-row api-detail-trigger" type="button" data-api-module="${escapeHtml(module.name)}" data-api-feature="${escapeHtml(feature.name)}" aria-label="View parameters and return types for ${escapeHtml(feature.name)}"><code>${escapeHtml(feature.name)}</code><strong>${escapeHtml(feature.task)}</strong><span>${escapeHtml(feature.detail)}</span><span class="feature-open" aria-hidden="true">+</span></button>`).join("")}
           </div>
         </div>
       </details>`;
   }
 
-  function renderPywin32(filter = "") {
+  function renderPywin32(filter = "", openFeature = "") {
     const query = filter.trim().toLowerCase();
     const modules = referenceData.pywin32Modules.filter((module) => matchingFeatures(module, query).length);
     const featureCount = modules.reduce((count, module) => count + matchingFeatures(module, query).length, 0);
@@ -382,7 +385,7 @@ user = <span class="code-function">win32api.GetUserName</span>()
         <div class="breadcrumb"><span><a href="#/">Course</a></span><span>pywin32 guide</span></div>
         <header class="reference-hero">
           <h1>Find the Windows capability you need.</h1>
-          <p>Search by outcome, API name, module, constant, or Windows concept. Each entry explains what it does, when it belongs in your solution, and the detail that usually causes mistakes.</p>
+          <p>Search by outcome, API name, module, constant, or Windows concept. Select any entry to inspect its parameters, Python types, output, and failure behavior.</p>
           <span class="source-note">Cross-checked with <a href="https://timgolden.me.uk/pywin32-docs/win32_modules.html" target="_blank" rel="noreferrer">the pywin32 module reference ↗</a></span>
         </header>
         <section class="reference-stats" aria-label="Guide coverage">
@@ -402,6 +405,10 @@ user = <span class="code-function">win32api.GetUserName</span>()
         </section>
       </div>`;
     document.querySelector("#module-filter").addEventListener("input", (event) => updatePywin32Results(event.target.value));
+    if (openFeature) {
+      const match = referenceData.pywin32Modules.flatMap((module) => module.features.map((feature) => ({ module, feature }))).find((item) => item.feature.name.toLowerCase() === openFeature.toLowerCase());
+      if (match) window.setTimeout(() => openApiDetails(match.module.name, match.feature.name), 0);
+    }
   }
 
   function updatePywin32Results(filter) {
@@ -474,6 +481,7 @@ user = <span class="code-function">win32api.GetUserName</span>()
   }
 
   function route() {
+    if (apiDialog.open) apiDialog.close();
     const hash = window.location.hash || "#/";
     const [path, queryString = ""] = hash.replace(/^#\//, "").split("?");
     const parts = path.split("/");
@@ -483,7 +491,7 @@ user = <span class="code-function">win32api.GetUserName</span>()
     if (root === "module") renderModule(parts[1]);
     else if (root === "lessons") renderLessons();
     else if (root === "lesson") renderLesson();
-    else if (root === "reference" && parts[1] === "pywin32") renderPywin32(params.get("q") || "");
+    else if (root === "reference" && parts[1] === "pywin32") renderPywin32(params.get("q") || "", params.get("api") || "");
     else if (root === "toolbox") renderToolbox(params.get("q") || "");
     else renderHome();
 
@@ -503,6 +511,85 @@ user = <span class="code-function">win32api.GetUserName</span>()
 
   function escapeHtml(value) {
     return value.replace(/[&<>'"]/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" })[character]);
+  }
+
+  function parameterRole(name, type) {
+    const value = name.toLowerCase();
+    if (/^(h|handle)/.test(value) || value.includes("handle")) return "Handle identifying the Windows object used by this call.";
+    if (value === "pid" || value.includes("processid")) return "Numeric process identifier.";
+    if (value.includes("access") || value.startsWith("dwdesired")) return "Integer access mask built from the relevant constants.";
+    if (value.includes("flags") || value === "flag") return "Integer bitmask that changes the operation's behavior.";
+    if (value.startsWith("b") && type.includes("bool")) return "Boolean switch controlling this option.";
+    if (value.includes("callback") || value.includes("function") || value.includes("entrypoint")) return "Callable or native function address invoked by the API.";
+    if (value.includes("attributes") || value === "sa") return "Security attributes object, often None when defaults are acceptable.";
+    if (value.includes("buffer") || value.includes("data") || value === "buf") return "Input or output storage whose ownership and size must remain valid for the call.";
+    if (value.includes("size") || value.includes("length") || value.includes("count")) return "Number of bytes or items, as defined by this API.";
+    if (value.includes("name") || value.includes("path") || value.includes("directory") || value.includes("commandline")) return "String naming the target, path, or command input.";
+    if (value.includes("timeout")) return "Wait duration in milliseconds, with the API's documented infinite value when supported.";
+    if (value.includes("address") || value.includes("pointer")) return "Pointer-sized address. Match the target process architecture.";
+    return "Value passed to the wrapper using the displayed Python type.";
+  }
+
+  function returnMeaning(type) {
+    const value = type.toLowerCase();
+    if (value === "none") return "Returns no Python value after successful completion.";
+    if (value.includes("pyhandle") || value.includes("handle")) return "Returns a Windows handle. Close an owned handle with its documented matching close function.";
+    if (value.includes("tuple")) return "Returns a tuple. The type arguments show the order and Python type of each item.";
+    if (value.includes("list") || value.includes("sequence")) return "Returns a Python collection containing the requested records or handles.";
+    if (value.includes("bool")) return "Returns True or False. For ctypes calls, a false value commonly indicates failure and requires a last-error check.";
+    if (value.includes("bytes")) return "Returns immutable Python bytes containing the requested binary data.";
+    if (value.includes("str")) return "Returns a Python Unicode string.";
+    if (value.includes("int")) return "Returns a Python integer representing an identifier, count, status, bitmask, address, or native scalar as described above.";
+    if (value.includes("object")) return "The maintained stub does not narrow this value further. Inspect the documented shape before relying on individual fields.";
+    return "Returns the displayed Python or pywin32 wrapper type.";
+  }
+
+  function displaySignature(signature) {
+    const parameters = signature.parameters.map((parameter) => `${parameter.name}: ${parameter.type}${parameter.optional ? " = ..." : ""}`).join(", ");
+    return `${signature.name}(${parameters}) -> ${signature.returns}`;
+  }
+
+  function conceptType(module, feature) {
+    if (module.name === "winerror") return "int error-code constant";
+    if (module.name === "win32con" || feature.name.startsWith("KEY_")) return "int flag, mask, or constant";
+    if (/error|com_error/.test(feature.name)) return "exception class";
+    if (/HANDLE|OVERLAPPED|ATTRIBUTES|DESCRIPTOR|SID|Time|IID|ACL|Framework|Structure|Union/.test(feature.name)) return "class or wrapper object";
+    if (/argtypes|restype|errcheck/.test(feature.name)) return "ctypes function attribute";
+    if (/wintypes|c_byte|c_void_p/.test(feature.name)) return "ctypes native type or type alias";
+    return "Windows API concept or configuration value";
+  }
+
+  function openApiDetails(moduleName, featureName) {
+    const module = referenceData.pywin32Modules.find((item) => item.name === moduleName);
+    const feature = module?.features.find((item) => item.name === featureName);
+    if (!module || !feature) return;
+    const detail = apiSignatures[`${moduleName}::${featureName}`];
+    const signatures = detail?.signatures || [];
+    apiDetailContent.innerHTML = `
+      <header class="api-dialog-head">
+        <div><span>${escapeHtml(module.name)}</span><h2 id="api-detail-title">${escapeHtml(feature.name)}</h2><p>${escapeHtml(feature.task)}</p></div>
+        <button class="api-dialog-close" type="button" aria-label="Close API details">×</button>
+      </header>
+      <div class="api-dialog-body">
+        <section class="api-dialog-summary"><p>${escapeHtml(feature.detail)}</p><span>${escapeHtml(module.category)} · ${escapeHtml(module.course)}</span></section>
+        ${signatures.length ? signatures.map((signature, index) => `
+          <section class="signature-block">
+            ${signatures.length > 1 ? `<h3>${escapeHtml(signature.name)}${index > 0 && signature.name === signatures[index - 1]?.name ? `, overload ${index + 1}` : ""}</h3>` : ""}
+            <pre><code>${escapeHtml(displaySignature(signature))}</code></pre>
+            <h3>Parameters</h3>
+            ${signature.parameters.length ? `<div class="parameter-list">${signature.parameters.map((parameter) => `<div><code>${escapeHtml(parameter.name)}</code><span class="parameter-type">${escapeHtml(parameter.type)}</span><span>${parameter.optional ? "Optional. " : "Required. "}${escapeHtml(parameter.description || parameterRole(parameter.name, parameter.type))}</span></div>`).join("")}</div>` : '<p class="no-parameters">This function takes no parameters.</p>'}
+            <h3>Output</h3>
+            <div class="return-card"><code>${escapeHtml(signature.returns)}</code><span>${escapeHtml(returnMeaning(signature.returns))}</span></div>
+          </section>`).join("") : `
+          <section class="signature-block concept-detail">
+            <h3>Value type</h3>
+            <div class="return-card"><code>${escapeHtml(conceptType(module, feature))}</code><span>This entry is a concept, constant, attribute, structure, or wrapper rather than a directly callable function, so function parameters and a return value do not apply.</span></div>
+          </section>`}
+        <aside class="api-error-note"><strong>Failure behavior</strong><span>Most pywin32 wrappers raise <code>pywintypes.error</code> when the underlying Win32 call fails. Functions that return status codes, sentinels, or partial results are called out in their description. ctypes calls require explicit failure checks.</span></aside>
+        ${detail?.sources?.length ? `<div class="api-source-links">${detail.sources.map((source, index) => `<a href="${source}" target="_blank" rel="noreferrer">${index ? "Additional type source" : "Type signature source"} ↗</a>`).join("")}</div>` : ""}
+      </div>`;
+    apiDetailContent.querySelector(".api-dialog-close").addEventListener("click", () => apiDialog.close());
+    apiDialog.showModal();
   }
 
   function wireInPageLinks() {
@@ -554,7 +641,7 @@ user = <span class="code-function">win32api.GetUserName</span>()
         title: feature.name,
         detail: `${module.name} · ${feature.task} · ${feature.detail}`,
         kind: "pywin32 API",
-        href: `#/reference/pywin32?q=${encodeURIComponent(feature.name)}`
+        href: `#/reference/pywin32?q=${encodeURIComponent(feature.name)}&api=${encodeURIComponent(feature.name)}`
       }))),
       ...referenceData.sysinternalsTools.map((item) => ({ title: item.name, detail: `${item.short} · ${item.description}`, kind: "Tool", href: `#/toolbox?q=${encodeURIComponent(item.name)}` })),
       ...referenceData.sysinternalsTools.flatMap((tool) => tool.capabilities.map(([name, detail]) => ({
@@ -590,6 +677,13 @@ user = <span class="code-function">win32api.GetUserName</span>()
   document.querySelector("#search-close").addEventListener("click", () => searchDialog.close());
   searchInput.addEventListener("input", () => updateSearch(searchInput.value));
   searchResults.addEventListener("click", () => searchDialog.close());
+  main.addEventListener("click", (event) => {
+    const trigger = event.target.closest(".api-detail-trigger");
+    if (trigger) openApiDetails(trigger.dataset.apiModule, trigger.dataset.apiFeature);
+  });
+  apiDialog.addEventListener("click", (event) => {
+    if (event.target === apiDialog) apiDialog.close();
+  });
   document.addEventListener("keydown", (event) => {
     if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") {
       event.preventDefault();

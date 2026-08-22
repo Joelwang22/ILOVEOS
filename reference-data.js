@@ -453,10 +453,10 @@ handle = win32file.CreateFile(path, access, 0, None,
       features: [
         { name: "CryptProtectData", task: "Encrypt bytes with DPAPI", detail: "Protection is tied to the current user by default; optional entropy must be reproduced for decryption." },
         { name: "CryptUnprotectData", task: "Decrypt DPAPI-protected bytes", detail: "Requires the matching user/machine context and optional entropy." },
-        { name: "CryptProtectMemory", task: "Protect memory-sized blocks", detail: "Designed for short-lived in-memory protection and requires specific block-size multiples." },
-        { name: "CryptUnprotectMemory", task: "Reverse memory protection", detail: "Must use the same scope and compatible process/logon context." },
+        { name: "CryptProtectMemory", task: "Protect memory-sized blocks through ctypes", detail: "This is a native Crypt32 API rather than a win32crypt module function. Call it through ctypes for short-lived in-memory protection, using the required block-size multiples." },
+        { name: "CryptUnprotectMemory", task: "Reverse native memory protection through ctypes", detail: "This is a native Crypt32 API rather than a win32crypt module function. Use the same flags and a compatible process or logon context." },
         { name: "CertOpenSystemStore", task: "Open a certificate store", detail: "Common stores include MY, ROOT, CA, and TRUST; close the returned store." },
-        { name: "CertEnumCertificatesInStore", task: "Enumerate certificates", detail: "Inspect subject, issuer, validity, thumbprint, and usages without assuming trust." },
+        { name: "CertEnumCertificatesInStore", task: "Enumerate certificates from a store object", detail: "Call this method on the PyCERTSTORE returned by CertOpenSystemStore. Inspect subject, issuer, validity, thumbprint, and usages without assuming trust." },
         { name: "CryptQueryObject", task: "Identify and decode a certificate/message object", detail: "Useful for examining signed files and encoded certificate material." }
       ]
     },
