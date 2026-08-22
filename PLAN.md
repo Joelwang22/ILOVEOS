@@ -637,6 +637,8 @@ Status: completed on 22 August 2026.
 
 ### Stage 4: Management and security
 
+Status: completed on 22 August 2026.
+
 - Deepen Modules 6 and 7.
 - Add Registry view maps, service state transitions, SCM handle ownership, token diagrams, DACL evaluation traces, privilege-state examples, and integrity-level comparisons.
 - Fully bridge `real_service_controller.py` and `get_my_leverage.py` with worked error and cleanup paths.

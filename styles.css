@@ -2270,7 +2270,7 @@ pre {
   .content-wrap { width: min(100% - 48px, 1000px); }
   .module-card { grid-template-columns: 45px minmax(180px, .85fr) 1.3fr 26px; }
   .module-meta { display: none; }
-  .lesson-page { grid-template-columns: minmax(0, 700px); }
+  .lesson-page { grid-template-columns: minmax(0, 1fr); }
   .lesson-aside { display: none; }
   .mobile-lesson-sections {
     display: block;

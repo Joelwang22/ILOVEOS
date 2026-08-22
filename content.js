@@ -122,7 +122,7 @@ window.ILOVEOS_DATA = {
         "Service hosts and background processes",
         "WoW64 and redirection"
       ],
-      time: "90 min",
+      time: "330 min",
       accent: "rose",
       topics: ["Registry", "Services", "SCM", "svchost", "WoW64", "Redirection"],
       tools: ["Process Monitor", "Autoruns", "PsService"],
@@ -144,7 +144,7 @@ window.ILOVEOS_DATA = {
         "Privileges and impersonation",
         "UAC and integrity levels"
       ],
-      time: "120 min",
+      time: "400 min",
       accent: "red",
       topics: ["SIDs", "Tokens", "DACLs & ACEs", "Privileges", "UAC", "Integrity levels"],
       tools: ["AccessChk", "Process Explorer"],
