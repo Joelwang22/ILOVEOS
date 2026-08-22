@@ -655,10 +655,20 @@ Status: completed on 22 August 2026.
 
 ### Stage 6: Hooking, injection, and full-course audit
 
+Status: completed on 23 August 2026.
+
 - Deepen Module 10 with visual, controlled, and defensively framed explanations.
 - Use loader, memory, IAT, hook-chain, and detection-timeline diagrams instead of relying on operational payload code.
 - Audit the complete course for missing prerequisites, duplicated explanations, inaccurate simplifications, unsafe practices, broken reference links, and inconsistent terminology.
 - Confirm every repository practice can be understood, completed, investigated, debugged, and extended using knowledge taught by the preceding lessons.
+
+Final audit record:
+
+- 62 of 62 lessons use the full teaching structure, with contextual explanations, a diagram, a worked example, Windows evidence, an integrated practice, and knowledge checks.
+- 43 referenced practice downloads exist and are reachable from their lessons.
+- 347 searchable pywin32, native API, and tool concepts are available, including 303 entries with detailed parameter, type, return, and failure contracts.
+- 63 distinct primary lesson or tool sources are included in the automated link review.
+- Module 10 demonstrations stay within the current process, static PE files, or owned baselines. They teach evidence and lifecycle reasoning without providing an operational cross-process payload.
 
 ### Completion gate for each stage
 

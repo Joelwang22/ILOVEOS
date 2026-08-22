@@ -206,7 +206,7 @@ window.ILOVEOS_DATA = {
         "Windows hooks and IAT hooking",
         "Detecting injection and suspicious modules"
       ],
-      time: "110 min",
+      time: "330 min",
       accent: "orange",
       topics: ["DLL injection", "Remote memory", "Windows hooks", "IAT hooking", "Detection"],
       tools: ["Process Explorer", "ListDLLs", "Process Monitor", "Sigcheck"],

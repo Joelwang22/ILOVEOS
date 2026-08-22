@@ -55,7 +55,7 @@ window.ILOVEOS_LESSONS = [
       steps: ["Predict the parent process and user before running the script.", "Open Process Explorer and enable Process ID, User Name, Integrity Level, and Image Type.", "Run who_am_i.py from a terminal and find its matching PID.", "Inspect the process path, parent, token, threads, and loaded modules.", "Classify each observation as program data, an OS abstraction, or an OS-managed resource."]
     },
     check: ["Why can Windows run another thread while a music player waits for storage?", ["The first process lost its memory", "The processor would otherwise be idle", "Every I/O request terminates a thread", "The file became a process"], 1, "A waiting thread is not ready to use a processor. The scheduler can dispatch a ready thread and keep the hardware doing useful work."],
-    sources: [["Windows architecture", "https://learn.microsoft.com/windows-hardware/drivers/gettingstarted/windows-architecture"]]
+    sources: [["User mode and kernel mode", "https://learn.microsoft.com/en-us/windows-hardware/drivers/gettingstarted/user-mode-and-kernel-mode"]]
   },
   {
     id: "windows-organisation",
@@ -78,7 +78,7 @@ window.ILOVEOS_LESSONS = [
     apis: ["CreateFileW", "NtCreateFile", "CloseHandle", "QueryDosDeviceW"],
     practice: { title: "Trace one request through the layers", time: "20 min", intro: "Use evidence to replace the idea that Windows is one opaque block.", steps: ["Start Process Monitor as administrator and clear existing events.", "Filter to one test process and the CreateFile operation.", "Open a harmless text file in that process.", "Inspect the event stack and note user-mode modules, the system-call boundary, and drivers shown.", "Draw the request as application, API DLL, Native API, kernel manager, driver, object, then label the returned handle."] },
     check: ["Which component normally contains the user-mode system-call stubs?", ["Ntdll.dll", "Explorer.exe", "Services.exe", "WinObj.exe"], 0, "Ntdll exposes the Native API and contains the user-mode transition code for system services."],
-    sources: [["Windows architecture", "https://learn.microsoft.com/windows-hardware/drivers/gettingstarted/windows-architecture"]]
+    sources: [["User mode and kernel mode", "https://learn.microsoft.com/en-us/windows-hardware/drivers/gettingstarted/user-mode-and-kernel-mode"]]
   },
   {
     id: "user-kernel-mode",
@@ -417,7 +417,7 @@ window.ILOVEOS_LESSONS = [
     apis: ["win32file.FlushFileBuffers", "GetProcessMemoryInfo", "QueryWorkingSetEx"],
     practice: { title: "Compare cold and warm reads", time: "20 min", intro: "Measure carefully without claiming more than the tools show.", steps: ["Read the same large test file twice and record elapsed time.", "Observe the file in RAMMap's File Summary before and after.", "Capture logical ReadFile operations in Process Monitor.", "Explain why the second run can be faster even if application code is unchanged.", "State why clearing all caches is intrusive and unnecessary for this conceptual comparison."] },
     check: ["What does FlushFileBuffers primarily request?", ["A CPU register reset", "Buffered file data be sent through the storage stack", "A larger process heap", "A new virtual address"], 1, "It requests that buffered information for the file be flushed toward the device, which can be much more expensive than normal cached writes."],
-    sources: [["Cache manager", "https://learn.microsoft.com/windows-hardware/drivers/kernel/windows-kernel-mode-cache-manager"]]
+    sources: [["File caching", "https://learn.microsoft.com/en-us/windows/win32/fileio/file-caching"]]
   },
   {
     id: "virtual-address-translation", module: "memory", title: "Virtual memory and address translation",
@@ -429,7 +429,7 @@ window.ILOVEOS_LESSONS = [
     apis: ["VirtualAlloc", "VirtualFree", "VirtualQueryEx", "win32process.GetProcessMemoryInfo"],
     practice: { title: "Explain three memory numbers", time: "20 min", intro: "Use one process to reconcile virtual size, private bytes, and working set.", steps: ["Record all three values in Process Explorer.", "Reserve a large region without touching it and record the change.", "Commit and touch pages progressively, recording changes each time.", "Use VMMap to identify the new private region.", "Explain which measurement represents address range, committed private backing, and current residency."] },
     check: ["What does reserving virtual memory guarantee?", ["Every page is in RAM", "An address range is set aside", "The file cache is emptied", "A process handle is inherited"], 1, "Reservation protects a virtual range from other allocations. Commitment and residency are separate states."],
-    sources: [["Virtual memory", "https://learn.microsoft.com/windows/win32/memory/virtual-memory"]]
+    sources: [["Virtual address space", "https://learn.microsoft.com/en-us/windows/win32/memory/virtual-address-space"]]
   },
   {
     id: "pages-frames-page-tables", module: "memory", title: "Pages, frames, and page tables",
@@ -453,7 +453,7 @@ window.ILOVEOS_LESSONS = [
     apis: ["GlobalMemoryStatusEx", "GetProcessMemoryInfo", "VirtualLock", "EmptyWorkingSet"],
     practice: { title: "Observe allocation and first touch", time: "25 min", intro: "Use alligator.py to separate allocation, commitment, touching, and residency.", steps: ["Record system commit and the Python process's private bytes and working set.", "Run alligator.py with a modest, safe allocation size.", "Record metrics after allocation and after every page is touched.", "Observe page-fault deltas and VMMap region type.", "Release the allocation and explain which metrics fall immediately and which system caches may retain pages."] },
     check: ["Which statement about a page fault is correct?", ["It always reads the page file", "It always crashes the process", "Windows may resolve it without storage I/O", "It occurs only in kernel mode"], 2, "Demand-zero, transition, copy-on-write, and other soft faults can be satisfied without a storage read."],
-    sources: [["Page files", "https://learn.microsoft.com/windows/troubleshoot/windows-client/performance/introduction-to-the-page-file"]]
+    sources: [["Page files", "https://learn.microsoft.com/en-us/troubleshoot/windows-client/performance/introduction-to-the-page-file"]]
   },
   {
     id: "shared-memory-copy-on-write", module: "memory", title: "Shared memory and copy-on-write",
@@ -622,7 +622,7 @@ window.ILOVEOS_LESSONS = [
     apis: ["IsWow64Process2", "Wow64DisableWow64FsRedirection", "KEY_WOW64_32KEY", "KEY_WOW64_64KEY"],
     practice: { title: "Prove a redirected view", time: "25 min", intro: "Use read-only probes from both interpreter architectures if available.", steps: ["Confirm each Python interpreter architecture with pointer size.", "Read the same selected HKLM\\Software location using default, 32-bit, and 64-bit flags.", "Capture Registry operations in Process Monitor.", "Compare system binary resolution from the two processes.", "Explain the observed view without changing system configuration."] },
     check: ["What is stored in System32 on x64 Windows?", ["Only 32-bit binaries", "Native 64-bit system binaries", "Registry hives only", "Python modules only"], 1, "The naming is historical. SysWOW64 contains the 32-bit system components."],
-    sources: [["WOW64 implementation details", "https://learn.microsoft.com/windows/win32/winprog64/implementation-details"]]
+    sources: [["WOW64 implementation details", "https://learn.microsoft.com/en-us/windows/win32/winprog64/wow64-implementation-details"]]
   },
 
   {
@@ -695,7 +695,7 @@ window.ILOVEOS_LESSONS = [
     apis: ["win32security.LookupPrivilegeValue", "win32security.AdjustTokenPrivileges", "win32security.DuplicateTokenEx", "win32process.CreateProcessAsUser", "win32security.RevertToSelf"],
     practice: { title: "Audit the leverage chain", time: "40 min", intro: "Analyze get_my_leverage.py as a security contract before executing it in a VM.", steps: ["List every required process, token, and privilege access right.", "Mark which handles each function acquires and who closes them.", "Add an ERROR_NOT_ALL_ASSIGNED check after AdjustTokenPrivileges.", "Run against a process you own and compare source and child tokens.", "Record expected access-denied branches and explain the policy rather than increasing rights blindly."] },
     check: ["Can AdjustTokenPrivileges add a privilege absent from the token?", ["Yes", "No", "Only for files", "Only in 32-bit processes"], 1, "It can enable, disable, or remove privileges already represented in the token, not grant a new account right."],
-    sources: [["Privileges", "https://learn.microsoft.com/windows/win32/secauthz/privileges"], ["Impersonation", "https://learn.microsoft.com/windows/win32/secauthz/impersonation"]]
+    sources: [["Privileges", "https://learn.microsoft.com/windows/win32/secauthz/privileges"], ["Client impersonation", "https://learn.microsoft.com/en-us/windows/win32/secauthz/client-impersonation"]]
   },
   {
     id: "uac-integrity", module: "security", title: "UAC and integrity levels",
