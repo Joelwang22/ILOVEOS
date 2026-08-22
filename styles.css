@@ -1417,8 +1417,13 @@ pre {
 }
 
 .api-module {
-  --module-color: var(--violet);
-  border-left: 3px solid var(--module-color);
+  --reference-color: var(--violet);
+  border-left: 3px solid color-mix(in srgb, var(--reference-color) 72%, var(--line));
+}
+
+.tool-manual {
+  --reference-color: var(--violet);
+  border-left: 3px solid color-mix(in srgb, var(--reference-color) 72%, var(--line));
 }
 
 .pattern-card summary,
@@ -1469,19 +1474,30 @@ pre {
 .api-module[open] summary,
 .tool-manual[open] summary { border-bottom: 1px solid var(--line); background: rgba(255,255,255,.015); }
 
-.api-module[open] summary { background: color-mix(in srgb, var(--module-color) 6%, transparent); }
-.api-module:hover { border-color: color-mix(in srgb, var(--module-color) 58%, var(--line)); border-left-color: var(--module-color); }
+.api-module[open] summary,
+.tool-manual[open] summary { background: color-mix(in srgb, var(--reference-color) 5%, transparent); }
+.api-module:hover,
+.tool-manual:hover { border-color: color-mix(in srgb, var(--reference-color) 42%, var(--line)); border-left-color: var(--reference-color); }
 
 .api-module-title { display: grid; gap: 4px; }
 .api-module-title code,
 .tool-manual summary code { font: 650 14px/1.4 "Cascadia Code", Consolas, monospace; }
-.api-module-title code { color: var(--module-color); }
-.tool-manual summary code { color: var(--violet); }
+.api-module-title code { color: var(--text); }
+.tool-manual summary code { color: color-mix(in srgb, var(--reference-color) 82%, var(--text)); }
 .api-module-title > span { color: var(--muted); font-size: 11px; }
 
 .api-summary-meta { display: flex; align-items: center; gap: 18px; color: var(--muted-2); font-size: 10px; white-space: nowrap; }
+.reference-category {
+  padding: 4px 8px;
+  border: 1px solid color-mix(in srgb, var(--reference-color) 30%, var(--line));
+  border-radius: 999px;
+  color: color-mix(in srgb, var(--reference-color) 85%, var(--text));
+  background: color-mix(in srgb, var(--reference-color) 7%, transparent);
+  font-weight: 650;
+}
 .details-chevron { color: var(--violet); font-size: 20px; transition: transform .18s ease; }
-.api-module .details-chevron { color: var(--module-color); }
+.api-module .details-chevron,
+.tool-manual .details-chevron { color: var(--reference-color); }
 [open] > summary .details-chevron { transform: rotate(180deg); }
 
 .api-module-body,
@@ -1491,12 +1507,13 @@ pre {
 .api-purpose strong { color: var(--blue); }
 .api-context { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 7px; }
 .api-context span { padding: 5px 8px; border: 1px solid var(--line); border-radius: 6px; color: var(--muted-2); font-size: 9px; }
-.api-module .api-context span:first-child { border-color: color-mix(in srgb, var(--module-color) 32%, var(--line)); color: var(--module-color); }
+.api-module .api-context span:first-child,
+.tool-manual .api-context span:first-child { border-color: color-mix(in srgb, var(--reference-color) 30%, var(--line)); color: var(--reference-color); }
 
 .constant-strip { margin-bottom: 20px; padding: 13px 15px; border-left: 2px solid var(--blue); background: rgba(96,165,250,.045); }
 .constant-strip > strong { display: block; margin-bottom: 10px; color: var(--blue); font-size: 10px; text-transform: uppercase; letter-spacing: .06em; }
-.api-module .constant-strip { border-left-color: var(--module-color); background: color-mix(in srgb, var(--module-color) 5%, transparent); }
-.api-module .constant-strip > strong { color: var(--module-color); }
+.api-module .constant-strip { border-left-color: var(--reference-color); background: color-mix(in srgb, var(--reference-color) 5%, transparent); }
+.api-module .constant-strip > strong { color: var(--reference-color); }
 
 .feature-table { border: 1px solid var(--line); border-radius: 9px; overflow: hidden; }
 .feature-row { display: grid; grid-template-columns: minmax(170px, .8fr) minmax(190px, 1fr) minmax(300px, 2fr) 34px; }
@@ -1702,7 +1719,7 @@ pre {
   .sticky-filter { top: 68px; flex-direction: column; align-items: stretch; }
   .reference-count { padding-inline: 3px; }
   .api-module summary, .tool-manual summary { padding: 14px 15px; }
-  .api-summary-meta > span:first-child { display: none; }
+  .entry-count { display: none; }
   .api-module-body, .tool-manual-body { padding: 16px; }
   .api-purpose { grid-template-columns: 1fr; }
   .feature-head { display: none; }
