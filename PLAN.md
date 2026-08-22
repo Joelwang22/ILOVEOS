@@ -28,6 +28,11 @@ The site should feel like a clear interactive textbook, not an academy, game, or
 - Independent research is an explicit course skill. It must be modelled and scaffolded before a practice expects the learner to perform it alone.
 - A practice may require reasoning and research, but it must not rely on prerequisite knowledge that the site never introduced.
 - The original repository material remains the source curriculum, but it may be expanded, corrected, reorganised, and clarified where that improves learning.
+- Lessons must teach the reasoning behind a concept, not merely state the correct definition or direct the learner to a reference page.
+- Paragraphs should contain enough explanation, cause and effect, and concrete examples to build understanding without repeating the same point or adding unrelated history.
+- Hard-to-visualise mechanisms should use a step-by-step execution trace, diagram, state transition, address map, ownership map, or worked example when that materially improves understanding.
+- Every step in a worked example must explain what happens, why the step is necessary, what state changes, and how the result can be verified.
+- The pywin32 guide, Sysinternals toolbox, and external documentation support the lessons. They must not carry teaching that the lesson itself should provide.
 - Navigation and presentation remain simple and focused.
 
 ## 3. Features intentionally excluded
@@ -63,27 +68,82 @@ Supporting pages will be limited to those that directly aid learning:
 
 ## 5. Recurring lesson format
 
-Lessons will generally draw from the following structure without being forced to include every section:
+Lessons should read like focused interactive textbook chapters rather than expanded outlines. To avoid a wall of subheadings, most lessons will use four visible phases while placing supporting material in diagrams, code cards, callouts, tables, and expandable details.
 
-1. **What you will learn**
-2. **Conceptual explanation**
-3. **Diagram, analogy, or execution trace**
-4. **How Windows implements it**
-5. **Relevant Win32 APIs**
-6. **Python example**, normally using pywin32
-7. **Lower-level view with `ctypes`**, where useful
-8. **Sysinternals investigation**
-9. **Knowledge checks and prediction questions**
-10. **Practical exercise**
-11. **Summary and key terms**
+### Learn
+
+- Establish the problem the mechanism exists to solve.
+- Introduce unfamiliar terms close to where they are first used.
+- Build the mental model through clear prose with enough causal explanation to answer both what happens and why.
+- Use a concrete example before moving to edge cases or formal details.
+- Address common misconceptions when they would otherwise damage later understanding.
+
+### Use it on Windows
+
+- Explain the Windows objects, components, state, and security boundaries involved.
+- Introduce the relevant Win32 API as part of the mechanism rather than as a detached list of names.
+- Explain important parameters, types, results, expected non-success states, ownership, and cleanup.
+- Prefer pywin32 for the main Python path and add `ctypes` when the native ABI, structure layout, pointer width, callback, or uncovered API is educationally important.
+- Connect the explanation to evidence available through Sysinternals or another appropriate Windows tool.
+
+### Investigate
+
+- Keep the practical workspace inside the lesson instead of downloading a separate worksheet.
+- Ask for a prediction before execution.
+- Provide step-by-step instructions with an explanation beside each step.
+- Include fields for observations, identifiers, return values, errors, evidence, and interpretation where useful.
+- Provide expandable hints that preserve the opportunity to reason independently.
+- Provide an actual downloadable starter file only when the learner needs a `.py` file or another concrete lab artifact.
+- End with cleanup and restoration instructions.
+
+### Review
+
+- Use more than one check when the lesson contains several important decisions or state transitions.
+- Include at least one question that requires explanation, prediction, debugging, or scenario-based choice rather than recognition alone.
+- Summarise the mental model and the few facts worth retaining.
+- Include an independent variation when the lesson completes a practice pathway.
 
 Questions may also appear inside explanations so the learner predicts an outcome before revealing it or running an experiment.
+
+### Content depth without bloat
+
+Depth is measured by whether the learner can explain, apply, debug, and extend the concept, not by word count alone. A lesson is not complete merely because it contains several paragraphs.
+
+- Each paragraph should advance the model, explain a causal link, work through an example, or resolve a likely misunderstanding.
+- Repeated definitions, decorative history, generic motivational copy, and API lists without context should be removed.
+- Narrow supporting lessons can remain shorter, while central mechanism and practice lessons should be substantially developed.
+- A major technical lesson will normally require multiple worked examples, state traces, or code stages. A smaller prerequisite lesson may need only one.
+- Deeper reference material and unusual edge cases can use expandable disclosures so the main reading path remains clear.
+
+### Worked example standard
+
+A worked example should make the learner's changing mental state visible:
+
+1. State the question, starting state, and prediction.
+2. Perform one meaningful action.
+3. Explain why that action is required.
+4. Show the state or value produced by the action.
+5. Connect that result to the next step.
+6. Identify the expected failure or alternative branch when it matters.
+7. Finish by interpreting the complete result rather than stopping at successful execution.
+
+Code examples should grow in understandable stages. New lines should be highlighted or explained, and the completed program should not appear before the learner understands the pieces that make it work.
+
+### Diagram standard
+
+Diagrams are teaching tools, not decoration. Use them when prose alone makes ownership, hierarchy, address translation, execution order, or cross-component relationships difficult to hold in working memory.
+
+- Prefer state diagrams for transitions, timelines for execution order, maps for memory and namespaces, and flow diagrams for API or I/O paths.
+- Label every object and arrow with its meaning.
+- Accompany the visual with a short guided reading that explains how to follow it.
+- Keep diagrams responsive and accessible, including a text equivalent or useful accessible description.
+- Do not add a diagram when a short example or compact table communicates the idea more clearly.
 
 Guided practices will progress through four learning stages:
 
 1. **Learn the mechanism:** understand the operating-system concept and why it exists.
 2. **Learn the interface:** read the native API, translate its types, identify outputs and failure rules, and choose pywin32 or `ctypes`.
-3. **Follow a guided investigation:** implement a downloadable scaffold, observe it with the relevant tools, and explain the evidence.
+3. **Follow a guided investigation:** work through the integrated lesson workspace, use a downloadable code scaffold only when needed, observe the result with the relevant tools, and explain the evidence.
 4. **Complete an independent variation:** apply the demonstrated research method to a changed requirement without copying the original solution.
 
 ## 6. Curriculum
@@ -407,11 +467,17 @@ Repository exercises should be converted into guided labs with:
 - Required tools and files.
 - Safety or environment notes.
 - A prediction made before execution.
-- Step-by-step investigation instructions.
+- Step-by-step investigation instructions, with the purpose and expected state change explained at each step.
 - Evidence to observe or record.
 - Questions about the result.
 - An explanation of what happened and why.
+- Expected failure branches and guidance for interpreting their error values.
+- A cleanup or restoration checklist.
 - An optional extension challenge.
+
+The practical workspace should be embedded in the lesson. It may include prediction fields, observation notes, evidence tables, short answers, and checklists. These fields may retain a draft in the learner's browser so a refresh does not erase work, but this must remain lesson-local note retention rather than course progress tracking. There will be no dashboard, completion score, or stored mastery state. A visible control must allow the learner to clear the lesson draft.
+
+Separate worksheet downloads should not be used. Download buttons are reserved for actual starter code, sample data, or another artifact required to run the practice.
 
 Unknown executables, process manipulation, hooking, and injection material must be handled conservatively and, where applicable, limited to an isolated Windows virtual machine.
 
@@ -433,14 +499,17 @@ The site must distinguish an expected simplified quiz answer from the more accur
 A practice is considered covered only when the preceding lessons provide or demonstrate all of the following:
 
 - The operating-system mechanism and the problem it solves.
+- A developed explanation with enough causal detail and concrete examples to teach the mechanism rather than summarise it.
+- A labelled diagram, execution trace, state transition, or worked example when the mechanism is difficult to visualise.
 - The Windows objects, state, and security boundaries involved.
 - Every required API, module, constant, structure, and access right.
 - Parameter meanings, native and Python types, output values, and documented failure behaviour.
 - Resource ownership, lifetime, cleanup, and the consequences of incorrect cleanup.
 - Architecture, Unicode, calling-convention, and pointer-width considerations where relevant.
 - Expected failures and a method for diagnosing them.
+- Step-by-step explanations for the important transformations, API calls, and state changes in worked examples.
 - A Sysinternals or equivalent observation workflow when Windows can expose useful evidence.
-- A downloadable starting scaffold and enough guidance to begin safely.
+- An integrated practice scaffold and enough guidance to begin safely, plus a downloadable code artifact when execution requires one.
 - An independent extension that proves the learner can transfer the method to a new requirement.
 
 Every callable used by a guided practice should be searchable in the pywin32 guide or the relevant supporting reference. The entry should be sufficient to identify its parameters, output, failure rule, and ownership obligations without requiring an undocumented guess.
@@ -493,7 +562,8 @@ The eventual implementation should favour:
 - Responsive layouts.
 - Readable typography and code blocks.
 - Accessible keyboard navigation and colour contrast.
-- Reusable lesson, question, callout, code, and lab components.
+- Reusable lesson, question, callout, code, worked-example, diagram, and integrated practice components.
+- Lesson-local draft storage for practice responses without introducing progress tracking.
 - Content that remains easy to edit as the course evolves.
 
 The existing HTML, CSS, and JavaScript architecture should remain straightforward. No implementation choice should complicate a project whose main job is presenting lessons clearly.
@@ -503,10 +573,73 @@ The existing HTML, CSS, and JavaScript architecture should remain straightforwar
 As implementation continues:
 
 1. Keep the repository practice coverage matrix current as scripts and lessons evolve.
-2. Author the CPU architecture and data-representation lesson before later lessons depend on addresses, bitmasks, or processor terminology.
-3. Author the Windows API documentation and calling lesson before a guided practice expects independent API research.
-4. For each remaining module, build the conceptual lessons and API bridges before publishing its full guided practices.
-5. Audit each supplied script for correctness, architecture assumptions, safety, error handling, and resource leaks before presenting it as a worked solution.
-6. Ensure every practice API and concept is searchable in the pywin32, `ctypes`, or Sysinternals reference material.
-7. Validate each guided investigation on a clean Windows lab environment and record expected output and observable evidence.
-8. End each module with an independent variation and a review that includes both supplied quiz objectives and deeper practice-level reasoning.
+2. Reauthor the CPU architecture and data-representation lesson before later lessons depend on addresses, bitmasks, or processor terminology.
+3. Reauthor the Windows API documentation and calling lesson before a guided practice expects independent API research.
+4. For each module, deepen the conceptual lessons and API bridges before publishing its revised guided practices.
+5. Add diagrams and worked examples only after identifying the relationship or state change they need to clarify.
+6. Replace external lesson worksheets with integrated practice workspaces and keep code downloads only where an executable starter is genuinely useful.
+7. Audit each supplied script for correctness, architecture assumptions, safety, error handling, and resource leaks before presenting it as a worked solution.
+8. Ensure every practice API and concept is searchable in the pywin32, `ctypes`, or Sysinternals reference material.
+9. Validate each guided investigation on a clean Windows lab environment and record expected output and observable evidence.
+10. Review each lesson for both missing explanation and unnecessary repetition before considering it complete.
+11. End each module with an independent variation and a review that includes both supplied quiz objectives and deeper practice-level reasoning.
+
+## 15. Staged lesson-depth overhaul
+
+The existing 61 lesson pages form a complete curriculum map, but many are still concise first-pass lessons. They will now be expanded incrementally so that content quality can be reviewed and corrected before the same pattern is repeated across the whole course.
+
+### Stage 1: Lesson system and operating-system foundations
+
+- Build the reusable integrated practice workspace, step-by-step worked-example component, diagram patterns, expandable hints, evidence fields, and lesson-local draft retention.
+- Remove the separate worksheet download behavior.
+- Deepen all seven OS foundations lessons.
+- Give particular attention to CPU architecture, binary and hexadecimal reasoning, Windows architecture, system-call flow, and reading WinAPI documentation.
+- Use this module to establish the final writing density and visual language for the remaining course.
+
+### Stage 2: Processes, handles, threads, and scheduling
+
+- Deepen Modules 2 and 3.
+- Add process-creation timelines, object and handle ownership diagrams, context-switch traces, and scheduling examples.
+- Turn `hidden_process.py`, Good/Bad/Ugly, `prime_threads.py`, better-together, and thread-overdose into fully integrated guided pathways.
+- Explain each code stage, API result, tool observation, and performance conclusion.
+
+### Stage 3: Memory, linking, and loading
+
+- Deepen Modules 4 and 5.
+- Add virtual-address translation diagrams, page-state transitions, memory-region maps, PE file-to-memory layouts, RVA calculations, import-resolution traces, and loader timelines.
+- Fully bridge `alligator.py`, `vmem_to_csv.py`, `open_the_box.py`, and the import-table loading exercise.
+- Check architecture and pointer-width explanations especially carefully.
+
+### Stage 4: Management and security
+
+- Deepen Modules 6 and 7.
+- Add Registry view maps, service state transitions, SCM handle ownership, token diagrams, DACL evaluation traces, privilege-state examples, and integrity-level comparisons.
+- Fully bridge `real_service_controller.py` and `get_my_leverage.py` with worked error and cleanup paths.
+- Keep configuration-changing practices reversible and security-sensitive practices constrained to owned lab targets.
+
+### Stage 5: Synchronisation and IPC
+
+- Deepen Modules 8 and 9.
+- Add race-condition interleavings, wait-result decision trees, object state diagrams, pipe endpoint ownership maps, blocking timelines, and message-framing examples.
+- Fully integrate `inviter.py`, `invitee.py`, `party.py`, `pipe_one.py`, `pipe_two.py`, and `whats_my_name.py`.
+- Make successful, timeout, abandoned, broken-pipe, partial-read, and cleanup branches explicit.
+
+### Stage 6: Hooking, injection, and full-course audit
+
+- Deepen Module 10 with visual, controlled, and defensively framed explanations.
+- Use loader, memory, IAT, hook-chain, and detection-timeline diagrams instead of relying on operational payload code.
+- Audit the complete course for missing prerequisites, duplicated explanations, inaccurate simplifications, unsafe practices, broken reference links, and inconsistent terminology.
+- Confirm every repository practice can be understood, completed, investigated, debugged, and extended using knowledge taught by the preceding lessons.
+
+### Completion gate for each stage
+
+A stage is complete only after:
+
+1. The revised lessons meet the depth, worked-example, and diagram standards in this plan.
+2. Integrated practice fields and hints work on desktop and mobile layouts.
+3. Every relevant starter artifact downloads correctly.
+4. Practice APIs link to sufficient pywin32 or native reference information.
+5. Quizzes test reasoning as well as assessment vocabulary.
+6. The corresponding repository practices have been checked against the teaching path.
+7. A final editing pass removes redundant prose and unexplained jargon.
+8. The stage is deployed and visually reviewed before the next stage begins.
