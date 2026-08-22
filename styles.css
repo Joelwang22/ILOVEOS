@@ -1302,6 +1302,24 @@ pre {
 
 .lab-head small { color: var(--violet); font-weight: 700; text-transform: uppercase; letter-spacing: .1em; }
 .lab-head h3 { margin: 4px 0 0; }
+.lab-actions { display: flex; align-items: center; gap: 13px; }
+.download-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 10px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  color: var(--muted);
+  background: rgba(8,11,16,.34);
+  font-size: 10px;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: border-color 160ms ease, color 160ms ease, background 160ms ease;
+}
+.download-button svg { width: 13px; height: 13px; }
+.download-button:hover { border-color: #51456f; color: #d7ccf8; background: var(--violet-soft); }
+.download-button:focus-visible { outline: 2px solid var(--violet); outline-offset: 2px; }
 .lab-time { color: var(--muted-2); font-size: 11px; white-space: nowrap; }
 .lab-body { padding: 22px 24px; }
 .lab-body ol { margin-bottom: 0; }
@@ -1710,6 +1728,8 @@ pre {
   .content-wrap { padding-bottom: 60px; }
   h1 { font-size: 38px; }
   .hero-lead, .lesson-lead { font-size: 16px; }
+  .lab-head { align-items: flex-start; flex-direction: column; }
+  .lab-actions { width: 100%; justify-content: space-between; }
   .module-card { padding: 18px 15px; }
   .module-index { font-size: 11px; }
   .feature-card { min-height: 330px; }

@@ -259,13 +259,19 @@ user = <span class="code-function">win32api.GetUserName</span>()
               <div class="lab-card">
                 <div class="lab-head">
                   <div><small>Guided investigation</small><h3>Find Python inside Windows</h3></div>
-                  <span class="lab-time">10–15 min</span>
+                  <div class="lab-actions">
+                    <a class="download-button" href="downloads/who_am_i.py" download="who_am_i.py" aria-label="Download the who_am_i.py starter file">
+                      <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 3v12m-5-5 5 5 5-5M5 20h14"/></svg>
+                      <span>Download starter</span>
+                    </a>
+                    <span class="lab-time">10–15 min</span>
+                  </div>
                 </div>
                 <div class="lab-body">
                   <ol>
                     <li>Before running the script, predict where its process will appear and which process will be its parent.</li>
                     <li>Open Process Explorer and enable the <strong>Process ID</strong> column.</li>
-                    <li>Run the script from a terminal and keep it alive temporarily by adding <code>input()</code> at the end.</li>
+                    <li>Download and run the starter from a terminal. It pauses so the process stays alive while you inspect it.</li>
                     <li>Find the matching PID. Inspect its image path, parent, user, integrity level, threads, and loaded modules.</li>
                     <li>Explain which details belong to the program and which are supplied or managed by Windows.</li>
                   </ol>
