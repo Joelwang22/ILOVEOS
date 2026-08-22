@@ -7,6 +7,13 @@ window.ILOVEOS_DATA = {
       kicker: "Start with the machine",
       description: "Build the mental model: hardware, abstraction, system calls, and the boundary between user mode and the Windows kernel.",
       lessons: 5,
+      lessonTitles: [
+        "Why does an operating system exist?",
+        "How Windows is organised",
+        "User mode and kernel mode",
+        "System calls and the Win32 API",
+        "Inspecting the operating system"
+      ],
       time: "70 min",
       accent: "violet",
       topics: ["Computer organisation", "Why an OS exists", "Windows NT", "User vs kernel mode", "System calls"],
@@ -20,6 +27,14 @@ window.ILOVEOS_DATA = {
       kicker: "Meet Windows objects",
       description: "See how Windows represents running programs and gives user-mode code controlled access to kernel resources.",
       lessons: 6,
+      lessonTitles: [
+        "Programs, processes, and isolation",
+        "Inside a process",
+        "Context switches and process metadata",
+        "How Windows creates a process",
+        "Kernel objects and the Object Manager",
+        "Handles, access rights, and reference counting"
+      ],
       time: "95 min",
       accent: "blue",
       topics: ["Process creation", "Kernel objects", "Handle tables", "Object Manager", "Reference counting"],
@@ -33,6 +48,13 @@ window.ILOVEOS_DATA = {
       kicker: "Who gets the CPU next?",
       description: "Follow a thread from creation to execution and understand the scheduling choices that keep Windows responsive.",
       lessons: 5,
+      lessonTitles: [
+        "Processes and their threads",
+        "Thread contexts, stacks, and states",
+        "Creating and ending threads",
+        "How the scheduler chooses a thread",
+        "Priorities, boosts, and starvation"
+      ],
       time: "85 min",
       accent: "cyan",
       topics: ["Thread context", "Stacks", "Context switches", "Priorities", "Priority boosts"],
@@ -46,6 +68,15 @@ window.ILOVEOS_DATA = {
       kicker: "An address is not a location",
       description: "Translate virtual addresses into physical reality through pages, frames, faults, protection, and heaps.",
       lessons: 7,
+      lessonTitles: [
+        "Addresses in binary and hexadecimal",
+        "The memory hierarchy and CPU caches",
+        "Virtual memory and address translation",
+        "Pages, frames, and page tables",
+        "Page faults, paging, and the page file",
+        "Shared memory and copy-on-write",
+        "VirtualAlloc, protection, and heaps"
+      ],
       time: "115 min",
       accent: "green",
       topics: ["Binary & hex", "Virtual memory", "Paging", "Page faults", "Heaps", "Copy-on-write"],
@@ -59,6 +90,14 @@ window.ILOVEOS_DATA = {
       kicker: "From file to live process",
       description: "Take apart a Portable Executable and trace how Windows resolves imports, maps sections, and loads DLLs.",
       lessons: 6,
+      lessonTitles: [
+        "From source code to an executable",
+        "Static and dynamic linking",
+        "Anatomy of a Portable Executable",
+        "Sections and relative virtual addresses",
+        "Imports, exports, and the IAT",
+        "How the Windows loader loads a process"
+      ],
       time: "105 min",
       accent: "amber",
       topics: ["Static & dynamic linking", "PE headers", "Sections", "Imports & exports", "The loader"],
@@ -72,6 +111,14 @@ window.ILOVEOS_DATA = {
       kicker: "Configuration and services",
       description: "Explore the Registry, the Service Control Manager, service hosts, and Windows-on-Windows compatibility.",
       lessons: 6,
+      lessonTitles: [
+        "How the Registry is structured",
+        "Reading and changing Registry data",
+        "Windows services and the SCM",
+        "Controlling services from Python",
+        "Service hosts and background processes",
+        "WoW64 and redirection"
+      ],
       time: "90 min",
       accent: "rose",
       topics: ["Registry", "Services", "SCM", "svchost", "WoW64", "Redirection"],
@@ -85,6 +132,15 @@ window.ILOVEOS_DATA = {
       kicker: "Who may do what?",
       description: "Reason through tokens, SIDs, security descriptors, access checks, privileges, UAC, and integrity levels.",
       lessons: 7,
+      lessonTitles: [
+        "The Windows security model",
+        "Users, groups, and SIDs",
+        "Access tokens and security contexts",
+        "Security descriptors, DACLs, and ACEs",
+        "How Windows performs an access check",
+        "Privileges and impersonation",
+        "UAC and integrity levels"
+      ],
       time: "120 min",
       accent: "red",
       topics: ["SIDs", "Tokens", "DACLs & ACEs", "Privileges", "UAC", "Integrity levels"],
@@ -98,6 +154,14 @@ window.ILOVEOS_DATA = {
       kicker: "Coordinate concurrent work",
       description: "Reproduce race conditions, then choose the right primitive to make shared state safe and predictable.",
       lessons: 6,
+      lessonTitles: [
+        "Why concurrent code goes wrong",
+        "Atomicity and race conditions",
+        "Critical sections and mutexes",
+        "Semaphores",
+        "Events and waitable objects",
+        "Deadlocks, starvation, and safe design"
+      ],
       time: "100 min",
       accent: "pink",
       topics: ["Atomicity", "Race conditions", "Mutexes", "Semaphores", "Events", "Deadlocks"],
@@ -111,6 +175,13 @@ window.ILOVEOS_DATA = {
       kicker: "Cross the process boundary",
       description: "Move data safely between isolated processes with pipes, shared memory, files, and sockets.",
       lessons: 5,
+      lessonTitles: [
+        "Why processes need IPC",
+        "Anonymous pipes",
+        "Named-pipe servers and clients",
+        "File mappings and shared memory",
+        "Choosing an IPC mechanism"
+      ],
       time: "85 min",
       accent: "teal",
       topics: ["Anonymous pipes", "Named pipes", "File mappings", "Shared memory", "Sockets"],
@@ -124,6 +195,14 @@ window.ILOVEOS_DATA = {
       kicker: "Change behaviour at runtime",
       description: "Understand injection and hooking mechanisms through constrained labs and defensive process investigation.",
       lessons: 6,
+      lessonTitles: [
+        "Injection and hooking explained",
+        "Loading code during process startup",
+        "Remote memory and remote threads",
+        "Position-independent injected code",
+        "Windows hooks and IAT hooking",
+        "Detecting injection and suspicious modules"
+      ],
       time: "110 min",
       accent: "orange",
       topics: ["DLL injection", "Remote memory", "Windows hooks", "IAT hooking", "Detection"],

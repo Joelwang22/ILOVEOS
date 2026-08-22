@@ -30,7 +30,7 @@
           </p>
           <div class="hero-actions">
             <a class="button primary" href="#/lesson/os-foundations">Start the first lesson ${icons.arrow}</a>
-            <a class="button" href="#/" data-scroll-target="course-outline">Browse the course</a>
+            <a class="button" href="#/lessons">View all lessons</a>
           </div>
         </section>
 
@@ -105,11 +105,51 @@ handle = <span class="code-function">win32process.GetCurrentProcess</span>()
       </a>`;
   }
 
+  function renderLessons() {
+    const totalLessons = data.modules.reduce((total, module) => total + module.lessonTitles.length, 0);
+
+    main.innerHTML = `
+      <div class="content-wrap narrow lesson-index-page">
+        <div class="breadcrumb"><span><a href="#/">Course</a></span><span>All lessons</span></div>
+        <header class="lessons-hero">
+          <h1>All lessons, in order.</h1>
+          <p>Follow the sequence from operating-system fundamentals to advanced Windows process behaviour. Each module builds on the ideas introduced before it.</p>
+          <span class="lessons-summary">${totalLessons} lessons across ${data.modules.length} modules</span>
+        </header>
+
+        <section class="lesson-index-list" aria-label="Complete lesson list">
+          ${data.modules.map((module) => `
+            <article class="lesson-module">
+              <a class="lesson-module-head" href="#/module/${module.id}">
+                <span class="lesson-module-number">${module.number}</span>
+                <h2>${module.title}</h2>
+                <span>${module.lessonTitles.length} lessons</span>
+              </a>
+              <ol>
+                ${module.lessonTitles.map((title, index) => {
+                  const isAvailable = module.id === "foundations" && index === 0;
+                  const href = isAvailable ? "#/lesson/os-foundations" : `#/module/${module.id}`;
+                  return `
+                    <li>
+                      <a class="lesson-index-row${isAvailable ? " is-available" : ""}" href="${href}">
+                        <span class="lesson-sequence">${module.number}.${String(index + 1).padStart(2, "0")}</span>
+                        <strong>${title}</strong>
+                        <span class="lesson-availability${isAvailable ? " available" : ""}">${isAvailable ? "Read lesson" : "Module outline"}</span>
+                        <span class="lesson-row-arrow" aria-hidden="true">→</span>
+                      </a>
+                    </li>`;
+                }).join("")}
+              </ol>
+            </article>`).join("")}
+        </section>
+      </div>`;
+  }
+
   function renderModule(id) {
     const module = data.modules.find((item) => item.id === id) || data.modules[0];
-    const lessonNames = module.topics.map((topic, index) => ({
-      title: topic,
-      type: index === module.topics.length - 1 ? "Investigation & review" : index % 2 ? "Concept + lab" : "Core lesson"
+    const lessonNames = module.lessonTitles.map((title, index) => ({
+      title,
+      type: index === module.lessonTitles.length - 1 ? "Investigation & review" : index % 2 ? "Concept + lab" : "Core lesson"
     }));
 
     main.innerHTML = `
@@ -356,6 +396,7 @@ user = <span class="code-function">win32api.GetUserName</span>()
     const root = parts[0];
 
     if (root === "module") renderModule(parts[1]);
+    else if (root === "lessons") renderLessons();
     else if (root === "lesson") renderLesson();
     else if (root === "reference" && parts[1] === "pywin32") renderPywin32();
     else if (root === "toolbox") renderToolbox();
@@ -417,6 +458,12 @@ user = <span class="code-function">win32api.GetUserName</span>()
   function allSearchItems() {
     return [
       ...data.modules.map((item) => ({ title: item.title, detail: item.description, kind: "Module", href: `#/module/${item.id}` })),
+      ...data.modules.flatMap((module) => module.lessonTitles.map((title, index) => ({
+        title,
+        detail: `${module.title} · Lesson ${index + 1}`,
+        kind: "Lesson",
+        href: module.id === "foundations" && index === 0 ? "#/lesson/os-foundations" : "#/lessons"
+      }))),
       ...data.pywin32.map((item) => ({ title: item.name, detail: item.label, kind: "pywin32", href: "#/reference/pywin32" })),
       ...data.tools.map((item) => ({ title: item.name, detail: item.short, kind: "Tool", href: "#/toolbox" }))
     ];

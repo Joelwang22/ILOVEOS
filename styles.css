@@ -807,6 +807,131 @@ pre {
   margin: 0;
 }
 
+/* Complete lesson index */
+.lessons-hero {
+  max-width: 730px;
+  margin-bottom: 52px;
+}
+
+.lessons-hero h1 {
+  margin-bottom: 18px;
+  font-size: clamp(42px, 5vw, 62px);
+}
+
+.lessons-hero p {
+  color: var(--muted);
+  font-size: 17px;
+}
+
+.lessons-summary {
+  display: inline-block;
+  margin-top: 8px;
+  color: var(--violet);
+  font-family: "Cascadia Code", Consolas, monospace;
+  font-size: 11px;
+}
+
+.lesson-index-list {
+  display: grid;
+  gap: 22px;
+}
+
+.lesson-module {
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: rgba(16, 21, 30, 0.72);
+}
+
+.lesson-module-head {
+  display: grid;
+  grid-template-columns: 54px 1fr auto;
+  align-items: center;
+  gap: 14px;
+  padding: 20px 22px;
+  background: var(--panel-2);
+}
+
+.lesson-module-head:hover h2 {
+  color: var(--violet);
+}
+
+.lesson-module-number {
+  color: var(--violet);
+  font-family: "Cascadia Code", Consolas, monospace;
+  font-size: 12px;
+}
+
+.lesson-module-head h2 {
+  margin: 0;
+  font-size: 20px;
+  transition: color 160ms ease;
+}
+
+.lesson-module-head > span:last-child {
+  color: var(--muted-2);
+  font-size: 10px;
+}
+
+.lesson-module ol {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.lesson-module li + li {
+  border-top: 1px solid var(--line);
+}
+
+.lesson-index-row {
+  display: grid;
+  grid-template-columns: 54px minmax(0, 1fr) 90px 18px;
+  align-items: center;
+  gap: 14px;
+  min-height: 59px;
+  padding: 10px 22px;
+  transition: background 150ms ease;
+}
+
+.lesson-index-row:hover {
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.lesson-index-row.is-available {
+  box-shadow: inset 2px 0 0 rgba(84, 214, 155, 0.7);
+}
+
+.lesson-sequence {
+  color: var(--muted-2);
+  font-family: "Cascadia Code", Consolas, monospace;
+  font-size: 10px;
+}
+
+.lesson-index-row strong {
+  font-size: 13px;
+  font-weight: 550;
+}
+
+.lesson-availability {
+  color: var(--muted-2);
+  font-size: 9px;
+  text-align: right;
+}
+
+.lesson-availability.available {
+  color: var(--green);
+}
+
+.lesson-row-arrow {
+  color: var(--muted-2);
+  transition: color 150ms ease, transform 150ms ease;
+}
+
+.lesson-index-row:hover .lesson-row-arrow {
+  color: var(--violet);
+  transform: translateX(2px);
+}
+
 /* Module overview */
 .breadcrumb {
   display: flex;
@@ -1379,6 +1504,10 @@ pre {
   .feature-card { padding: 25px; }
   .module-hero-grid { grid-template-columns: 1fr; gap: 30px; }
   .module-facts { max-width: none; }
+  .lesson-module-head { grid-template-columns: 42px 1fr; padding: 18px 16px; }
+  .lesson-module-head > span:last-child { display: none; }
+  .lesson-index-row { grid-template-columns: 42px minmax(0, 1fr) 16px; padding-inline: 16px; }
+  .lesson-availability { display: none; }
   .concept-diagram { grid-template-columns: 1fr 1fr; }
   .diagram-node:nth-child(2)::after { display: none; }
   .tool-grid { grid-template-columns: 1fr; }
