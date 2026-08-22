@@ -23,7 +23,11 @@ The site should feel like a clear interactive textbook, not an academy, game, or
 - `ctypes` is introduced when native signatures, structures, pointers, or APIs unavailable through pywin32 add educational value.
 - Sysinternals tools are teaching instruments, not a disconnected appendix.
 - Questions should test reasoning and prediction, not just recognition or memorisation.
-- The original repository material remains the source curriculum, but it may be reorganised and clarified where that improves learning.
+- The lecture notes and quizzes define the minimum examinable vocabulary, not the limit of what the lessons must teach.
+- The supplied practices and scripts are binding curriculum requirements. Every concept needed to understand, complete, debug, and extend them must be taught or deliberately researched through a demonstrated method.
+- Independent research is an explicit course skill. It must be modelled and scaffolded before a practice expects the learner to perform it alone.
+- A practice may require reasoning and research, but it must not rely on prerequisite knowledge that the site never introduced.
+- The original repository material remains the source curriculum, but it may be expanded, corrected, reorganised, and clarified where that improves learning.
 - Navigation and presentation remain simple and focused.
 
 ## 3. Features intentionally excluded
@@ -42,13 +46,7 @@ Quizzes may show the result of the current attempt and allow incorrect questions
 
 ## 4. Site structure
 
-The homepage will act as a clean course introduction and table of contents. It will contain:
-
-- A short explanation of the module.
-- Prerequisites.
-- Environment and safety guidance.
-- The ordered list of lesson modules.
-- Links to supporting reference pages.
+The homepage will act as a direct table of contents. It will prioritise the ordered list of lesson modules and links to the supporting reference pages.
 
 Lessons will use simple sequential navigation:
 
@@ -81,26 +79,58 @@ Lessons will generally draw from the following structure without being forced to
 
 Questions may also appear inside explanations so the learner predicts an outcome before revealing it or running an experiment.
 
+Guided practices will progress through four learning stages:
+
+1. **Learn the mechanism:** understand the operating-system concept and why it exists.
+2. **Learn the interface:** read the native API, translate its types, identify outputs and failure rules, and choose pywin32 or `ctypes`.
+3. **Follow a guided investigation:** implement a downloadable scaffold, observe it with the relevant tools, and explain the evidence.
+4. **Complete an independent variation:** apply the demonstrated research method to a changed requirement without copying the original solution.
+
 ## 6. Curriculum
 
 ### Module 1: Operating-system foundations
 
+The repository topics labelled CPU architecture and Operating Systems API will be taught here as prerequisite lesson clusters. They do not require separate top-level modules because their concepts are reinforced throughout memory, scheduling, management, IPC, security, and linking.
+
+Planned lesson order:
+
+1. CPU architecture and data representation.
+2. Why an operating system exists.
+3. How Windows is organised.
+4. User mode, kernel mode, and protected operations.
+5. System calls, the Native API, and the Win32 API.
+6. How to read and call a Windows API.
+7. Inspecting the operating system.
+
 Topics:
 
+- Decimal, binary, and hexadecimal notation.
+- Bits, bytes, powers of two, and address-space calculations.
 - CPU, registers, RAM, storage, buses, and devices.
+- CPU packages, physical cores, logical processors, and the limits of the one-instruction-per-core model.
+- 32-bit and 64-bit architectures, pointer widths, virtual address spaces, and the distinction between addressable and usable memory.
 - Why operating systems exist.
 - Hardware abstraction and resource management.
 - Multiprogramming, multitasking, and context switching.
 - Windows history and Windows NT architecture.
 - User mode, kernel mode, and privilege rings.
 - System calls, the Native API, and the Win32 API.
+- The anatomy of Windows API documentation: purpose, native signature, parameters, return value, failure rules, requirements, header, and DLL.
+- Windows scalar, string, pointer, handle, and structure types, including `BOOL`, `DWORD`, `CHAR`, `LPCTSTR`, and pointer-sized types.
+- Parameter direction and optionality, including `[in]`, `[out]`, and `[in, out]` annotations.
+- Return sentinels, `GetLastError`, formatted error messages, and pywin32 exceptions.
+- ANSI and Unicode API variants and the meaning of `A` and `W` suffixes.
 - Calling Windows APIs from Python.
+- Choosing between pywin32 and `ctypes`.
 
 Practical integration:
 
 - Explore the system using Process Explorer.
 - Make introductory Win32 calls with pywin32.
 - Reproduce a small call with `ctypes` and compare the two interfaces.
+- Read an unfamiliar Microsoft API entry and identify its DLL, parameter roles, output, failure sentinel, and cleanup obligation.
+- Translate a small native signature into `ctypes.argtypes` and `ctypes.restype`.
+- Include concise "quiz model versus complete model" explanations where the supplied question intentionally simplifies CPU throughput, address spaces, or API failure behaviour.
 
 ### Module 2: Processes, kernel objects, and handles
 
@@ -385,9 +415,77 @@ Repository exercises should be converted into guided labs with:
 
 Unknown executables, process manipulation, hooking, and injection material must be handled conservatively and, where applicable, limited to an isolated Windows virtual machine.
 
-## 11. Technical direction
+## 11. Curriculum completeness and research bridge
 
-The intended deployment target is GitHub Pages. The site should therefore begin as a static website with no backend dependency.
+### Source hierarchy
+
+The course will be built from four complementary sources:
+
+1. **Lectures and quizzes** establish the minimum terminology and expected assessment answers.
+2. **Repository practices and scripts** reveal the operational skills, API knowledge, failure cases, and research ability the learner is actually expected to possess.
+3. **Authoritative documentation** supplies details that the provided material omits, especially native signatures, structures, access rights, state machines, and platform limitations.
+4. **Controlled experiments** connect all three sources to observable Windows behaviour.
+
+The site must distinguish an expected simplified quiz answer from the more accurate working model. It should prepare the learner for assessment without presenting simplifications as universal facts.
+
+### Definition of a complete lesson path
+
+A practice is considered covered only when the preceding lessons provide or demonstrate all of the following:
+
+- The operating-system mechanism and the problem it solves.
+- The Windows objects, state, and security boundaries involved.
+- Every required API, module, constant, structure, and access right.
+- Parameter meanings, native and Python types, output values, and documented failure behaviour.
+- Resource ownership, lifetime, cleanup, and the consequences of incorrect cleanup.
+- Architecture, Unicode, calling-convention, and pointer-width considerations where relevant.
+- Expected failures and a method for diagnosing them.
+- A Sysinternals or equivalent observation workflow when Windows can expose useful evidence.
+- A downloadable starting scaffold and enough guidance to begin safely.
+- An independent extension that proves the learner can transfer the method to a new requirement.
+
+Every callable used by a guided practice should be searchable in the pywin32 guide or the relevant supporting reference. The entry should be sufficient to identify its parameters, output, failure rule, and ownership obligations without requiring an undocumented guess.
+
+### Research method taught by the course
+
+The lessons will repeatedly demonstrate this workflow until the learner can perform it independently:
+
+1. State the required outcome in plain language.
+2. Find the authoritative Windows API or pywin32 documentation.
+3. Identify the API family, native signature, header, implementing DLL, and minimum supported environment.
+4. Decode Windows typedefs, pointers, structures, parameter direction, optional values, and buffer-size units.
+5. Check whether a suitable pywin32 wrapper exists and prefer it when it communicates the task clearly.
+6. When `ctypes` is required, declare the calling interface, argument types, return type, structures, and callback types exactly.
+7. Identify the documented success value, failure sentinel, extended-error rule, and expected asynchronous or partial-result states.
+8. Determine ownership of every returned handle, buffer, pointer, and allocated object before writing the call.
+9. Run one controlled experiment and verify the result with output, system state, and the relevant inspection tool.
+10. Record what failed, why it failed, and which evidence supports the conclusion.
+
+Guided exercises should not require external documentation merely to fill an unexplained gap. External research becomes part of the independent variation only after the lesson has demonstrated how to perform that research.
+
+## 12. Repository practice coverage matrix
+
+This matrix is a durable authoring checklist. It should be updated whenever a practice is added, removed, or materially changed.
+
+| Repository practice | Module | Required teaching bridge |
+| --- | --- | --- |
+| `Hidden_Process/hidden_process.py` | Processes and handles | `CreateProcessW`, full `STARTUPINFOW` and `PROCESS_INFORMATION` layouts, input and output structures, writable command lines, structure size fields, flags, pointer-sized handles, error reporting, and cleanup |
+| GoodLog and BadLog Process Monitor investigation, recorded in `the_good_the_bad_the_ugly.txt` and `thegoodbadugly_2.txt` | Processes and handles | Controlled capture, filters, file-operation sequences, path and result interpretation, evidence recording, and the cost of repeated open/write/close cycles |
+| `prime_threads.py`, `better_together`, and `thread_overdose` | Threads and scheduling | Work partitioning, thread lifecycle, joining, CPU-bound versus I/O-bound work, the Python GIL, scheduler observation, contention, and why more threads can reduce performance |
+| `alligator.py` | Memory management | Reservation versus commitment, page size, allocation base, protection, partial commitment, cleanup, and comparison with VMMap |
+| `vmem_to_csv.py` | Memory management | Address-space traversal, `VirtualQueryEx`, `MEMORY_BASIC_INFORMATION`, structure ABI, state/type/protection bitmasks, hexadecimal ranges, termination conditions, access rights, CSV evidence, and handle cleanup |
+| `open_the_box.py` | Linking and loading | DLL loading, exports, `LoadLibrary`, `GetProcAddress`, raw function addresses, calling conventions, pointer-sized returns, ANSI byte strings, Unicode alternatives, and safe function-pointer construction |
+| `real_service_controller.py` | Windows management | SCM and service access masks, `Advapi32.dll`, native signatures, `argtypes`, `restype`, `SERVICE_STATUS`, input/output parameters, `GetLastError`, service state transitions, and `CloseServiceHandle` |
+| `get_my_leverage.py` | Windows security | Process and token access, privileges present versus enabled, privilege adjustment, impersonation levels, primary-token duplication, `CreateProcessAsUser`, expected access failures, and complete handle ownership |
+| `inviter.py` and `invitee.py` | Synchronisation | Named events, `Local` and `Global` scope, access rights, manual versus auto reset, signaled state, wait results, object lifetime, and cross-process observation |
+| `party.py` | Synchronisation | Threads sharing native handles, events, mutex ownership, protected read-modify-write operations, `WAIT_OBJECT_0`, `WAIT_ABANDONED`, safe release, joining, and cleanup ordering |
+| `pipe_one.py` and `pipe_two.py` | Inter-process communication | Anonymous pipes, inheritable security attributes, handle inheritance masks, standard-handle redirection, `STARTF_USESTDHANDLES`, parent/child handle closure, pipe EOF, blocking, buffer deadlocks, decoding, waits, and cleanup |
+| `whats_my_name.py` | Inter-process communication | Named-pipe discovery, canonical pipe paths, availability waits, `CreateFile`, byte versus message mode, partial reads and writes, response encoding, error handling, ownership, and Sysinternals correlation |
+
+The practice lesson for each row must also explain any fragile, incomplete, architecture-dependent, or intentionally simplified choices in the supplied solution. Repository code is evidence of the required learning outcome, not automatically the final reference implementation.
+
+## 13. Technical direction
+
+The site is implemented as a dependency-free static website and deployed through GitHub Pages. It does not require a backend.
 
 The eventual implementation should favour:
 
@@ -398,15 +496,17 @@ The eventual implementation should favour:
 - Reusable lesson, question, callout, code, and lab components.
 - Content that remains easy to edit as the course evolves.
 
-The exact framework and visual design will be selected later. No implementation choice should complicate a project whose main job is presenting lessons clearly.
+The existing HTML, CSS, and JavaScript architecture should remain straightforward. No implementation choice should complicate a project whose main job is presenting lessons clearly.
 
-## 12. Proposed next planning steps
+## 14. Authoring and verification sequence
 
-Before implementation begins:
+As implementation continues:
 
-1. Produce a detailed inventory of every source file and map it to a module and lesson.
-2. Break each module into individual lesson pages.
-3. Identify concepts that are missing, dated, ambiguous, or require authoritative verification.
-4. Decide which existing exercises can be reused directly and which need safer or clearer replacements.
-5. Design one representative lesson on paper to validate the content structure.
-6. Choose the static-site technology and visual direction only after the lesson structure is settled.
+1. Keep the repository practice coverage matrix current as scripts and lessons evolve.
+2. Author the CPU architecture and data-representation lesson before later lessons depend on addresses, bitmasks, or processor terminology.
+3. Author the Windows API documentation and calling lesson before a guided practice expects independent API research.
+4. For each remaining module, build the conceptual lessons and API bridges before publishing its full guided practices.
+5. Audit each supplied script for correctness, architecture assumptions, safety, error handling, and resource leaks before presenting it as a worked solution.
+6. Ensure every practice API and concept is searchable in the pywin32, `ctypes`, or Sysinternals reference material.
+7. Validate each guided investigation on a clean Windows lab environment and record expected output and observable evidence.
+8. End each module with an independent variation and a review that includes both supplied quiz objectives and deeper practice-level reasoning.
