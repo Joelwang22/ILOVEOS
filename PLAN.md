@@ -628,6 +628,8 @@ Status: completed on 22 August 2026.
 
 ### Stage 3: Memory, linking, and loading
 
+Status: completed on 22 August 2026.
+
 - Deepen Modules 4 and 5.
 - Add virtual-address translation diagrams, page-state transitions, memory-region maps, PE file-to-memory layouts, RVA calculations, import-resolution traces, and loader timelines.
 - Fully bridge `alligator.py`, `vmem_to_csv.py`, `open_the_box.py`, and the import-table loading exercise.

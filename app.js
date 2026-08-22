@@ -188,11 +188,16 @@ handle = <span class="code-function">win32process.GetCurrentProcess</span>()
 
   function lessonApiChip(api) {
     const featureName = api.includes(".") ? api.split(".").pop() : api;
-    const isInGuide = referenceData.pywin32Modules.some((module) =>
-      module.features.some((feature) => feature.name.toLowerCase() === featureName.toLowerCase())
-    );
-    if (!isInGuide) return `<span class="lesson-api-chip"><code>${escapeHtml(api)}</code></span>`;
-    return `<a class="lesson-api-chip linked" href="#/reference/pywin32?q=${encodeURIComponent(featureName)}&api=${encodeURIComponent(featureName)}"><code>${escapeHtml(api)}</code><span>Open guide</span></a>`;
+    const apiLower = api.toLowerCase();
+    const featureLower = featureName.toLowerCase();
+    const preferredModule = api.startsWith("ctypes.") ? "ctypes / ctypes.wintypes" : api.split(".")[0];
+    const matches = referenceData.pywin32Modules.flatMap((module) => module.features.map((feature) => ({ module, feature }))).filter(({ feature }) => {
+      const name = feature.name.toLowerCase();
+      return name === apiLower || name === featureLower || name.endsWith(`.${featureLower}`);
+    });
+    const match = matches.find(({ module }) => module.name === preferredModule) || matches[0];
+    if (!match) return `<span class="lesson-api-chip"><code>${escapeHtml(api)}</code></span>`;
+    return `<a class="lesson-api-chip linked" href="#/reference/pywin32?q=${encodeURIComponent(match.feature.name)}&api=${encodeURIComponent(match.feature.name)}"><code>${escapeHtml(api)}</code><span>Open guide</span></a>`;
   }
 
   function renderParagraphs(paragraphs) {

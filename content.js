@@ -80,7 +80,7 @@ window.ILOVEOS_DATA = {
         "Shared memory and copy-on-write",
         "VirtualAlloc, protection, and heaps"
       ],
-      time: "115 min",
+      time: "330 min",
       accent: "green",
       topics: ["Binary & hex", "Virtual memory", "Paging", "Page faults", "Heaps", "Copy-on-write"],
       tools: ["VMMap", "RAMMap"],
@@ -101,7 +101,7 @@ window.ILOVEOS_DATA = {
         "Imports, exports, and the IAT",
         "How the Windows loader loads a process"
       ],
-      time: "105 min",
+      time: "330 min",
       accent: "amber",
       topics: ["Static & dynamic linking", "PE headers", "Sections", "Imports & exports", "The loader"],
       tools: ["CFF Explorer", "ListDLLs", "Process Explorer"],
