@@ -14,6 +14,10 @@
   const searchResults = document.querySelector("#search-results");
   const apiDialog = document.querySelector("#api-detail-dialog");
   const apiDetailContent = document.querySelector("#api-detail-content");
+  const settingsTrigger = document.querySelector("#settings-trigger");
+  const settingsPanel = document.querySelector("#settings-panel");
+  const settingsClose = document.querySelector("#settings-close");
+  const sizeOptions = [...document.querySelectorAll("[data-content-size]")];
 
   const icons = {
     arrow: '<svg aria-hidden="true" viewBox="0 0 24 24"><path d="M5 12h14m-5-5 5 5-5 5"/></svg>',
@@ -743,6 +747,25 @@ except pywintypes.error as error:
     }
   }
 
+  function setContentSize(size, persist = true) {
+    const selectedSize = ["small", "default", "large"].includes(size) ? size : "default";
+    document.documentElement.dataset.contentSize = selectedSize;
+    sizeOptions.forEach((option) => {
+      option.setAttribute("aria-pressed", String(option.dataset.contentSize === selectedSize));
+    });
+    if (!persist) return;
+    try {
+      localStorage.setItem("iloveos-content-size", selectedSize);
+    } catch (_) {
+      // The setting still applies for the current visit when storage is unavailable.
+    }
+  }
+
+  function setSettingsOpen(open) {
+    settingsPanel.hidden = !open;
+    settingsTrigger.setAttribute("aria-expanded", String(open));
+  }
+
   function allSearchItems() {
     return [
       ...data.modules.map((item) => ({ title: item.title, detail: item.description, kind: "Module", href: `#/module/${item.id}` })),
@@ -791,6 +814,15 @@ except pywintypes.error as error:
   scrim.addEventListener("click", closeSidebar);
   document.querySelector("#search-trigger").addEventListener("click", openSearch);
   document.querySelector("#search-close").addEventListener("click", () => searchDialog.close());
+  settingsTrigger.addEventListener("click", () => setSettingsOpen(settingsPanel.hidden));
+  settingsClose.addEventListener("click", () => {
+    setSettingsOpen(false);
+    settingsTrigger.focus();
+  });
+  settingsPanel.addEventListener("click", (event) => {
+    const option = event.target.closest("[data-content-size]");
+    if (option) setContentSize(option.dataset.contentSize);
+  });
   searchInput.addEventListener("input", () => updateSearch(searchInput.value));
   searchResults.addEventListener("click", () => searchDialog.close());
   main.addEventListener("click", (event) => {
@@ -801,16 +833,29 @@ except pywintypes.error as error:
     if (event.target === apiDialog) apiDialog.close();
   });
   document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && !settingsPanel.hidden) {
+      setSettingsOpen(false);
+      settingsTrigger.focus();
+      return;
+    }
     if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") {
       event.preventDefault();
       openSearch();
     }
+  });
+  document.addEventListener("click", (event) => {
+    if (!settingsPanel.hidden && !event.target.closest(".settings-control")) setSettingsOpen(false);
   });
   window.addEventListener("hashchange", route);
   try {
     setSidebarCollapsed(localStorage.getItem("iloveos-sidebar-collapsed") === "true");
   } catch (_) {
     setSidebarCollapsed(false);
+  }
+  try {
+    setContentSize(localStorage.getItem("iloveos-content-size") || "default", false);
+  } catch (_) {
+    setContentSize("default", false);
   }
   route();
 })();
