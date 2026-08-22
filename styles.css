@@ -738,28 +738,6 @@ pre {
 .orbit-chip:nth-child(3) { top: 110px; right: -18px; }
 .orbit-chip:nth-child(4) { bottom: 4px; left: 88px; }
 
-.site-footer {
-  display: flex;
-  width: min(1180px, calc(100% - 80px));
-  margin: 0 auto;
-  align-items: center;
-  justify-content: space-between;
-  padding: 25px 0 36px;
-  border-top: 1px solid var(--line);
-  color: var(--muted-2);
-  font-size: 11px;
-}
-
-.site-footer span {
-  color: var(--muted);
-  font-weight: 700;
-  letter-spacing: 0.08em;
-}
-
-.site-footer p {
-  margin: 0;
-}
-
 /* Complete lesson index */
 .lessons-hero {
   max-width: 730px;
@@ -1702,7 +1680,7 @@ pre {
   .mobile-only { display: grid; flex: 0 0 36px; }
   .search-trigger { width: 100%; min-width: 0; }
   .search-trigger kbd { display: none; }
-  .content-wrap, .content-wrap.narrow, .content-wrap.reference-width, .sidebar-collapsed .content-wrap.reference-width, .site-footer { width: calc(100% - 34px); }
+  .content-wrap, .content-wrap.narrow, .content-wrap.reference-width, .sidebar-collapsed .content-wrap.reference-width { width: calc(100% - 34px); }
   .content-wrap { padding-top: 48px; }
   h1 { font-size: 43px; }
   .hero { padding-bottom: 60px; }
@@ -1760,7 +1738,6 @@ pre {
   .module-index { font-size: 11px; }
   .feature-card { min-height: 330px; }
   .tool-orbit { opacity: .65; }
-  .site-footer { align-items: start; flex-direction: column; gap: 4px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
