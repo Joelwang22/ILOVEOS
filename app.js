@@ -3,6 +3,8 @@
 
   const data = window.ILOVEOS_DATA;
   const lessons = window.ILOVEOS_LESSONS || [];
+  const lessonDepth = window.ILOVEOS_LESSON_DEPTH || {};
+  lessons.forEach((lesson) => Object.assign(lesson, lessonDepth[lesson.id] || {}));
   const referenceData = window.ILOVEOS_REFERENCE;
   const apiSignatures = window.ILOVEOS_API_SIGNATURES || {};
   const main = document.querySelector("#main-content");
@@ -197,6 +199,130 @@ handle = <span class="code-function">win32process.GetCurrentProcess</span>()
     return paragraphs.map((paragraph) => `<p>${escapeHtml(paragraph)}</p>`).join("");
   }
 
+  function renderLearningBlocks(blocks) {
+    return blocks.map((block) => `
+      <section class="learning-block">
+        <h3>${escapeHtml(block.title)}</h3>
+        ${renderParagraphs(block.paragraphs || [])}
+        ${block.bullets?.length ? `<ul>${block.bullets.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>` : ""}
+        ${block.callout ? `<aside class="rich-callout ${escapeHtml(block.callout.tone || "note")}"><strong>${escapeHtml(block.callout.label)}</strong><p>${escapeHtml(block.callout.text)}</p></aside>` : ""}
+      </section>`).join("");
+  }
+
+  function renderVisual(visual) {
+    return `
+      <figure class="lesson-visual visual-${escapeHtml(visual.type || "flow")}" aria-label="${escapeHtml(visual.alt || visual.title)}">
+        <div class="visual-head"><span>Visual model</span><h3>${escapeHtml(visual.title)}</h3>${visual.intro ? `<p>${escapeHtml(visual.intro)}</p>` : ""}</div>
+        <div class="visual-track">
+          ${visual.items.map((item, index) => `
+            <div class="visual-unit">
+              <div class="visual-node tone-${escapeHtml(item.tone || String((index % 4) + 1))}">
+                ${item.meta ? `<small>${escapeHtml(item.meta)}</small>` : ""}
+                <strong>${escapeHtml(item.label)}</strong>
+                ${item.detail ? `<p>${escapeHtml(item.detail)}</p>` : ""}
+              </div>
+              ${index < visual.items.length - 1 ? `<div class="visual-link" aria-hidden="true"><span>${escapeHtml(item.linkAfter || "then")}</span><i></i></div>` : ""}
+            </div>`).join("")}
+        </div>
+        ${visual.caption ? `<figcaption>${escapeHtml(visual.caption)}</figcaption>` : ""}
+      </figure>`;
+  }
+
+  function renderWorkedExamples(examples) {
+    return (examples || []).map((example) => `
+      <section class="worked-example">
+        <div class="worked-head"><span>Worked example</span><h3>${escapeHtml(example.title)}</h3><p>${escapeHtml(example.prompt)}</p></div>
+        <ol class="worked-steps">
+          ${example.steps.map((step, index) => `
+            <li>
+              <span class="worked-number">${String(index + 1).padStart(2, "0")}</span>
+              <div>
+                <h4>${escapeHtml(step.title)}</h4>
+                <p><strong>Do:</strong> ${escapeHtml(step.action)}</p>
+                <p><strong>Why:</strong> ${escapeHtml(step.why)}</p>
+                ${step.result ? `<p class="worked-result"><strong>Result:</strong> ${escapeHtml(step.result)}</p>` : ""}
+                ${step.code ? `<pre><code>${escapeHtml(step.code)}</code></pre>` : ""}
+              </div>
+            </li>`).join("")}
+        </ol>
+        ${example.conclusion ? `<p class="worked-conclusion"><strong>What this proves:</strong> ${escapeHtml(example.conclusion)}</p>` : ""}
+      </section>`).join("");
+  }
+
+  function renderCodeWalkthroughs(walkthroughs) {
+    return (walkthroughs || []).map((walkthrough) => `
+      <section class="code-walkthrough">
+        <div class="code-walkthrough-head"><span>Code walkthrough</span><h3>${escapeHtml(walkthrough.title)}</h3><p>${escapeHtml(walkthrough.intro)}</p></div>
+        ${walkthrough.stages.map((stage, index) => `
+          <div class="code-stage">
+            <div class="code-stage-copy"><span>Step ${index + 1}</span><h4>${escapeHtml(stage.title)}</h4><p>${escapeHtml(stage.explanation)}</p></div>
+            <pre><code>${escapeHtml(stage.code)}</code></pre>
+          </div>`).join("")}
+      </section>`).join("");
+  }
+
+  function normalizedPractice(lesson) {
+    const practice = lesson.practice;
+    const steps = practice.steps.map((step, index) => typeof step === "string" ? {
+      action: step,
+      why: "This turns the lesson's model into evidence you can inspect or explain.",
+      observe: "Record what happened, including any value, error, path, process, or tool view that supports your conclusion."
+    } : step);
+    return {
+      ...practice,
+      predictionPrompt: practice.predictionPrompt || `Before starting, predict what you expect to observe during ${practice.title.toLowerCase()}. Explain what evidence would change your mind.`,
+      steps,
+      fields: practice.fields || [
+        { id: "evidence", label: "Evidence", prompt: "Record the values and observations that matter. Be specific enough that you could repeat the investigation." },
+        { id: "explanation", label: "Explanation", prompt: "Explain what happened using the lesson's vocabulary. Also state what your evidence does not prove." }
+      ],
+      cleanup: practice.cleanup || ["Close handles, tools, files, and test processes opened for the investigation.", "Remove or restore any temporary configuration change you made."],
+      hints: practice.hints || [{ title: "If you are stuck", body: "Return to the expected observation for the current step. Check the tool filter, process identity, permissions, and whether the event happened after capture began." }]
+    };
+  }
+
+  function renderPractice(lesson) {
+    const practice = normalizedPractice(lesson);
+    return `
+      <div class="practice-workspace" data-practice-workspace="${escapeHtml(lesson.id)}">
+        <div class="lab-head">
+          <div><small>Guided investigation</small><h3>${escapeHtml(practice.title)}</h3></div>
+          <div class="lab-actions">
+            ${practice.download ? `<a class="download-button" href="${escapeHtml(practice.download[0])}" download="${escapeHtml(practice.download[1])}"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 3v12m-5-5 5 5 5-5M5 20h14"/></svg><span>Download starter</span></a>` : ""}
+            <span class="lab-time">${escapeHtml(practice.time)}</span>
+          </div>
+        </div>
+        <div class="practice-intro"><p>${escapeHtml(practice.intro)}</p></div>
+        ${practice.safety ? `<aside class="rich-callout caution"><strong>Safety boundary</strong><p>${escapeHtml(practice.safety)}</p></aside>` : ""}
+        <label class="practice-field prediction-field"><strong>Make a prediction</strong><span>${escapeHtml(practice.predictionPrompt)}</span><textarea rows="4" data-draft-key="prediction" placeholder="Write your prediction before collecting evidence..."></textarea></label>
+        <ol class="practice-steps">
+          ${practice.steps.map((step, index) => `
+            <li>
+              <span class="practice-number">${String(index + 1).padStart(2, "0")}</span>
+              <div class="practice-step-copy"><h4>${escapeHtml(step.action)}</h4><p><strong>Why this step matters:</strong> ${escapeHtml(step.why)}</p><label><span>${escapeHtml(step.observe)}</span><textarea rows="3" data-draft-key="step-${index + 1}" placeholder="Record your observation..."></textarea></label>${step.hint ? `<details><summary>Hint for this step</summary><p>${escapeHtml(step.hint)}</p></details>` : ""}</div>
+            </li>`).join("")}
+        </ol>
+        <div class="practice-response-grid">
+          ${practice.fields.map((field) => `<label class="practice-field"><strong>${escapeHtml(field.label)}</strong><span>${escapeHtml(field.prompt)}</span><textarea rows="5" data-draft-key="${escapeHtml(field.id)}" placeholder="Write here..."></textarea></label>`).join("")}
+        </div>
+        <details class="practice-hints"><summary>Need a nudge?</summary>${practice.hints.map((hint) => `<div><strong>${escapeHtml(hint.title)}</strong><p>${escapeHtml(hint.body)}</p></div>`).join("")}</details>
+        ${practice.extension ? `<aside class="practice-extension"><strong>${escapeHtml(practice.extension.title)}</strong><p>${escapeHtml(practice.extension.prompt)}</p></aside>` : ""}
+        <div class="cleanup-block"><h4>Cleanup</h4>${practice.cleanup.map((item, index) => `<label><input type="checkbox" data-draft-key="cleanup-${index + 1}"><span>${escapeHtml(item)}</span></label>`).join("")}</div>
+        <div class="practice-savebar"><span data-draft-status>Your responses stay in this browser on this device.</span><button type="button" class="clear-responses" data-clear-practice>Clear responses</button></div>
+      </div>`;
+  }
+
+  function renderChecks(lesson, optionLetters) {
+    const checks = lesson.checks || [lesson.check];
+    return checks.map((check, checkIndex) => `
+      <div class="quiz-card" data-answer="${optionLetters[check[2]].toLowerCase()}">
+        <span class="quiz-kicker">Question ${checkIndex + 1} of ${checks.length}</span>
+        <h3>${escapeHtml(check[0])}</h3>
+        <div class="quiz-options">${check[1].map((option, index) => `<button class="quiz-option" data-option="${optionLetters[index].toLowerCase()}"><span class="option-letter">${optionLetters[index]}</span>${escapeHtml(option)}</button>`).join("")}</div>
+        <p class="quiz-feedback">${escapeHtml(check[3])}</p>
+      </div>`).join("");
+  }
+
   function renderLesson(id) {
     const lesson = findLesson(id);
     const module = data.modules.find((item) => item.id === lesson.module) || data.modules[0];
@@ -206,14 +332,12 @@ handle = <span class="code-function">win32process.GetCurrentProcess</span>()
     const previous = lessons[allIndex - 1];
     const next = lessons[allIndex + 1];
     const optionLetters = ["A", "B", "C", "D", "E"];
-    const sections = [
-      ["core", "The core idea"],
-      ["mechanics", "How it works"],
-      ["windows", "Windows in practice"],
-      ["investigation", "Guided investigation"],
-      ["check", "Check your model"],
-      ["summary", "What to take forward"]
+    const sections = [["learn", "Learn"], ["windows", "Use it on Windows"], ["investigation", "Investigate"], ["review", "Review"]];
+    const learningBlocks = lesson.learning || [
+      { title: "The core idea", paragraphs: lesson.core },
+      { title: "How it works", paragraphs: lesson.mechanics }
     ];
+    const windowsBlocks = lesson.windowsLearning || [{ title: "Windows in practice", paragraphs: lesson.windows }];
 
     main.innerHTML = `
       <div class="content-wrap lesson-wrap">
@@ -224,60 +348,33 @@ handle = <span class="code-function">win32process.GetCurrentProcess</span>()
             <h1>${escapeHtml(lesson.title)}</h1>
             <p class="lesson-lead">${escapeHtml(lesson.lead)}</p>
 
-            <section id="core">
-              <h2>The core idea</h2>
-              ${renderParagraphs(lesson.core)}
+            <section id="learn" class="lesson-phase">
+              <div class="phase-heading"><span>01</span><div><h2>Learn</h2><p>Build the mental model before using the tools.</p></div></div>
+              ${renderLearningBlocks(learningBlocks)}
+              ${(lesson.visuals || []).filter((visual) => (visual.phase || "learn") === "learn").map(renderVisual).join("")}
+              ${renderWorkedExamples(lesson.workedExamples)}
             </section>
 
-            <section id="mechanics">
-              <h2>How it works</h2>
-              ${renderParagraphs(lesson.mechanics)}
-            </section>
-
-            <section id="windows">
-              <h2>Windows in practice</h2>
-              ${renderParagraphs(lesson.windows)}
+            <section id="windows" class="lesson-phase">
+              <div class="phase-heading"><span>02</span><div><h2>Use it on Windows</h2><p>Connect the model to real APIs, types, and observable system state.</p></div></div>
+              ${renderLearningBlocks(windowsBlocks)}
+              ${(lesson.visuals || []).filter((visual) => visual.phase === "windows").map(renderVisual).join("")}
+              ${renderCodeWalkthroughs(lesson.codeWalkthroughs)}
               <div class="lesson-api-panel">
                 <span>APIs and concepts to recognise</span>
                 <div>${lesson.apis.map(lessonApiChip).join("")}</div>
               </div>
             </section>
 
-            <section id="investigation">
-              <h2>Guided investigation</h2>
-              <div class="lab-card">
-                <div class="lab-head">
-                  <div><small>Practice</small><h3>${escapeHtml(lesson.practice.title)}</h3></div>
-                  <div class="lab-actions">
-                    ${lesson.practice.download ? `<a class="download-button" href="${escapeHtml(lesson.practice.download[0])}" download="${escapeHtml(lesson.practice.download[1])}">
-                      <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 3v12m-5-5 5 5 5-5M5 20h14"/></svg><span>Download starter</span></a>` : ""}
-                    <button class="download-button" type="button" data-lesson-download="${escapeHtml(lesson.id)}">
-                      <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 3v12m-5-5 5 5 5-5M5 20h14"/></svg><span>Download worksheet</span>
-                    </button>
-                    <span class="lab-time">${escapeHtml(lesson.practice.time)}</span>
-                  </div>
-                </div>
-                <div class="lab-body">
-                  <p>${escapeHtml(lesson.practice.intro)}</p>
-                  <ol>${lesson.practice.steps.map((step) => `<li>${escapeHtml(step)}</li>`).join("")}</ol>
-                </div>
-              </div>
+            <section id="investigation" class="lesson-phase">
+              <div class="phase-heading"><span>03</span><div><h2>Investigate</h2><p>Predict first, gather evidence, then explain what Windows did.</p></div></div>
+              ${renderPractice(lesson)}
             </section>
 
-            <section id="check">
-              <h2>Check your model</h2>
-              <div class="quiz-card" data-answer="${optionLetters[lesson.check[2]].toLowerCase()}">
-                <h3>${escapeHtml(lesson.check[0])}</h3>
-                <div class="quiz-options">
-                  ${lesson.check[1].map((option, index) => `<button class="quiz-option" data-option="${optionLetters[index].toLowerCase()}"><span class="option-letter">${optionLetters[index]}</span>${escapeHtml(option)}</button>`).join("")}
-                </div>
-                <p class="quiz-feedback">${escapeHtml(lesson.check[3])}</p>
-              </div>
-            </section>
-
-            <section id="summary">
-              <h2>What to take forward</h2>
-              <ul>${lesson.keys.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>
+            <section id="review" class="lesson-phase review-phase">
+              <div class="phase-heading"><span>04</span><div><h2>Review</h2><p>Test the model, then retain the ideas that later lessons depend on.</p></div></div>
+              <div class="quiz-stack">${renderChecks(lesson, optionLetters)}</div>
+              <div class="take-forward"><h3>What to take forward</h3><ul>${lesson.keys.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul></div>
               <div class="lesson-sources"><span>Continue with primary documentation</span>${lesson.sources.map(([label, url]) => `<a href="${escapeHtml(url)}" target="_blank" rel="noreferrer">${escapeHtml(label)} <span aria-hidden="true">&#8599;</span></a>`).join("")}</div>
             </section>
 
@@ -297,51 +394,35 @@ handle = <span class="code-function">win32process.GetCurrentProcess</span>()
       </div>`;
 
     wireQuizzes();
-    wireLessonDownloads(lesson, module);
+    wirePracticeWorkspace(lesson);
   }
 
-  function wireLessonDownloads(lesson, module) {
-    document.querySelectorAll(`[data-lesson-download="${lesson.id}"]`).forEach((button) => {
-      button.addEventListener("click", () => {
-        const worksheet = [
-          `# ${lesson.title}`,
-          "",
-          `Module ${module.number}: ${module.title}`,
-          "",
-          `Goal: ${lesson.practice.intro}`,
-          "",
-          "## Before you begin",
-          "",
-          "Write your prediction and the evidence that would prove or disprove it.",
-          "",
-          "## Steps",
-          "",
-          ...lesson.practice.steps.map((step, index) => `${index + 1}. ${step}`),
-          "",
-          "## APIs and concepts",
-          "",
-          ...lesson.apis.map((api) => `- ${api}`),
-          "",
-          "## Evidence",
-          "",
-          "Record PIDs, TIDs, handles, paths, timestamps, return values, error codes, and screenshots that matter.",
-          "",
-          "## Explanation",
-          "",
-          "What happened, why did Windows behave that way, and what does the evidence not prove?",
-          "",
-          "## Cleanup",
-          "",
-          "List every handle, mapping, process, file, Registry value, or configuration change that must be released or restored.",
-          ""
-        ].join("\n");
-        const url = URL.createObjectURL(new Blob([worksheet], { type: "text/markdown;charset=utf-8" }));
-        const link = document.createElement("a");
-        link.href = url;
-        link.download = `${lesson.id}-worksheet.md`;
-        link.click();
-        URL.revokeObjectURL(url);
+  function wirePracticeWorkspace(lesson) {
+    const workspace = document.querySelector(`[data-practice-workspace="${lesson.id}"]`);
+    if (!workspace) return;
+    const storageKey = `iloveos-lesson-draft:${lesson.id}`;
+    const controls = [...workspace.querySelectorAll("[data-draft-key]")];
+    const status = workspace.querySelector("[data-draft-status]");
+    let saved = {};
+    try { saved = JSON.parse(localStorage.getItem(storageKey) || "{}"); } catch { saved = {}; }
+    controls.forEach((control) => {
+      const value = saved[control.dataset.draftKey];
+      if (control.type === "checkbox") control.checked = value === true;
+      else if (typeof value === "string") control.value = value;
+      control.addEventListener("input", () => {
+        const next = {};
+        controls.forEach((item) => { next[item.dataset.draftKey] = item.type === "checkbox" ? item.checked : item.value; });
+        try {
+          localStorage.setItem(storageKey, JSON.stringify(next));
+          status.textContent = "Saved on this device.";
+        } catch { status.textContent = "This browser could not save your responses."; }
       });
+    });
+    workspace.querySelector("[data-clear-practice]")?.addEventListener("click", () => {
+      if (!window.confirm("Clear every response saved for this lesson?")) return;
+      controls.forEach((control) => { if (control.type === "checkbox") control.checked = false; else control.value = ""; });
+      try { localStorage.removeItem(storageKey); } catch { /* Storage may be unavailable. */ }
+      status.textContent = "Responses cleared.";
     });
   }
 
@@ -948,6 +1029,16 @@ except pywintypes.error as error:
         const index = moduleLessons(lesson.module).indexOf(lesson);
         return {
           title: lesson.title,
+          searchText: JSON.stringify({
+            learning: lesson.learning,
+            windowsLearning: lesson.windowsLearning,
+            workedExamples: lesson.workedExamples,
+            codeWalkthroughs: lesson.codeWalkthroughs,
+            practice: lesson.practice,
+            core: lesson.core,
+            mechanics: lesson.mechanics,
+            windows: lesson.windows
+          }),
           detail: `${module.title} · Lesson ${index + 1} · ${lesson.lead} ${lesson.keys.join(" ")} ${lesson.apis.join(" ")}`,
           kind: "Lesson",
           href: `#/lesson/${lesson.id}`
@@ -972,7 +1063,7 @@ except pywintypes.error as error:
 
   function updateSearch(query = "") {
     const term = query.trim().toLowerCase();
-    const items = allSearchItems().filter((item) => !term || containsEveryToken(`${item.title} ${item.detail} ${item.kind}`, term)).slice(0, 10);
+    const items = allSearchItems().filter((item) => !term || containsEveryToken(`${item.title} ${item.detail} ${item.kind} ${item.searchText || ""}`, term)).slice(0, 10);
     searchResults.innerHTML = items.length ? items.map((item) => `
       <a class="search-result" href="${item.href}">
         <span><strong>${item.title}</strong><small>${item.detail}</small></span>

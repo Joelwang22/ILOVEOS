@@ -1513,6 +1513,152 @@ pre {
 .lab-body { padding: 22px 24px; }
 .lab-body ol { margin-bottom: 0; }
 
+/* Deep lesson system */
+.lesson-phase { scroll-margin-top: 92px; }
+.phase-heading {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  margin: 82px 0 32px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--line);
+}
+.phase-heading > span {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 34px;
+  place-items: center;
+  border: 1px solid rgba(167,139,250,.35);
+  border-radius: 9px;
+  color: var(--violet);
+  background: var(--violet-soft);
+  font: 700 10px/1 "Cascadia Code", Consolas, monospace;
+}
+.phase-heading h2 { margin: -4px 0 2px; }
+.phase-heading p { margin: 0; color: var(--muted-2); font-size: 12px; }
+.learning-block { margin: 0 0 34px; }
+.learning-block h3 { margin: 0 0 12px; font-size: 21px; }
+.learning-block p + p { margin-top: 13px; }
+.learning-block ul { margin-top: 15px; }
+.rich-callout {
+  margin: 22px 0 4px;
+  padding: 15px 17px;
+  border: 1px solid rgba(96,165,250,.19);
+  border-left: 3px solid var(--blue);
+  border-radius: 9px;
+  background: rgba(96,165,250,.055);
+}
+.rich-callout strong { display: block; margin-bottom: 4px; color: #8ec5fa; font-size: 10px; letter-spacing: .07em; text-transform: uppercase; }
+.rich-callout p { margin: 0; font-size: 13px; }
+.rich-callout.caution { border-color: rgba(245,196,81,.19); border-left-color: var(--amber); background: rgba(245,196,81,.045); }
+.rich-callout.caution strong { color: var(--amber); }
+
+.lesson-visual {
+  margin: 38px 0;
+  padding: 22px;
+  border: 1px solid var(--line-bright);
+  border-radius: 14px;
+  background: linear-gradient(150deg, rgba(96,165,250,.065), rgba(13,17,24,.92) 48%);
+}
+.visual-head > span,
+.worked-head > span,
+.code-walkthrough-head > span {
+  color: var(--blue);
+  font-size: 9px;
+  font-weight: 750;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+.visual-head h3, .worked-head h3, .code-walkthrough-head h3 { margin: 4px 0 6px; font-size: 19px; }
+.visual-head p, .worked-head p, .code-walkthrough-head p { margin: 0; color: var(--muted); font-size: 12px; }
+.visual-track { display: flex; align-items: stretch; margin-top: 22px; overflow-x: auto; padding-bottom: 4px; }
+.visual-unit { display: flex; min-width: 0; flex: 1 1 0; align-items: center; }
+.visual-node { min-width: 145px; height: 100%; flex: 1; padding: 15px; border: 1px solid var(--line); border-top: 2px solid var(--blue); border-radius: 9px; background: #0b1017; }
+.visual-node small { display: block; margin-bottom: 4px; color: var(--muted-2); font-size: 8px; letter-spacing: .07em; text-transform: uppercase; }
+.visual-node strong { display: block; color: #d8e0ea; font-size: 12px; }
+.visual-node p { margin: 6px 0 0; color: var(--muted); font-size: 10px; line-height: 1.55; }
+.visual-node.tone-2 { border-top-color: var(--violet); }
+.visual-node.tone-3 { border-top-color: var(--green); }
+.visual-node.tone-4 { border-top-color: var(--amber); }
+.visual-link { display: grid; min-width: 58px; place-items: center; padding: 0 8px; }
+.visual-link span { color: var(--muted-2); font-size: 8px; text-align: center; }
+.visual-link i { position: relative; display: block; width: 100%; height: 1px; margin-top: 5px; background: var(--line-bright); }
+.visual-link i::after { position: absolute; top: -3px; right: 0; width: 6px; height: 6px; border-top: 1px solid var(--muted-2); border-right: 1px solid var(--muted-2); content: ""; transform: rotate(45deg); }
+.visual-layers .visual-track { flex-direction: column; gap: 8px; }
+.visual-layers .visual-unit { width: 100%; flex-direction: column; }
+.visual-layers .visual-node { width: 100%; min-width: 0; }
+.visual-layers .visual-link { min-width: 0; min-height: 34px; padding: 4px 0; }
+.visual-layers .visual-link i { width: 1px; height: 17px; }
+.visual-layers .visual-link i::after { top: auto; right: -3px; bottom: 0; transform: rotate(135deg); }
+.lesson-visual figcaption { margin-top: 16px; padding-top: 13px; border-top: 1px solid var(--line); color: var(--muted-2); font-size: 10px; line-height: 1.55; }
+
+.worked-example { margin: 40px 0; overflow: hidden; border: 1px solid var(--line-bright); border-radius: 14px; background: rgba(17,22,31,.72); }
+.worked-head { padding: 21px 23px; border-bottom: 1px solid var(--line); background: rgba(167,139,250,.045); }
+.worked-head > span { color: var(--violet); }
+.worked-steps { margin: 0; padding: 0; list-style: none; }
+.worked-steps > li { display: grid; grid-template-columns: 42px 1fr; gap: 14px; padding: 20px 23px; }
+.worked-steps > li + li { margin: 0; border-top: 1px solid var(--line); }
+.worked-number { display: grid; width: 32px; height: 32px; place-items: center; border-radius: 8px; color: var(--violet); background: var(--violet-soft); font: 700 9px/1 "Cascadia Code", Consolas, monospace; }
+.worked-steps h4 { margin: 1px 0 8px; color: #d8e0ea; font-size: 14px; }
+.worked-steps p { margin: 5px 0; font-size: 12px; line-height: 1.65; }
+.worked-steps pre, .code-stage pre { margin: 12px 0 0; padding: 14px; border: 1px solid var(--line); border-radius: 8px; background: #080c12; overflow-x: auto; }
+.worked-steps code, .code-stage code { color: #c4b5fd; font: 11px/1.65 "Cascadia Code", Consolas, monospace; white-space: pre; }
+.worked-result { color: #9ad6c3 !important; }
+.worked-conclusion { margin: 0; padding: 16px 22px; border-top: 1px solid rgba(84,214,155,.16); background: rgba(84,214,155,.04); font-size: 12px !important; }
+
+.code-walkthrough { margin: 38px 0; overflow: hidden; border: 1px solid var(--line-bright); border-radius: 14px; background: rgba(12,16,23,.88); }
+.code-walkthrough-head { padding: 21px 23px; border-bottom: 1px solid var(--line); }
+.code-walkthrough-head > span { color: var(--green); }
+.code-stage { display: grid; grid-template-columns: minmax(190px, .65fr) minmax(320px, 1.35fr); gap: 20px; padding: 20px 23px; }
+.code-stage + .code-stage { border-top: 1px solid var(--line); }
+.code-stage-copy > span { color: var(--green); font-size: 9px; font-weight: 700; text-transform: uppercase; }
+.code-stage h4 { margin: 4px 0 7px; font-size: 13px; }
+.code-stage p { margin: 0; font-size: 11px; line-height: 1.65; }
+.code-stage pre { margin: 0; }
+
+.practice-workspace { margin: 30px 0; overflow: hidden; border: 1px solid var(--line-bright); border-radius: 14px; background: linear-gradient(145deg, rgba(167,139,250,.075), var(--panel) 32%); }
+.practice-intro { padding: 20px 24px 0; }
+.practice-intro p { margin: 0; }
+.practice-workspace > .rich-callout { margin-inline: 24px; }
+.practice-field { display: grid; gap: 6px; padding: 20px 24px; }
+.practice-field strong { font-size: 12px; }
+.practice-field > span, .practice-step-copy label > span { color: var(--muted); font-size: 11px; line-height: 1.55; }
+.prediction-field { margin: 20px 24px 6px; padding: 17px; border: 1px solid rgba(96,165,250,.18); border-radius: 10px; background: rgba(96,165,250,.035); }
+.practice-workspace textarea { width: 100%; resize: vertical; padding: 11px 12px; border: 1px solid var(--line); border-radius: 8px; outline: 0; color: #cbd5e1; background: #090d13; font: inherit; font-size: 12px; line-height: 1.6; }
+.practice-workspace textarea:focus { border-color: rgba(167,139,250,.55); box-shadow: 0 0 0 3px rgba(167,139,250,.07); }
+.practice-steps { margin: 20px 0 0; padding: 0; border-top: 1px solid var(--line); list-style: none; }
+.practice-steps > li { display: grid; grid-template-columns: 42px 1fr; gap: 14px; margin: 0; padding: 22px 24px; }
+.practice-steps > li + li { border-top: 1px solid var(--line); }
+.practice-number { display: grid; width: 32px; height: 32px; place-items: center; border-radius: 8px; color: var(--violet); background: var(--violet-soft); font: 700 9px/1 "Cascadia Code", Consolas, monospace; }
+.practice-step-copy h4 { margin: 2px 0 8px; color: #d8e0ea; font-size: 13px; line-height: 1.5; }
+.practice-step-copy > p { margin: 0 0 14px; font-size: 11px; }
+.practice-step-copy label { display: grid; gap: 7px; }
+.practice-step-copy details { margin-top: 11px; color: var(--muted); font-size: 10px; }
+.practice-step-copy details p { margin: 6px 0 0; font-size: 11px; }
+.practice-response-grid { display: grid; grid-template-columns: 1fr 1fr; border-top: 1px solid var(--line); }
+.practice-response-grid > * + * { border-left: 1px solid var(--line); }
+.practice-hints { margin: 0; border-top: 1px solid var(--line); }
+.practice-hints summary { padding: 15px 24px; color: var(--violet); font-size: 11px; cursor: pointer; }
+.practice-hints > div { padding: 0 24px 16px; }
+.practice-hints > div strong { font-size: 11px; }
+.practice-hints > div p { margin: 5px 0 0; font-size: 11px; }
+.practice-extension { margin: 0 24px 20px; padding: 15px 17px; border: 1px solid rgba(84,214,155,.17); border-radius: 9px; background: rgba(84,214,155,.035); }
+.practice-extension strong { color: var(--green); font-size: 11px; }
+.practice-extension p { margin: 5px 0 0; font-size: 11px; }
+.cleanup-block { display: grid; gap: 8px; padding: 19px 24px; border-top: 1px solid var(--line); }
+.cleanup-block h4 { margin: 0 0 3px; font-size: 12px; }
+.cleanup-block label { display: flex; align-items: flex-start; gap: 9px; color: var(--muted); font-size: 11px; line-height: 1.5; }
+.cleanup-block input { margin-top: 2px; accent-color: var(--violet); }
+.practice-savebar { display: flex; align-items: center; justify-content: space-between; gap: 15px; padding: 13px 24px; border-top: 1px solid var(--line); background: rgba(0,0,0,.12); }
+.practice-savebar span { color: var(--muted-2); font-size: 9px; }
+.clear-responses { padding: 6px 9px; border: 1px solid var(--line); border-radius: 7px; color: var(--muted-2); background: transparent; font: inherit; font-size: 9px; cursor: pointer; }
+.clear-responses:hover { border-color: rgba(248,113,113,.35); color: #fca5a5; }
+.quiz-stack .quiz-card { margin: 14px 0; }
+.take-forward { margin-top: 35px; padding: 20px 22px; border: 1px solid rgba(84,214,155,.16); border-radius: 12px; background: rgba(84,214,155,.035); }
+.take-forward h3 { margin: 0 0 12px; font-size: 16px; }
+.take-forward ul { margin: 0; }
+
 .lesson-footer-nav {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -2022,6 +2168,15 @@ pre {
   .capability-list span, .command-list span { border-left: 0; }
   .lesson-footer-nav { grid-template-columns: 1fr; }
   .lesson-nav-card:last-child { text-align: left; }
+  .visual-track { flex-direction: column; gap: 0; overflow: visible; }
+  .visual-unit { width: 100%; flex-direction: column; }
+  .visual-node { width: 100%; min-width: 0; }
+  .visual-link { min-width: 0; min-height: 39px; padding: 5px 0; }
+  .visual-link i { width: 1px; height: 18px; }
+  .visual-link i::after { top: auto; right: -3px; bottom: 0; transform: rotate(135deg); }
+  .code-stage { grid-template-columns: 1fr; }
+  .practice-response-grid { grid-template-columns: 1fr; }
+  .practice-response-grid > * + * { border-top: 1px solid var(--line); border-left: 0; }
 }
 
 @media (max-width: 480px) {
@@ -2034,6 +2189,12 @@ pre {
   .module-index { font-size: 11px; }
   .feature-card { min-height: 330px; }
   .tool-orbit { opacity: .65; }
+  .phase-heading { margin-top: 64px; }
+  .lesson-visual, .worked-example, .practice-workspace { margin-inline: -4px; }
+  .worked-steps > li, .practice-steps > li { grid-template-columns: 34px 1fr; padding-inline: 17px; }
+  .practice-field, .practice-intro, .cleanup-block, .practice-savebar { padding-inline: 17px; }
+  .prediction-field { margin-inline: 17px; }
+  .practice-savebar { align-items: flex-start; flex-direction: column; }
 }
 
 @media (prefers-reduced-motion: reduce) {

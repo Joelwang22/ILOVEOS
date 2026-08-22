@@ -590,6 +590,8 @@ The existing 61 lesson pages form a complete curriculum map, but many are still 
 
 ### Stage 1: Lesson system and operating-system foundations
 
+Status: completed on 22 August 2026.
+
 - Build the reusable integrated practice workspace, step-by-step worked-example component, diagram patterns, expandable hints, evidence fields, and lesson-local draft retention.
 - Remove the separate worksheet download behavior.
 - Deepen all seven OS foundations lessons.
