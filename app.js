@@ -263,19 +263,15 @@ handle = <span class="code-function">win32process.GetCurrentProcess</span>()
 
   function normalizedPractice(lesson) {
     const practice = lesson.practice;
-    const steps = practice.steps.map((step, index) => typeof step === "string" ? {
+    const steps = practice.steps.map((step) => typeof step === "string" ? {
       action: step,
       why: "This turns the lesson's model into evidence you can inspect or explain.",
-      observe: "Record what happened, including any value, error, path, process, or tool view that supports your conclusion."
+      observe: "Look for the value, error, path, process, or tool view described by this step."
     } : step);
     return {
       ...practice,
-      predictionPrompt: practice.predictionPrompt || `Before starting, predict what you expect to observe during ${practice.title.toLowerCase()}. Explain what evidence would change your mind.`,
+      expectedOutcome: practice.expectedOutcome || "The named tool or script should expose the system state described by the steps. Exact identifiers and addresses will differ on each machine, but the relationships and result types should match the lesson.",
       steps,
-      fields: practice.fields || [
-        { id: "evidence", label: "Evidence", prompt: "Record the values and observations that matter. Be specific enough that you could repeat the investigation." },
-        { id: "explanation", label: "Explanation", prompt: "Explain what happened using the lesson's vocabulary. Also state what your evidence does not prove." }
-      ],
       cleanup: practice.cleanup || ["Close handles, tools, files, and test processes opened for the investigation.", "Remove or restore any temporary configuration change you made."],
       hints: practice.hints || [{ title: "If you are stuck", body: "Return to the expected observation for the current step. Check the tool filter, process identity, permissions, and whether the event happened after capture began." }]
     };
@@ -294,21 +290,17 @@ handle = <span class="code-function">win32process.GetCurrentProcess</span>()
         </div>
         <div class="practice-intro"><p>${escapeHtml(practice.intro)}</p></div>
         ${practice.safety ? `<aside class="rich-callout caution"><strong>Safety boundary</strong><p>${escapeHtml(practice.safety)}</p></aside>` : ""}
-        <label class="practice-field prediction-field"><strong>Make a prediction</strong><span>${escapeHtml(practice.predictionPrompt)}</span><textarea rows="4" data-draft-key="prediction" placeholder="Write your prediction before collecting evidence..."></textarea></label>
+        <details class="practice-expectation"><summary><span>What should happen?</span><span class="details-chevron" aria-hidden="true">+</span></summary><p>${escapeHtml(practice.expectedOutcome)}</p></details>
         <ol class="practice-steps">
           ${practice.steps.map((step, index) => `
             <li>
               <span class="practice-number">${String(index + 1).padStart(2, "0")}</span>
-              <div class="practice-step-copy"><h4>${escapeHtml(step.action)}</h4><p><strong>Why this step matters:</strong> ${escapeHtml(step.why)}</p><label><span>${escapeHtml(step.observe)}</span><textarea rows="3" data-draft-key="step-${index + 1}" placeholder="Record your observation..."></textarea></label>${step.hint ? `<details><summary>Hint for this step</summary><p>${escapeHtml(step.hint)}</p></details>` : ""}</div>
+              <div class="practice-step-copy"><h4>${escapeHtml(step.action)}</h4><p><strong>Why this step matters:</strong> ${escapeHtml(step.why)}</p><p class="practice-observe"><strong>Look for:</strong> ${escapeHtml(step.observe)}</p>${step.hint ? `<details><summary>Hint for this step</summary><p>${escapeHtml(step.hint)}</p></details>` : ""}</div>
             </li>`).join("")}
         </ol>
-        <div class="practice-response-grid">
-          ${practice.fields.map((field) => `<label class="practice-field"><strong>${escapeHtml(field.label)}</strong><span>${escapeHtml(field.prompt)}</span><textarea rows="5" data-draft-key="${escapeHtml(field.id)}" placeholder="Write here..."></textarea></label>`).join("")}
-        </div>
         <details class="practice-hints"><summary>Need a nudge?</summary>${practice.hints.map((hint) => `<div><strong>${escapeHtml(hint.title)}</strong><p>${escapeHtml(hint.body)}</p></div>`).join("")}</details>
         ${practice.extension ? `<aside class="practice-extension"><strong>${escapeHtml(practice.extension.title)}</strong><p>${escapeHtml(practice.extension.prompt)}</p></aside>` : ""}
-        <div class="cleanup-block"><h4>Cleanup</h4>${practice.cleanup.map((item, index) => `<label><input type="checkbox" data-draft-key="cleanup-${index + 1}"><span>${escapeHtml(item)}</span></label>`).join("")}</div>
-        <div class="practice-savebar"><span data-draft-status>Your responses stay in this browser on this device.</span><button type="button" class="clear-responses" data-clear-practice>Clear responses</button></div>
+        <div class="cleanup-block"><h4>Cleanup</h4><ul>${practice.cleanup.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul></div>
       </div>`;
   }
 
@@ -367,7 +359,7 @@ handle = <span class="code-function">win32process.GetCurrentProcess</span>()
             </section>
 
             <section id="investigation" class="lesson-phase">
-              <div class="phase-heading"><span>03</span><div><h2>Investigate</h2><p>Predict first, gather evidence, then explain what Windows did.</p></div></div>
+              <div class="phase-heading"><span>03</span><div><h2>Investigate</h2><p>Follow the steps, inspect the evidence, and compare it with the expected result.</p></div></div>
               ${renderPractice(lesson)}
             </section>
 
@@ -394,36 +386,6 @@ handle = <span class="code-function">win32process.GetCurrentProcess</span>()
       </div>`;
 
     wireQuizzes();
-    wirePracticeWorkspace(lesson);
-  }
-
-  function wirePracticeWorkspace(lesson) {
-    const workspace = document.querySelector(`[data-practice-workspace="${lesson.id}"]`);
-    if (!workspace) return;
-    const storageKey = `iloveos-lesson-draft:${lesson.id}`;
-    const controls = [...workspace.querySelectorAll("[data-draft-key]")];
-    const status = workspace.querySelector("[data-draft-status]");
-    let saved = {};
-    try { saved = JSON.parse(localStorage.getItem(storageKey) || "{}"); } catch { saved = {}; }
-    controls.forEach((control) => {
-      const value = saved[control.dataset.draftKey];
-      if (control.type === "checkbox") control.checked = value === true;
-      else if (typeof value === "string") control.value = value;
-      control.addEventListener("input", () => {
-        const next = {};
-        controls.forEach((item) => { next[item.dataset.draftKey] = item.type === "checkbox" ? item.checked : item.value; });
-        try {
-          localStorage.setItem(storageKey, JSON.stringify(next));
-          status.textContent = "Saved on this device.";
-        } catch { status.textContent = "This browser could not save your responses."; }
-      });
-    });
-    workspace.querySelector("[data-clear-practice]")?.addEventListener("click", () => {
-      if (!window.confirm("Clear every response saved for this lesson?")) return;
-      controls.forEach((control) => { if (control.type === "checkbox") control.checked = false; else control.value = ""; });
-      try { localStorage.removeItem(storageKey); } catch { /* Storage may be unavailable. */ }
-      status.textContent = "Responses cleared.";
-    });
   }
 
   function renderLegacyLesson() {

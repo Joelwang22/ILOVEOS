@@ -95,6 +95,7 @@ window.ILOVEOS_LESSON_DEPTH = {
       title: "Decode what Windows shows you",
       time: "20 min",
       intro: "Connect architecture, notation, and pointer width to a live process before later memory and PE lessons depend on them.",
+      expectedOutcome: "Your Python process will normally report a pointer size of either 4 bytes for 32-bit Python or 8 bytes for 64-bit Python. Process Explorer will show addresses in hexadecimal and identify the process image type. The final two hexadecimal digits should convert cleanly into two groups of four binary bits. Exact addresses will differ each time, but pointer width must follow the Python process architecture.",
       predictionPrompt: "Predict the pointer size of your Python process and the form in which Process Explorer will display a start address. Explain how you could be wrong.",
       steps: [
         { action: "Run the ctypes pointer-size code from this lesson.", why: "The calling process architecture controls pointer width, even when the installed Windows system is 64-bit.", observe: "Record the Python executable path, reported architecture label, pointer bytes, and pointer bits." },
@@ -202,6 +203,7 @@ window.ILOVEOS_LESSON_DEPTH = {
       time: "20 min",
       download: ["downloads/who_am_i.py", "who_am_i.py"],
       intro: "Run a small pywin32 program, then connect its Python-level output to the operating-system objects and resources around it.",
+      expectedOutcome: "The script will print a PID and user that match the same process in Process Explorer. Process Explorer should also reveal a parent process, token details, one or more threads, handles, and loaded modules that were not written directly into the script. When you let the process exit, its row and current resources disappear, although Windows may reuse the numeric PID later.",
       predictionPrompt: "Before running the starter, predict its parent process, user, integrity level, and whether it will have more than one thread. State why.",
       steps: [
         { action: "Open Process Explorer and enable Process ID, Parent PID, User Name, Integrity Level, Image Type, and Threads.", why: "These columns connect identity, security, architecture, and scheduling without opening several unrelated tools.", observe: "Record which columns you enabled and any permission limitation Process Explorer reports." },
@@ -291,6 +293,7 @@ window.ILOVEOS_LESSON_DEPTH = {
       title: "Trace one file request through Windows",
       time: "25 min",
       intro: "Use Process Monitor evidence to turn the layer diagram into an observed request path.",
+      expectedOutcome: "Process Monitor should capture one or more file operations from the chosen editor against the exact test path. A successful open will show a success result and request details. The event stack may begin with application and user-mode DLL frames, then cross into kernel and filesystem or filter-driver frames. The precise modules vary by Windows build and installed software.",
       predictionPrompt: "Predict which process, operation name, path, result, user-mode DLLs, and kernel drivers you expect when Notepad opens a harmless text file.",
       steps: [
         { action: "Create or choose a harmless text file, then start Process Monitor and pause capture.", why: "A controlled target and a paused initial capture reduce unrelated events before filters are ready.", observe: "Record the test file's full path and the Process Monitor elevation state." },
@@ -385,6 +388,7 @@ window.ILOVEOS_LESSON_DEPTH = {
       title: "Compare standard and elevated security contexts",
       time: "20 min",
       intro: "Observe that elevation changes token and integrity state while both Python processes remain ordinary user-mode applications.",
+      expectedOutcome: "Both Python processes remain user-mode applications and normally use the same executable architecture. The ordinary process will usually have medium integrity, while the elevated process will usually have high integrity and different token group or privilege state. Their PIDs and parents will differ. Elevation changes authorization context, not the processor mode used by Python instructions.",
       predictionPrompt: "Predict which Process Explorer properties will differ between a Python process launched normally and one launched from an elevated terminal. Also list two properties you expect to remain the same.",
       safety: "Use only your own short-lived Python processes. Do not attempt to open, suspend, terminate, or modify protected system processes.",
       steps: [
@@ -492,6 +496,7 @@ window.ILOVEOS_LESSON_DEPTH = {
       title: "Compare a wrapper with a native declaration",
       time: "25 min",
       intro: "Map one operation across Microsoft documentation, pywin32, and ctypes so that the binding never hides the native contract from you.",
+      expectedOutcome: "The native and pywin32 signatures should describe the same file-open intent, access, sharing, creation behavior, flags, and cleanup obligation even though their Python types look different. pywin32 normally reports native failure as pywintypes.error. A direct ctypes version must detect INVALID_HANDLE_VALUE, capture the last error immediately, and close every successfully acquired handle.",
       predictionPrompt: "Before reading, predict which CreateFileW parameters pywin32 will preserve, which values it may convert, how failure appears, and what cleanup both approaches require.",
       steps: [
         { action: "Open the Microsoft Learn page for CreateFileW and identify DLL, header, minimum client, parameters, return, remarks, and required cleanup.", why: "These sections define the stable operation and its environment before Python changes the surface.", observe: "Record the native signature, INVALID_HANDLE_VALUE failure sentinel, last-error rule, and CloseHandle obligation." },
@@ -616,6 +621,7 @@ window.ILOVEOS_LESSON_DEPTH = {
       title: "Annotate a real API contract",
       time: "30 min",
       intro: "Build a reusable function card from the primary documentation, then produce safe pywin32 and ctypes call plans without an external worksheet.",
+      expectedOutcome: "Your completed API card should identify the DLL, supported environment, every parameter direction and type, the exact success and failure values, how error detail is retrieved, and which resource release function is required. The pywin32 plan may convert outputs or raise an exception. The ctypes plan should expose the native signature, sentinel check, last-error handling, and cleanup explicitly.",
       predictionPrompt: "Choose CreateFileW or ControlService. Before reading, predict its DLL, input and output directions, success value, failure mechanism, and cleanup responsibility.",
       steps: [
         { action: "Read the function page once from top to bottom without writing code.", why: "A complete first pass exposes remarks and requirements that change how the signature should be interpreted.", observe: "Record the function purpose, header, DLL, supported client, and any privilege or access prerequisite." },
@@ -730,6 +736,7 @@ window.ILOVEOS_LESSON_DEPTH = {
       title: "Investigate one file open with three views",
       time: "35 min",
       intro: "Combine a controlled Python action, a Process Monitor trace, and a Process Explorer snapshot, then state the evidence and its limits.",
+      expectedOutcome: "While the script is at its first pause, Process Monitor should retain the successful file-open event and Process Explorer should show a live handle to the same path in the matching PID. After the script closes the file, the handle should disappear from the Process Explorer snapshot while the earlier Process Monitor event remains in the trace. Exact PIDs, handle values, and timestamps will differ.",
       predictionPrompt: "Predict the process name and PID, Procmon operation and result, handle path, requested access, and whether the handle will still exist after Python closes the file.",
       safety: "Use a temporary file in a directory you own. Do not capture passwords or unrelated private activity, and do not close handles from Process Explorer.",
       steps: [

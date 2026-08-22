@@ -89,9 +89,9 @@ Lessons should read like focused interactive textbook chapters rather than expan
 ### Investigate
 
 - Keep the practical workspace inside the lesson instead of downloading a separate worksheet.
-- Ask for a prediction before execution.
 - Provide step-by-step instructions with an explanation beside each step.
-- Include fields for observations, identifiers, return values, errors, evidence, and interpretation where useful.
+- Provide an expandable "What should happen?" explanation so the learner can compare the real result with the expected mechanism.
+- State the specific values, identifiers, results, errors, or tool evidence to look for without turning the lesson into a form.
 - Provide expandable hints that preserve the opportunity to reason independently.
 - Provide an actual downloadable starter file only when the learner needs a `.py` file or another concrete lab artifact.
 - End with cleanup and restoration instructions.
@@ -466,7 +466,7 @@ Repository exercises should be converted into guided labs with:
 - Required background.
 - Required tools and files.
 - Safety or environment notes.
-- A prediction made before execution.
+- An expandable explanation of what should happen and which details may vary by machine.
 - Step-by-step investigation instructions, with the purpose and expected state change explained at each step.
 - Evidence to observe or record.
 - Questions about the result.
@@ -475,7 +475,7 @@ Repository exercises should be converted into guided labs with:
 - A cleanup or restoration checklist.
 - An optional extension challenge.
 
-The practical workspace should be embedded in the lesson. It may include prediction fields, observation notes, evidence tables, short answers, and checklists. These fields may retain a draft in the learner's browser so a refresh does not erase work, but this must remain lesson-local note retention rather than course progress tracking. There will be no dashboard, completion score, or stored mastery state. A visible control must allow the learner to clear the lesson draft.
+The practical workspace should be embedded in the lesson, but it should read as an instructional guide rather than a form. It should contain a compact expected-outcome dropdown, clear steps, reasons, evidence to look for, optional hints, and cleanup instructions. It should not require the learner to fill repeated text boxes or store lesson responses in the browser. There will be no dashboard, completion score, or stored mastery state.
 
 Separate worksheet downloads should not be used. Download buttons are reserved for actual starter code, sample data, or another artifact required to run the practice.
 
@@ -563,7 +563,7 @@ The eventual implementation should favour:
 - Readable typography and code blocks.
 - Accessible keyboard navigation and colour contrast.
 - Reusable lesson, question, callout, code, worked-example, diagram, and integrated practice components.
-- Lesson-local draft storage for practice responses without introducing progress tracking.
+- Compact expected-outcome disclosures and static observation guidance for practices.
 - Content that remains easy to edit as the course evolves.
 
 The existing HTML, CSS, and JavaScript architecture should remain straightforward. No implementation choice should complicate a project whose main job is presenting lessons clearly.
@@ -592,7 +592,7 @@ The existing 61 lesson pages form a complete curriculum map, but many are still 
 
 Status: completed on 22 August 2026.
 
-- Build the reusable integrated practice workspace, step-by-step worked-example component, diagram patterns, expandable hints, evidence fields, and lesson-local draft retention.
+- Build the reusable integrated practice workspace, step-by-step worked-example component, diagram patterns, expected-outcome disclosures, observation guidance, and expandable hints.
 - Remove the separate worksheet download behavior.
 - Deepen all seven OS foundations lessons.
 - Give particular attention to CPU architecture, binary and hexadecimal reasoning, Windows architecture, system-call flow, and reading WinAPI documentation.
@@ -638,7 +638,7 @@ Status: completed on 22 August 2026.
 A stage is complete only after:
 
 1. The revised lessons meet the depth, worked-example, and diagram standards in this plan.
-2. Integrated practice fields and hints work on desktop and mobile layouts.
+2. Expected-outcome disclosures, investigation steps, and hints work on desktop and mobile layouts.
 3. Every relevant starter artifact downloads correctly.
 4. Practice APIs link to sufficient pywin32 or native reference information.
 5. Quizzes test reasoning as well as assessment vocabulary.
