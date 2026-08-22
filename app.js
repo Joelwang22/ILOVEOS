@@ -330,33 +330,41 @@ user = <span class="code-function">win32api.GetUserName</span>()
     return module.features.filter((feature) => containsEveryToken(`${moduleSearchText(module)} ${feature.name} ${feature.task} ${feature.detail}`, query));
   }
 
-  function referenceAccent(category) {
+  function pywin32Accent(category) {
     return ({
       Core: "violet",
       Processes: "blue",
-      Synchronisation: "blue",
-      Observation: "blue",
-      Tracing: "blue",
-      "Files and I/O": "teal",
+      Synchronisation: "pink",
+      "Files and I/O": "green",
       IPC: "teal",
-      Networking: "teal",
-      Objects: "teal",
       Security: "rose",
-      Persistence: "rose",
       Management: "amber",
-      Automation: "amber",
-      Administration: "amber",
-      Desktop: "violet",
+      Observation: "cyan",
+      Desktop: "orange",
+      Networking: "indigo",
+      Automation: "lime",
+      "Low-level companion": "red"
+    })[category] || "violet";
+  }
+
+  function toolboxAccent(category) {
+    return ({
+      Processes: "blue",
+      Tracing: "cyan",
+      Memory: "green",
+      Objects: "teal",
       Images: "violet",
-      "Low-level companion": "violet",
-      Memory: "green"
+      Persistence: "rose",
+      Security: "red",
+      Administration: "amber",
+      IPC: "pink"
     })[category] || "violet";
   }
 
   function pywin32ModuleCard(module, query) {
     const features = matchingFeatures(module, query);
     return `
-      <details class="api-module" style="--reference-color: var(--${referenceAccent(module.category)})" ${query ? "open" : ""}>
+      <details class="api-module" style="--reference-color: var(--${pywin32Accent(module.category)})" ${query ? "open" : ""}>
         <summary>
           <span class="api-module-title"><code>${escapeHtml(module.name)}</code><span>${escapeHtml(module.label)}</span></span>
           <span class="api-summary-meta"><span class="reference-category">${escapeHtml(module.category)}</span><span class="entry-count">${features.length} ${features.length === 1 ? "entry" : "entries"}</span><span class="details-chevron">⌄</span></span>
@@ -420,7 +428,7 @@ user = <span class="code-function">win32api.GetUserName</span>()
 
   function toolManual(tool, query) {
     return `
-      <details class="tool-manual" style="--reference-color: var(--${referenceAccent(tool.category)})" ${query ? "open" : ""}>
+      <details class="tool-manual" style="--reference-color: var(--${toolboxAccent(tool.category)})" ${query ? "open" : ""}>
         <summary>
           <span><code>${escapeHtml(tool.exe)}</code><strong>${escapeHtml(tool.name)}</strong><small>${escapeHtml(tool.short)}</small></span>
           <span class="api-summary-meta"><span class="reference-category">${escapeHtml(tool.category)}</span><span class="entry-count">${tool.capabilities.length} capabilities</span><span class="details-chevron">⌄</span></span>
