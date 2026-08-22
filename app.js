@@ -6,6 +6,7 @@
   const sidebar = document.querySelector("#sidebar");
   const scrim = document.querySelector("#sidebar-scrim");
   const menuButton = document.querySelector("#menu-button");
+  const sidebarToggle = document.querySelector("#sidebar-toggle");
   const searchDialog = document.querySelector("#search-dialog");
   const searchInput = document.querySelector("#search-input");
   const searchResults = document.querySelector("#search-results");
@@ -23,7 +24,6 @@
     main.innerHTML = `
       <div class="content-wrap">
         <section class="hero">
-          <p class="eyebrow">Operating systems · Windows internals</p>
           <h1>Understand what Windows is actually doing.</h1>
           <p class="hero-lead">
             A clear, practical path from processes and memory to security, IPC, and hooking—taught with Python, the Win32 API, and the tools that let you see the operating system at work.
@@ -54,10 +54,7 @@
 
         <section id="course-outline">
           <div class="section-heading">
-            <div>
-              <p class="eyebrow">Course outline</p>
-              <h2>Ten modules, in order.</h2>
-            </div>
+            <h2>Ten modules, in order.</h2>
             <p>Each concept prepares the ground for the next. The path moves from the machine itself to advanced process behaviour.</p>
           </div>
           <div class="module-list">
@@ -67,7 +64,6 @@
 
         <section class="feature-split">
           <article class="feature-card">
-            <p class="eyebrow">Python meets Windows</p>
             <h2>The Win32 API, without the documentation maze.</h2>
             <p>Learn what each module is for before confronting hundreds of function names. Examples begin with the intent, then expose the handle, flag, or structure beneath it.</p>
             <div class="code-card">
@@ -84,7 +80,6 @@ handle = <span class="code-function">win32process.GetCurrentProcess</span>()
           </article>
 
           <article class="feature-card">
-            <p class="eyebrow">Observe, then explain</p>
             <h2>Sysinternals is part of every relevant lesson.</h2>
             <p>No separate tool dump. Process Explorer appears when processes do; VMMap appears when virtual memory does.</p>
             <div class="hero-actions"><a class="button" href="#/toolbox">Explore the toolbox ${icons.arrow}</a></div>
@@ -103,7 +98,7 @@ handle = <span class="code-function">win32process.GetCurrentProcess</span>()
     return `
       <a class="module-card" href="#/module/${module.id}" ${accentStyle(module.accent)}>
         <span class="module-index">${module.number}</span>
-        <span class="module-title"><small>${module.kicker}</small><strong>${module.title}</strong></span>
+        <span class="module-title"><strong>${module.title}</strong></span>
         <p class="module-description">${module.description}</p>
         <span class="module-meta"><span>${module.lessons} lessons</span><span>${module.time}</span></span>
         <span class="module-arrow" aria-hidden="true">→</span>
@@ -122,7 +117,6 @@ handle = <span class="code-function">win32process.GetCurrentProcess</span>()
         <div class="breadcrumb"><span><a href="#/">Course</a></span><span>Module ${module.number}</span></div>
         <section class="module-hero-grid">
           <div>
-            <p class="eyebrow">Module ${module.number} · ${module.kicker}</p>
             <h1>${module.title}</h1>
             <p class="hero-lead">${module.description}</p>
             <div class="topic-chips">${module.topics.map((topic) => `<span class="topic-chip">${topic}</span>`).join("")}</div>
@@ -139,7 +133,6 @@ handle = <span class="code-function">win32process.GetCurrentProcess</span>()
         </section>
 
         <section class="lesson-outline">
-          <p class="eyebrow">Inside this module</p>
           <h2>Lesson sequence</h2>
           ${lessonNames.map((lesson, index) => `
             <div class="outline-item">
@@ -157,7 +150,6 @@ handle = <span class="code-function">win32process.GetCurrentProcess</span>()
         <div class="lesson-page">
           <article class="lesson-copy">
             <div class="breadcrumb"><span><a href="#/">Course</a></span><span><a href="#/module/foundations">OS foundations</a></span><span>Lesson 1</span></div>
-            <p class="eyebrow">Module 01 · Lesson 01</p>
             <h1>Why does an operating system exist?</h1>
             <p class="lesson-lead">Before processes, pages, and handles make sense, we need to understand the two problems an operating system is always solving: managing scarce resources and hiding awkward hardware details.</p>
 
@@ -299,7 +291,6 @@ user = <span class="code-function">win32api.GetUserName</span>()
       <div class="content-wrap narrow">
         <div class="breadcrumb"><span><a href="#/">Course</a></span><span>Reference</span></div>
         <header class="reference-hero">
-          <p class="eyebrow">Python reference</p>
           <h1>pywin32, explained by purpose.</h1>
           <p>The official-style index tells you what exists. This guide tells you why you would use it, how the modules fit together, and where each one appears in the course.</p>
           <span class="source-note">Coverage informed by <a href="https://timgolden.me.uk/pywin32-docs/win32_modules.html" target="_blank" rel="noreferrer">Tim Golden's pywin32 module reference ↗</a></span>
@@ -343,7 +334,6 @@ user = <span class="code-function">win32api.GetUserName</span>()
       <div class="content-wrap">
         <div class="breadcrumb"><span><a href="#/">Course</a></span><span>Toolbox</span></div>
         <header class="reference-hero">
-          <p class="eyebrow">Sysinternals toolbox</p>
           <h1>Use the right lens.</h1>
           <p>Each tool reveals a different part of Windows. The course introduces one only when it helps answer a concrete question.</p>
         </header>
@@ -412,6 +402,18 @@ user = <span class="code-function">win32api.GetUserName</span>()
     menuButton.setAttribute("aria-expanded", "false");
   }
 
+  function setSidebarCollapsed(collapsed) {
+    document.body.classList.toggle("sidebar-collapsed", collapsed);
+    sidebarToggle.setAttribute("aria-label", collapsed ? "Expand sidebar" : "Collapse sidebar");
+    sidebarToggle.setAttribute("title", collapsed ? "Expand sidebar" : "Collapse sidebar");
+    sidebarToggle.setAttribute("aria-expanded", String(!collapsed));
+    try {
+      localStorage.setItem("iloveos-sidebar-collapsed", String(collapsed));
+    } catch (_) {
+      // The layout still works when storage is unavailable.
+    }
+  }
+
   function allSearchItems() {
     return [
       ...data.modules.map((item) => ({ title: item.title, detail: item.description, kind: "Module", href: `#/module/${item.id}` })),
@@ -438,6 +440,7 @@ user = <span class="code-function">win32api.GetUserName</span>()
   }
 
   menuButton.addEventListener("click", () => sidebar.classList.contains("open") ? closeSidebar() : openSidebar());
+  sidebarToggle.addEventListener("click", () => setSidebarCollapsed(!document.body.classList.contains("sidebar-collapsed")));
   scrim.addEventListener("click", closeSidebar);
   document.querySelector("#search-trigger").addEventListener("click", openSearch);
   document.querySelector("#search-close").addEventListener("click", () => searchDialog.close());
@@ -450,5 +453,10 @@ user = <span class="code-function">win32api.GetUserName</span>()
     }
   });
   window.addEventListener("hashchange", route);
+  try {
+    setSidebarCollapsed(localStorage.getItem("iloveos-sidebar-collapsed") === "true");
+  } catch (_) {
+    setSidebarCollapsed(false);
+  }
   route();
 })();
