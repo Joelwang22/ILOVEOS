@@ -2,6 +2,12 @@ window.ILOVEOS_LESSON_DEPTH = {
   ...(window.ILOVEOS_LESSON_DEPTH || {}),
 
   "cpu-architecture-data": {
+    phases: {
+      learn: ["Understand the machine", "Connect instructions, number systems, processor topology, and address width into one foundation."],
+      windows: ["Decode Windows values", "Use Win32 types and Python's ABI to interpret the values Windows exposes."],
+      investigation: ["Inspect the machine", "Compare the simplified architecture model with the system Windows reports."],
+      review: ["Check the foundations", "Test the calculations and distinctions that later lessons rely on."]
+    },
     learning: [
       {
         title: "A computer changes state by executing instructions",
@@ -23,7 +29,8 @@ window.ILOVEOS_LESSON_DEPTH = {
         paragraphs: [
           "A CPU package is the physical chip installed in a socket. A package may contain several physical cores, and a core may expose more than one logical processor through simultaneous multithreading. Windows schedules threads onto logical processors. Saying that two packages with four cores each provide eight physical cores is a useful counting exercise, but saying they can execute exactly eight instructions at once is only a classroom simplification.",
           "Modern cores pipeline many instructions, issue more than one operation in a cycle, wait on dependencies, and reorder work while preserving the program's visible behavior. Multiple runnable threads also compete for shared caches and memory bandwidth. For operating-system work, the practical rule is that logical processors are scheduling targets, while actual throughput depends on the workload and microarchitecture."
-        ]
+        ],
+        inlineCheck: ["A machine has two CPU packages, four physical cores per package, and two logical processors per core. How many logical processors can Windows schedule onto?", ["4", "8", "16", "32"], 2, "Two packages times four cores times two logical processors gives sixteen scheduling targets. This does not mean exactly sixteen instructions complete at every instant."]
       },
       {
         title: "Address width limits the names a process can give memory locations",
@@ -122,6 +129,12 @@ window.ILOVEOS_LESSON_DEPTH = {
   },
 
   "why-operating-system": {
+    phases: {
+      learn: ["See the problem", "Start from raw hardware and identify the abstractions and resource decisions an OS must provide."],
+      windows: ["Find the abstractions", "Connect the model to Windows objects, APIs, and observable process state."],
+      investigation: ["Trace one request", "Follow a controlled action from Python into the Windows abstractions that serve it."],
+      review: ["Check the OS model", "Test why abstraction, protection, and resource management belong together."]
+    },
     learning: [
       {
         title: "Raw hardware is powerful but awkward to share",
@@ -163,7 +176,7 @@ window.ILOVEOS_LESSON_DEPTH = {
     workedExamples: [
       {
         type: "trace",
-        title: "Follow an application opening a file",
+        title: "Running example: follow an application opening a file",
         prompt: "A text editor asks to open C:\\notes\\plan.txt. What work belongs to the operating system?",
         steps: [
           { title: "Express intent", action: "The editor supplies a path, requested access, sharing rules, and opening behavior to a file API.", why: "The editor describes the outcome without addressing disk sectors.", result: "A structured request enters the Windows API." },
@@ -231,6 +244,12 @@ window.ILOVEOS_LESSON_DEPTH = {
   },
 
   "windows-organisation": {
+    phases: {
+      learn: ["Map Windows", "Build a practical layered model without treating Windows as one opaque block."],
+      windows: ["Connect layers to tools", "Use different evidence sources for different parts of the architecture."],
+      investigation: ["Trace a request through Windows", "Follow one controlled file operation across the layers that participate."],
+      review: ["Check the architecture", "Test which components own stable contracts and which remain implementation detail."]
+    },
     learning: [
       {
         title: "Windows is a set of cooperating layers, not one opaque block",
@@ -273,7 +292,7 @@ window.ILOVEOS_LESSON_DEPTH = {
     workedExamples: [
       {
         type: "trace",
-        title: "Trace CreateFileW through the map",
+        title: "Running example: trace CreateFileW through the map",
         prompt: "A process opens an existing text file for reading. Follow the important responsibilities without claiming every internal implementation detail.",
         steps: [
           { title: "Enter the public contract", action: "The application calls CreateFileW with a UTF-16 path, desired access, sharing rules, creation disposition, and flags.", why: "The documented Win32 API defines what application code may rely on.", result: "Kernel32 or its implementation forwards and prepares the request." },
@@ -322,6 +341,12 @@ window.ILOVEOS_LESSON_DEPTH = {
   },
 
   "user-kernel-mode": {
+    phases: {
+      learn: ["Understand the boundary", "Separate processor execution modes from identity, elevation, and ordinary application privilege."],
+      windows: ["Read the security context", "Connect user-mode requests to Windows validation, tokens, and observable state."],
+      investigation: ["Compare two contexts", "Observe what elevation changes without confusing it with kernel-mode execution."],
+      review: ["Check the boundary", "Test the controlled-entry and validation rules that protect the machine."]
+    },
     learning: [
       {
         title: "Execution mode is a processor-enforced privilege boundary",
@@ -440,6 +465,12 @@ window.ILOVEOS_LESSON_DEPTH = {
   },
 
   "system-calls-win32": {
+    phases: {
+      learn: ["Separate the contracts", "Distinguish APIs, ABIs, wrappers, native services, and system-call transitions."],
+      windows: ["Follow the API path", "Trace one operation through pywin32, the public Win32 contract, and native implementation layers."],
+      investigation: ["Trace the boundary", "Separate the supported public contract from an observed implementation path."],
+      review: ["Check the boundaries", "Test which behaviors are public contracts and which paths may change."]
+    },
     learning: [
       {
         title: "API, ABI, and system call describe different contracts",
@@ -494,7 +525,7 @@ window.ILOVEOS_LESSON_DEPTH = {
     ],
     windowsLearning: [
       {
-        title: "CreateFileW shows why the whole contract matters",
+        title: "Running example: CreateFileW shows why the whole contract matters",
         paragraphs: [
           "CreateFileW opens or creates a file or I/O device. The desired-access field says what operations the returned handle may request. Share flags say which kinds of access other opens may receive while this handle remains open. Creation disposition says whether the target must exist and whether existing content may be replaced. Flags describe attributes, caching behavior, asynchronous behavior, and other options.",
           "Success returns a handle. Failure returns INVALID_HANDLE_VALUE, not NULL, and sets the calling thread's last-error value. The handle must be closed with CloseHandle. If you remember only the path parameter, code may work in a friendly test and fail under concurrency, permissions, or a different creation state."
@@ -520,25 +551,21 @@ window.ILOVEOS_LESSON_DEPTH = {
       }
     ],
     practice: {
-      title: "Compare a wrapper with a native declaration",
+      title: "Separate contract from implementation",
       time: "25 min",
-      intro: "Map one operation across Microsoft documentation, pywin32, and ctypes so that the binding never hides the native contract from you.",
-      expectedOutcome: "The native and pywin32 signatures should describe the same file-open intent, access, sharing, creation behavior, flags, and cleanup obligation even though their Python types look different. pywin32 normally reports native failure as pywintypes.error. A direct ctypes version must detect INVALID_HANDLE_VALUE, capture the last error immediately, and close every successfully acquired handle.",
-      predictionPrompt: "Before reading, predict which CreateFileW parameters pywin32 will preserve, which values it may convert, how failure appears, and what cleanup both approaches require.",
+      intro: "Trace one harmless file open and distinguish the documented Win32 promise from the internal route observed on this Windows build.",
+      expectedOutcome: "The CreateFileW page should define stable application-facing behavior, while a Process Monitor stack may show Python, pywin32, public Win32 libraries, native transition code, kernel components, and file-system drivers. The exact frames can vary with Windows build, symbols, filters, and implementation. One captured path does not prove that every Win32 API maps to exactly one system call.",
+      predictionPrompt: "Before capture, predict which parts of the file-open behavior are documented contracts and which stack frames are implementation details.",
       steps: [
-        { action: "Open the Microsoft Learn page for CreateFileW and identify DLL, header, minimum client, parameters, return, remarks, and required cleanup.", why: "These sections define the stable operation and its environment before Python changes the surface.", observe: "Record the native signature, INVALID_HANDLE_VALUE failure sentinel, last-error rule, and CloseHandle obligation." },
-        { action: "Open the local pywin32 guide entry for win32file.CreateFile.", why: "The wrapper signature shows which native ideas remain explicit and which values become Python objects.", observe: "Map all wrapper arguments to native concepts and record the Python success type and failure behavior." },
-        { action: "Write safe pywin32 pseudocode for a read-only open using try, except, and finally.", why: "The structure makes error context and deterministic handle cleanup part of the design.", observe: "Include access, sharing, disposition, flags, a useful error message, and Close in finally." },
-        { action: "Write the ctypes declarations without making the call.", why: "Signature work can be reviewed independently before a pointer or sentinel mistake reaches Windows.", observe: "List each argtype, restype, use_last_error choice, failure check, and CloseHandle signature." },
-        { action: "Explain when the ctypes version would be justified.", why: "A direct ABI call should solve a coverage or learning requirement, not duplicate a clearer wrapper by habit.", observe: "Give one justified reason and one weak reason." }
+        { action: "Read the Microsoft Learn page for CreateFileW and list only its supported contract.", why: "Starting with public documentation makes it easier to recognise which later observations are not promises.", observe: "Record behavior, parameters, result, last-error rule, requirements, and cleanup, but not an assumed system-service number." },
+        { action: "Run a small pywin32 script that opens an existing temporary file, pauses briefly, and closes the handle.", why: "A controlled actor and path give the trace a precise identity and time window.", observe: "Print the PID and exact path so Process Monitor evidence can be correlated without relying on process name alone." },
+        { action: "Capture only that PID and file path in Process Monitor, then inspect the successful CreateFile event and its stack.", why: "The event and stack expose an observed route through user-mode and kernel components.", observe: "Look for application or Python frames, Windows libraries, the transition boundary, kernel components, and file-system drivers when symbols permit." },
+        { action: "Label every observation as public contract or implementation evidence.", why: "The distinction prevents one build's stack from becoming an invented programming guarantee.", observe: "Treat documented access, sharing, result, and cleanup as contract; treat exact frames and internal routing as evidence from this capture." },
+        { action: "Explain why the trace does not establish a one-API-to-one-system-call rule.", why: "Wrappers can validate, transform, cache, or issue more than one protected request.", observe: "State what the capture proves, what may differ on another Windows build, and what additional evidence would be required." }
       ],
-      fields: [
-        { id: "mapping", label: "Contract mapping", prompt: "Map native parameter, native type, Python argument, purpose, and any conversion." },
-        { id: "decision", label: "Binding decision", prompt: "Choose pywin32 or ctypes for a read-only file open and defend the choice using coverage, clarity, failure handling, and ownership." }
-      ],
-      hints: [{ title: "The signatures look different", body: "Match semantics rather than capitalization. A Python string can represent LPCWSTR, None can represent a null optional pointer, and a PyHANDLE can own a native handle even though its Python type name differs." }],
-      cleanup: ["Close any test handle if you chose to run your pseudocode.", "Delete only a temporary file you created for this investigation; do not alter an existing file."],
-      extension: { title: "Optional extension", prompt: "Implement both safe read-only versions against a temporary file. Print the returned handle type, deliberately try a missing path, and compare pywintypes.error with ctypes.get_last_error." }
+      hints: [{ title: "The stack is shallow or missing symbols", body: "The exact stack is not required for the contract lesson. Record the limitation, confirm stack capture is enabled, and use the frames that are available without guessing the hidden ones." }],
+      cleanup: ["Close the file handle and stop the test process if it is still paused.", "Clear or close the Process Monitor capture and delete only the temporary file created for this investigation."],
+      extension: { title: "Optional extension", prompt: "Repeat with GetCurrentProcessId and compare how much observable kernel work appears. Explain why a public API name alone does not predict an exact system-call path." }
     },
     checks: [
       ["Which statement is correct?", ["Every Win32 call is one system call", "All Win32 APIs are wrapped by pywin32", "Native Microsoft documentation matters for pywin32 and ctypes", "ctypes infers every C signature"], 2, "The native contract defines behavior, rights, flags, lifetime, and errors for either binding."],
@@ -548,6 +575,12 @@ window.ILOVEOS_LESSON_DEPTH = {
   },
 
   "reading-winapi-docs": {
+    phases: {
+      learn: ["Read the contract", "Follow the documentation in an order that keeps behavior, data flow, results, and lifetime connected."],
+      windows: ["Build the contract card", "Turn the native page into a binding-neutral description you can use safely."],
+      investigation: ["Annotate a real API", "Apply the reading method to unfamiliar primary documentation."],
+      review: ["Check the contract", "Test the documentation and ownership distinctions before choosing a Python binding."]
+    },
     learning: [
       {
         title: "Read a WinAPI page as a contract, not a function-name dictionary",
@@ -561,7 +594,8 @@ window.ILOVEOS_LESSON_DEPTH = {
         paragraphs: [
           "An [in] parameter supplies data that the function reads. An [out] parameter points to storage the function fills. An [in, out] parameter starts with caller-provided state and returns modified state. Optional modifies a direction, such as [in, optional] or [out, optional]. It is not a complete direction by itself. SAL annotations can express buffer length relationships and nullability in more detail.",
           "A pointer does not automatically mean output. LPCWSTR is an input pointer to constant text. LPWSTR may point to a writable character buffer, but its actual direction comes from the parameter contract. A pointer-to-pointer can let a function return an allocated address or modify a caller-held pointer. ctypes must model every pointer level correctly, while pywin32 may replace an output buffer with a returned Python value."
-        ]
+        ],
+        inlineCheck: ["Which annotation fully describes an optional output parameter?", ["[optional]", "[in]", "[out, optional]", "[in, out]"], 2, "Optional modifies a direction. The complete annotation must still state that data flows out of the function."]
       },
       {
         title: "Success, failure, and last error form one decision",
@@ -596,7 +630,7 @@ window.ILOVEOS_LESSON_DEPTH = {
     workedExamples: [
       {
         type: "contract",
-        title: "Read CreateFileW before calling it",
+        title: "Running example: read CreateFileW before calling it",
         prompt: "You want to open an existing text file for read access without preventing another reader or writer.",
         steps: [
           { title: "Fix the intended behavior", action: "Choose GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, OPEN_EXISTING, and ordinary attributes.", why: "The same function can create, truncate, lock, or open devices. Intent determines safe flags.", result: "You have a specific contract to map rather than a vague file-open goal." },
@@ -605,66 +639,36 @@ window.ILOVEOS_LESSON_DEPTH = {
           { title: "Assign ownership", action: "Place CloseHandle in finally after successful acquisition.", why: "Every exit path, including later exceptions, must release the process's handle-table reference.", result: "The call has a complete lifetime rather than only a successful beginning." }
         ],
         conclusion: "The correct call is defined by behavior, types, branching, and cleanup together."
-      },
-      {
-        type: "branch",
-        title: "Handle wait results without treating them as Boolean",
-        prompt: "A thread waits up to five seconds for an event handle using win32event.WaitForSingleObject.",
-        setupCode: "result = win32event.WaitForSingleObject(event, 5000)",
-        branches: [
-          { value: "WAIT_OBJECT_0", meaning: "The event became signaled before the timeout.", action: "Run the signaled path. Do not test this value with bool(), because it is numerically zero." },
-          { value: "WAIT_TIMEOUT", meaning: "Five seconds elapsed without the event becoming signaled.", action: "Run the timeout path. This is an expected result, not successful acquisition and not necessarily an exception." },
-          { value: "WAIT_ABANDONED", meaning: "This result applies to a mutex whose owning thread exited without releasing it.", action: "Treat the protected state as potentially inconsistent. An event wait does not normally produce this branch." },
-          { value: "pywintypes.error", meaning: "The wrapper could not return a normal wait status because the underlying call failed.", action: "Use the Windows error code and function context, then clean up without pretending that a wait result was returned." }
-        ],
-        steps: [
-          { title: "Store the returned status", action: "Assign the result instead of placing the call directly inside a generic truth test.", why: "WAIT_OBJECT_0 is numerically zero, so bool(result) would be false even though the wait succeeded.", code: "result = win32event.WaitForSingleObject(event, 5000)" },
-          { title: "Name expected outcomes", action: "Compare explicitly with WAIT_OBJECT_0 and WAIT_TIMEOUT.", why: "Signal and timeout are different normal control-flow outcomes, not success versus exception.", code: "if result == win32event.WAIT_OBJECT_0:\n    handle_signal()\nelif result == win32event.WAIT_TIMEOUT:\n    handle_timeout()" },
-          { title: "Reject unplanned outcomes", action: "Raise for any value the program did not design for.", why: "Abandoned mutex and failed-wait cases should not silently follow the timeout path.", code: "else:\n    raise RuntimeError(f\"unexpected wait result: {result}\")" },
-          { title: "Keep wrapper exceptions separate", action: "Catch pywintypes.error only where you can add useful context or choose a valid fallback.", why: "The wrapper can raise before a status is returned when the underlying call fails.", result: "Normal status branching and exceptional API failure remain understandable." }
-        ],
-        conclusion: "A status value is a small protocol. Compare named outcomes instead of assuming zero means false and nonzero means true."
       }
     ],
     windowsLearning: [
       {
-        title: "Translate native declarations into pywin32 deliberately",
+        title: "Turn the page into a binding-neutral contract card",
         paragraphs: [
-          "Start with semantics, then compare signatures. pywin32 may omit a buffer length because it allocates the buffer, return multiple output values as a tuple, accept None for a null pointer, or represent HANDLE as PyHANDLE. Search the wrapper documentation and inspect a known example, but return to Microsoft Learn for access masks, flags, object lifetime, and security behavior.",
-          "When a wrapper raises pywintypes.error, useful fields typically include winerror, funcname, and strerror. Branch on numeric error codes when behavior truly differs, such as file not found versus access denied. Messages vary by language and wording, so they are for people, not stable program logic."
+          "After reading, compress the page into a card you could hand to someone using any language. State the intended outcome, requirements, DLL, each parameter's direction and meaning, every documented result branch, the last-error rule, required access, and the matching release operation.",
+          "Do not copy the declaration without interpretation. A useful card explains whether a size is measured in bytes or characters, whether a pointer may be null, who initializes a structure size field, whether a returned value is owned or borrowed, and which remarks constrain the arguments you intend to use."
         ]
       },
       {
-        title: "Translate into ctypes as an ABI checklist",
+        title: "Recognise what changes when a binding is introduced",
         paragraphs: [
-          "Load the documented DLL with WinDLL. Prefer the W export for text. Assign argtypes in exact order and restype before the first call. Use wintypes where it accurately matches the declaration, define structures with matching field order and alignment, and represent optional pointers with None. Callback objects must remain alive as long as native code might call them.",
-          "For a last-error API, use use_last_error=True, detect the documented failure sentinel, capture ctypes.get_last_error immediately, and raise ctypes.WinError(code) or handle a known code. Then release each acquired resource with its specific API. A ctypes call that returns without crashing is not proof that the signature was correct."
-        ]
-      }
-    ],
-    codeWalkthroughs: [
-      {
-        title: "Turn GetLastError into a precise ctypes exception",
-        intro: "The important order is declare, call, test, capture, interpret, and clean up.",
-        stages: [
-          { title: "Load with last-error support", explanation: "use_last_error lets ctypes preserve the Windows thread error around foreign-function calls.", code: "import ctypes\nfrom ctypes import wintypes\n\nkernel32 = ctypes.WinDLL(\"kernel32\", use_last_error=True)" },
-          { title: "Declare a failure-aware signature", explanation: "The actual API determines argtypes and restype. This small example uses CloseHandle, where zero means failure.", code: "kernel32.CloseHandle.argtypes = [wintypes.HANDLE]\nkernel32.CloseHandle.restype = wintypes.BOOL" },
-          { title: "Test before any other call", explanation: "Only read last error after the function's documented failure result. WinError formats the captured numeric code.", code: "ok = kernel32.CloseHandle(handle)\nif not ok:\n    code = ctypes.get_last_error()\n    raise ctypes.WinError(code)" }
+          "A Python binding can convert representation without changing the contract. It may accept str instead of LPCWSTR, return an output buffer as bytes, turn a HANDLE into a PyHANDLE, or raise an exception after detecting a native failure sentinel. Those are binding behaviors layered over the same Windows operation.",
+          "Keep those layers separate in your notes. The native page tells you what Windows promises. The binding documentation tells you how Python supplies inputs, receives outputs, and exposes native failure. The next lesson uses this contract to choose pywin32 or ctypes and construct the call safely."
         ]
       }
     ],
     practice: {
       title: "Annotate a real API contract",
       time: "30 min",
-      intro: "Build a reusable function card from the primary documentation, then produce safe pywin32 and ctypes call plans without an external worksheet.",
-      expectedOutcome: "Your completed API card should identify the DLL, supported environment, every parameter direction and type, the exact success and failure values, how error detail is retrieved, and which resource release function is required. The pywin32 plan may convert outputs or raise an exception. The ctypes plan should expose the native signature, sentinel check, last-error handling, and cleanup explicitly.",
+      intro: "Build a reusable, binding-neutral function card from the primary documentation without an external worksheet.",
+      expectedOutcome: "Your completed API card should identify the DLL, supported environment, every parameter direction and native type, the exact success, alternate, and failure values, how error detail is retrieved, which access or privilege requirements apply, and which resource release function is required. Someone should be able to use the card to evaluate any language binding without rereading the page from scratch.",
       predictionPrompt: "Choose CreateFileW or ControlService. Before reading, predict its DLL, input and output directions, success value, failure mechanism, and cleanup responsibility.",
       steps: [
         { action: "Read the function page once from top to bottom without writing code.", why: "A complete first pass exposes remarks and requirements that change how the signature should be interpreted.", observe: "Record the function purpose, header, DLL, supported client, and any privilege or access prerequisite." },
-        { action: "Annotate every parameter with direction, optionality, native type, Python representation, and lifetime.", why: "This converts syntax into data flow and catches pointer-level mistakes early.", observe: "Include what None or a null pointer means where allowed, and identify every related size field." },
-        { action: "Write a result decision table.", why: "Success, normal alternate outcomes, and failures should be named before they appear in code.", observe: "For each returned value or raised exception, state the meaning and the next action." },
-        { action: "Write the pywin32 call plan, including exception handling and cleanup.", why: "The wrapper changes representation but not the operating-system contract.", observe: "Name the pywin32 module, wrapper, Python return type, pywintypes.error fields used, and release call." },
-        { action: "Write the ctypes signature and failure plan, then compare its risk with pywin32.", why: "The comparison reveals exactly which safety and conversion work the wrapper provides.", observe: "Include WinDLL, use_last_error, argtypes, restype, sentinel test, WinError, and resource release." }
+        { action: "Annotate every parameter with direction, optionality, native type, meaning, and lifetime.", why: "This converts syntax into data flow without committing to a particular language binding.", observe: "Include what a null pointer means where allowed, and identify every related size field and unit." },
+        { action: "Write a result decision table.", why: "Success, normal alternate outcomes, and failures should be named before they appear in code.", observe: "For each documented returned value, state its meaning, whether error detail is available, and the next action." },
+        { action: "Record ownership, access requirements, and cleanup beside the result table.", why: "A successful return is unsafe to use if its access limits or lifetime remain unknown.", observe: "Distinguish owned, borrowed, and pseudo handles or pointers, then name the exact matching release rule." },
+        { action: "Explain which contract facts any language binding must preserve.", why: "This separates stable Windows behavior from representation choices made by pywin32, ctypes, or another wrapper.", observe: "Name at least one value a binding may convert and one behavior it cannot legitimately change." }
       ],
       fields: [
         { id: "function-card", label: "Function contract card", prompt: "Record purpose, DLL, parameters with directions and types, success, alternate outcomes, failure, error retrieval, ownership, and requirements." },
@@ -675,16 +679,138 @@ window.ILOVEOS_LESSON_DEPTH = {
         { title: "An output buffer is confusing", body: "Find the parameter that supplies its capacity and the unit used, such as bytes or characters. Determine whether the function returns the required size when the buffer is too small." }
       ],
       cleanup: ["Close any handle acquired while testing with the documented matching function.", "Restore any service or file state only if your chosen API changed it; a documentation-only pass changes nothing."],
-      extension: { title: "Optional extension", prompt: "Create a reusable Python context manager for one owned handle type. Make acquisition failure and cleanup failure visible without hiding the original exception." }
+      extension: { title: "Optional extension", prompt: "Repeat the contract card for a second API with a different return convention, then compare which parts of the reading method remained unchanged." }
     },
     checks: [
       ["Which section is not normally part of a C WinAPI function contract?", ["Parameter descriptions", "Return-value behavior", "Exceptions the C function throws", "Requirements and DLL"], 2, "C WinAPI functions normally report through return values and error state. A Python wrapper may translate failure into an exception."],
       ["Which is not a complete valid direction annotation by itself?", ["[out, optional]", "[optional]", "[out]", "[in, out]"], 1, "Optional modifies a direction. By itself it does not say whether data enters or leaves the function."],
-      ["Why is if result: wrong for WAIT_OBJECT_0?", ["WAIT_OBJECT_0 is a string", "WAIT_OBJECT_0 is numerically zero even though the object was signaled", "Wait functions never return", "Python cannot compare constants"], 1, "The signaled status can be zero and therefore false in a Boolean context. Compare named constants explicitly."]
+      ["What must be decided before code uses a returned handle?", ["Only its printed integer value", "Its ownership, permitted access, and matching cleanup rule", "Whether its name contains an uppercase letter", "Whether every handle uses RegCloseKey"], 1, "A handle is useful only with its access and lifetime contract. Cleanup functions depend on the API family."]
+    ]
+  },
+
+  "calling-winapi-python": {
+    phases: {
+      learn: ["Choose the binding", "Start from the native contract, then choose the Python surface that communicates the task safely."],
+      windows: ["Construct the call", "Translate types, result branches, error state, and ownership into explicit Python code."],
+      investigation: ["Compare both surfaces", "Map one harmless operation through pywin32 and ctypes before deciding which version to run."],
+      review: ["Check the call paths", "Test the binding, status, failure, and cleanup decisions together."]
+    },
+    learning: [
+      {
+        title: "The native contract comes before the binding",
+        paragraphs: [
+          "Begin with the contract card from the previous lesson. It defines the Windows operation, access requirements, native parameter meanings, result branches, error-detail rule, and resource lifetime. Only then compare Python surfaces. This order prevents convenient wrapper syntax from hiding a right, sentinel, or cleanup requirement.",
+          "A binding may legitimately change representation. pywin32 can accept a Python str for LPCWSTR, allocate output storage, return several outputs as a tuple, and represent a native handle with PyHANDLE. ctypes stays closer to the C declaration. Neither binding may change what access Windows checks, what the operation does, or which resource lifetime Windows defines."
+        ],
+        callout: { label: "Running example, new lens", text: "Earlier lessons used CreateFileW to explain abstraction, Windows layers, and API contracts. Here the question is narrower: which Python binding should express that already-understood contract, and what safety work remains visible?" }
+      },
+      {
+        title: "Prefer pywin32 when it communicates the task clearly",
+        paragraphs: [
+          "A suitable pywin32 wrapper usually removes repetitive foreign-function declarations while retaining the arguments that matter to the operation. It may also wrap an owned native handle in an object with a Close method and translate a documented native failure into pywintypes.error. That makes pywin32 the preferred course path when coverage and behavior are clear.",
+          "Read the wrapper documentation for its Python signature, return shape, conversions, and exception behavior. Then keep the Microsoft contract beside it for flags, rights, sharing rules, security requirements, side effects, and lifetime. Catch pywintypes.error only where code can add context, choose a documented fallback, or restore state. Use the numeric winerror for stable branching, not the localized message text."
+        ]
+      },
+      {
+        title: "Use ctypes when the native boundary is part of the problem",
+        paragraphs: [
+          "ctypes is justified when pywin32 has no usable wrapper or when the task specifically requires an exact structure, union, callback, pointer level, calling convention, or export. Load the documented DLL with WinDLL, prefer the Unicode W export for text, declare argtypes in native order, and set restype before the first call. A missing restype can silently truncate pointer-sized results.",
+          "Keep Python objects alive while native code can still reference their buffers, structures, or callbacks. Use wintypes only when its declaration matches the documentation, and define custom structures with the correct field order, alignment, and architecture-dependent widths. A call returning without crashing proves very little if the ABI declaration is wrong."
+        ],
+        inlineCheck: ["When is ctypes the stronger choice?", ["Whenever pywin32 already has a clear wrapper", "When an uncovered API or exact native ABI detail is required", "Whenever the function returns an integer", "Because ctypes automatically discovers every signature"], 1, "ctypes is valuable when coverage or ABI-level learning requires it. A clear pywin32 wrapper is normally safer and easier to read."]
+      }
+    ],
+    visuals: [
+      {
+        type: "flow",
+        title: "From Windows contract to safe Python call",
+        intro: "Binding selection is one decision inside a larger correctness path.",
+        items: [
+          { meta: "Outcome", label: "State the operation", detail: "Required behavior and target object", linkAfter: "read" },
+          { meta: "Windows", label: "Fix the native contract", detail: "Rights, parameters, results, ownership", linkAfter: "check coverage" },
+          { meta: "Binding", label: "Prefer pywin32", detail: "Use the wrapper when its behavior is clear", linkAfter: "otherwise declare" },
+          { meta: "ABI", label: "Use ctypes deliberately", detail: "DLL, argtypes, restype, structures", linkAfter: "complete" },
+          { meta: "Control flow", label: "Handle and clean up", detail: "Named results, error detail, release" }
+        ],
+        caption: "Choosing ctypes does not replace the contract. It adds responsibility for representing that contract exactly."
+      }
+    ],
+    workedExamples: [
+      {
+        type: "branch",
+        title: "Handle wait results without treating them as Boolean",
+        prompt: "A thread waits up to five seconds for an event handle using win32event.WaitForSingleObject.",
+        setupCode: "result = win32event.WaitForSingleObject(event, 5000)",
+        branches: [
+          { value: "WAIT_OBJECT_0", meaning: "The event became signaled before the timeout.", action: "Run the signaled path. Do not test this value with bool(), because it is numerically zero." },
+          { value: "WAIT_TIMEOUT", meaning: "Five seconds elapsed without the event becoming signaled.", action: "Run the timeout path. This is expected control flow, not successful acquisition and not necessarily an exception." },
+          { value: "WAIT_ABANDONED", meaning: "This result applies to a mutex whose owning thread exited without releasing it.", action: "Treat the protected state as potentially inconsistent. An event wait does not normally produce this branch." },
+          { value: "pywintypes.error", meaning: "The wrapper could not return a normal wait status because the underlying call failed.", action: "Use the Windows error code and function context, then clean up without pretending a wait result was returned." }
+        ],
+        conclusion: "A status value is a small protocol. Compare named outcomes instead of assuming zero means false and nonzero means true."
+      }
+    ],
+    windowsLearning: [
+      {
+        title: "Translate pywin32 failures and returned statuses separately",
+        paragraphs: [
+          "When a wrapper raises pywintypes.error, useful fields typically include winerror, funcname, and strerror. The exception says no ordinary wrapper result was produced. Add operation context, recover only from error codes the design expects, and allow unexpected failures to remain visible.",
+          "Some wrappers successfully return a status that still requires a decision. Wait functions can return WAIT_OBJECT_0, WAIT_TIMEOUT, or WAIT_ABANDONED. Enumeration functions may use an end sentinel. A partial read can return useful data and a state requiring another call. Name these branches instead of forcing every result through a Boolean success test."
+        ]
+      },
+      {
+        title: "Make ctypes failure detection match the exact declaration",
+        paragraphs: [
+          "For an API that documents last error, construct WinDLL with use_last_error=True. Call the function, test its documented failure value, and immediately store ctypes.get_last_error before logging or cleanup invokes another Windows function. Raise ctypes.WinError(code) for an unexpected failure or branch on a known numeric code when the design has a valid recovery path.",
+          "There is no universal ctypes failure test. FALSE, NULL, INVALID_HANDLE_VALUE, SOCKET_ERROR, HRESULT values, and valid zero results belong to different contracts. Define the check beside the restype, then put every acquired resource into try/finally as soon as acquisition succeeds."
+        ]
+      }
+    ],
+    codeWalkthroughs: [
+      {
+        title: "Turn GetLastError into a precise ctypes exception",
+        intro: "The important order is declare, call, test, capture, interpret, and clean up.",
+        stages: [
+          { title: "Load with last-error support", explanation: "use_last_error lets ctypes preserve Windows error state around foreign-function calls.", code: "import ctypes\nfrom ctypes import wintypes\n\nkernel32 = ctypes.WinDLL(\"kernel32\", use_last_error=True)" },
+          { title: "Declare a failure-aware signature", explanation: "The actual API determines argtypes and restype. This small example uses CloseHandle, where zero means failure.", code: "kernel32.CloseHandle.argtypes = [wintypes.HANDLE]\nkernel32.CloseHandle.restype = wintypes.BOOL" },
+          { title: "Test before any other Windows call", explanation: "Read last error only after the documented failure result. WinError formats the captured numeric code.", code: "ok = kernel32.CloseHandle(handle)\nif not ok:\n    code = ctypes.get_last_error()\n    raise ctypes.WinError(code)" }
+        ]
+      }
+    ],
+    practice: {
+      title: "Plan one safe call through both bindings",
+      time: "25 min",
+      intro: "Use the CreateFileW contract card to expose what pywin32 supplies and what a direct ctypes call must declare.",
+      expectedOutcome: "Both plans should preserve the same read-only file-open behavior, sharing rules, existing-file requirement, failure meaning, and handle lifetime. The pywin32 plan should be shorter and expose pywintypes.error plus PyHANDLE cleanup. The ctypes plan should declare the full Unicode signature, detect INVALID_HANDLE_VALUE, capture last error immediately, and call CloseHandle in every successful acquisition path.",
+      predictionPrompt: "Before comparing signatures, predict which native details pywin32 will convert and which rights, flags, result meanings, and ownership rules it must preserve.",
+      steps: [
+        { action: "Reuse the CreateFileW contract card from the previous lesson.", why: "Starting from an agreed contract prevents either binding from quietly redefining the task.", observe: "Confirm read access, sharing, OPEN_EXISTING, INVALID_HANDLE_VALUE, last error, and CloseHandle." },
+        { action: "Map the contract to win32file.CreateFile.", why: "The wrapper should simplify representation while keeping behaviorally important choices visible.", observe: "Record Python argument types, PyHANDLE output, pywintypes.error fields, and the handle's Close method." },
+        { action: "Write pywin32 pseudocode with acquisition, one small operation, and cleanup.", why: "The control-flow shape should make it impossible for a later exception to skip release.", observe: "Use try/finally and add context only where an expected Windows error can be handled meaningfully." },
+        { action: "Declare the equivalent ctypes call without running it.", why: "Reviewing the ABI separately reduces the chance that a type or sentinel mistake reaches Windows.", observe: "Include WinDLL, use_last_error, all argtypes, restype, INVALID_HANDLE_VALUE, get_last_error, WinError, and CloseHandle." },
+        { action: "Choose the version you would maintain and defend the decision.", why: "Binding choice should follow coverage, clarity, and required control, not novelty.", observe: "Prefer pywin32 unless the ctypes plan solves a concrete missing-wrapper or ABI-learning requirement." }
+      ],
+      hints: [
+        { title: "The signatures do not look alike", body: "Map meaning rather than spelling. A Python str can represent LPCWSTR, None can represent a permitted null pointer, and PyHANDLE can own the native handle." },
+        { title: "INVALID_HANDLE_VALUE is awkward", body: "Do not replace the documented sentinel with a generic null check. Define or derive the pointer-sized minus-one value in a way that matches the declared HANDLE result." }
+      ],
+      cleanup: ["Close any handle if you choose to execute the pywin32 plan against a temporary file.", "Delete only the temporary file you created for this investigation."],
+      extension: { title: "Optional extension", prompt: "Implement both versions against a temporary file, deliberately try a missing path, and compare the Python exception information produced by each binding." }
+    },
+    checks: [
+      ["Why is pywin32 normally preferred when a clear wrapper exists?", ["It changes Windows access rules", "It removes avoidable ABI declarations while keeping the operation readable", "It makes cleanup unnecessary", "It guarantees every call succeeds"], 1, "A clear wrapper reduces conversion and declaration work. The native behavior, errors, and lifetime still matter."],
+      ["Why is if result: wrong for WAIT_OBJECT_0?", ["WAIT_OBJECT_0 is text", "WAIT_OBJECT_0 is numerically zero even though the object was signaled", "Wait functions never return", "Python cannot compare named constants"], 1, "The signaled result can be zero and therefore false in a Boolean context. Compare named status constants explicitly."],
+      ["When should ctypes.get_last_error be read?", ["After any successful call", "Immediately after detecting a failure from an API documented to set last error", "Only after cleanup", "Before calling the API"], 1, "Capture the error immediately after the documented failure result, before another Windows call can replace the thread's error state."]
     ]
   },
 
   "inspect-windows": {
+    phases: {
+      learn: ["Build the investigation method", "Turn a precise question into a prediction, evidence plan, and bounded conclusion."],
+      windows: ["Match tools to evidence", "Choose snapshots, traces, and internal probes according to the question."],
+      investigation: ["Run a three-view investigation", "Correlate one harmless action from the script, a live snapshot, and a trace."],
+      review: ["Check the evidence", "Test what each observation proves, suggests, and cannot establish."]
+    },
     learning: [
       {
         title: "Begin with a question that has an observable answer",
@@ -699,7 +825,8 @@ window.ILOVEOS_LESSON_DEPTH = {
           "A snapshot describes state at an observation time. Process Explorer shows the processes, threads, tokens, handles, mappings, and performance counters that still exist when it refreshes. WinObj shows the named Object Manager namespace at that moment. Autoruns shows configured persistence locations. A snapshot is strong for current ownership and relationships but can miss something short-lived.",
           "A trace records events over an interval. Process Monitor captures file, Registry, process, thread, image-load, and selected network activity with timestamps and results. A trace can show an open that failed and disappeared, or the exact query sequence before a configuration decision. It can also omit events that occurred before capture, drown the signal in unrelated traffic, and show correlation without proving the application's higher-level intent."
         ],
-        callout: { label: "Use both when possible", text: "The trace shows what happened. The snapshot shows what remains. Agreement between independent views produces a stronger conclusion." }
+        callout: { label: "Use both when possible", text: "The trace shows what happened. The snapshot shows what remains. Agreement between independent views produces a stronger conclusion." },
+        inlineCheck: ["A file handle opened and closed before Process Explorer refreshed. Which evidence source is most likely to preserve the operation?", ["A Process Monitor trace captured during the action", "A later Process Explorer snapshot", "A desktop screenshot", "The file extension"], 0, "A trace records events over time. A later snapshot can only show handles that still exist when it observes the process."]
       },
       {
         title: "Filters are part of the experiment",

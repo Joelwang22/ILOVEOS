@@ -68,7 +68,7 @@ Supporting pages will be limited to those that directly aid learning:
 
 ## 5. Recurring lesson format
 
-Lessons should read like focused interactive textbook chapters rather than expanded outlines. To avoid a wall of subheadings, most lessons will use four visible phases while placing supporting material in diagrams, code cards, callouts, tables, and expandable details.
+Lessons should read like focused interactive textbook chapters rather than expanded outlines. To avoid a wall of subheadings, most lessons will use four visible phases while placing supporting material in diagrams, code cards, callouts, tables, and expandable details. The four-part navigation remains predictable, but phase names and short descriptions should fit the lesson instead of repeating identical labels everywhere.
 
 ### Learn
 
@@ -96,6 +96,8 @@ Lessons should read like focused interactive textbook chapters rather than expan
 - Provide an actual downloadable starter file only when the learner needs a `.py` file or another concrete lab artifact.
 - End with cleanup and restoration instructions.
 
+The action is always visible. A separate reason or observation prompt should appear only when it adds information the learner cannot infer from the action itself. Simple steps should remain visually simple instead of receiving generic filler labels.
+
 ### Review
 
 - Use more than one check when the lesson contains several important decisions or state transitions.
@@ -103,7 +105,9 @@ Lessons should read like focused interactive textbook chapters rather than expan
 - Summarise the mental model and the few facts worth retaining.
 - Include an independent variation when the lesson completes a practice pathway.
 
-Questions may also appear inside explanations so the learner predicts an outcome before revealing it or running an experiment.
+Questions may also appear inside explanations so the learner predicts an outcome before revealing it or running an experiment. These inline checks should be visually restrained, placed directly after the concept they test, and used selectively in longer lessons rather than becoming additional named phases.
+
+At compact widths, each lesson will provide an expandable "Lesson sections" control because the desktop "On this page" column is hidden. The control should use the lesson's context-specific phase names and collapse after a destination is selected.
 
 ### Content depth without bloat
 
@@ -173,8 +177,9 @@ Planned lesson order:
 3. How Windows is organised.
 4. User mode, kernel mode, and protected operations.
 5. System calls, the Native API, and the Win32 API.
-6. How to read and call a Windows API.
-7. Inspecting the operating system.
+6. How to read a Windows API contract.
+7. Calling Windows APIs safely from Python.
+8. Inspecting the operating system.
 
 Topics:
 
@@ -600,7 +605,7 @@ As implementation continues:
 
 ## 15. Staged lesson-depth overhaul
 
-The existing 61 lesson pages form a complete curriculum map, but many are still concise first-pass lessons. They will now be expanded incrementally so that content quality can be reviewed and corrected before the same pattern is repeated across the whole course.
+The existing 62 lesson pages form a complete curriculum map, but many are still concise first-pass lessons. They will now be expanded incrementally so that content quality can be reviewed and corrected before the same pattern is repeated across the whole course.
 
 ### Stage 1: Lesson system and operating-system foundations
 
@@ -608,7 +613,7 @@ Status: completed on 22 August 2026.
 
 - Build the reusable integrated practice workspace, context-specific worked-example formats, diagram patterns, expected-outcome disclosures, observation guidance, and expandable hints.
 - Remove the separate worksheet download behavior.
-- Deepen all seven OS foundations lessons.
+- Deepen all eight OS foundations lessons, including separate documentation-reading and safe-Python-calling lessons.
 - Give particular attention to CPU architecture, binary and hexadecimal reasoning, Windows architecture, system-call flow, and reading WinAPI documentation.
 - Use this module to establish the final writing density and visual language for the remaining course.
 

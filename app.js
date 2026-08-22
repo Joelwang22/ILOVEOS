@@ -199,6 +199,18 @@ handle = <span class="code-function">win32process.GetCurrentProcess</span>()
     return paragraphs.map((paragraph) => `<p>${escapeHtml(paragraph)}</p>`).join("");
   }
 
+  function renderInlineCheck(check) {
+    if (!check) return "";
+    const optionLetters = ["A", "B", "C", "D", "E"];
+    return `
+      <aside class="quiz-card inline-check" data-answer="${optionLetters[check[2]].toLowerCase()}">
+        <span class="quiz-kicker">Pause and predict</span>
+        <h3>${escapeHtml(check[0])}</h3>
+        <div class="quiz-options">${check[1].map((option, index) => `<button class="quiz-option" type="button" data-option="${optionLetters[index].toLowerCase()}"><span class="option-letter">${optionLetters[index]}</span>${escapeHtml(option)}</button>`).join("")}</div>
+        <p class="quiz-feedback">${escapeHtml(check[3])}</p>
+      </aside>`;
+  }
+
   function renderLearningBlocks(blocks) {
     return blocks.map((block) => `
       <section class="learning-block">
@@ -206,6 +218,7 @@ handle = <span class="code-function">win32process.GetCurrentProcess</span>()
         ${renderParagraphs(block.paragraphs || [])}
         ${block.bullets?.length ? `<ul>${block.bullets.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>` : ""}
         ${block.callout ? `<aside class="rich-callout ${escapeHtml(block.callout.tone || "note")}"><strong>${escapeHtml(block.callout.label)}</strong><p>${escapeHtml(block.callout.text)}</p></aside>` : ""}
+        ${renderInlineCheck(block.inlineCheck)}
       </section>`).join("");
   }
 
@@ -350,9 +363,7 @@ handle = <span class="code-function">win32process.GetCurrentProcess</span>()
   function normalizedPractice(lesson) {
     const practice = lesson.practice;
     const steps = practice.steps.map((step) => typeof step === "string" ? {
-      action: step,
-      why: "This turns the lesson's model into evidence you can inspect or explain.",
-      observe: "Look for the value, error, path, process, or tool view described by this step."
+      action: step
     } : step);
     return {
       ...practice,
@@ -381,7 +392,7 @@ handle = <span class="code-function">win32process.GetCurrentProcess</span>()
           ${practice.steps.map((step, index) => `
             <li>
               <span class="practice-number">${String(index + 1).padStart(2, "0")}</span>
-              <div class="practice-step-copy"><h4>${escapeHtml(step.action)}</h4><p><strong>Why this step matters:</strong> ${escapeHtml(step.why)}</p><p class="practice-observe"><strong>Look for:</strong> ${escapeHtml(step.observe)}</p>${step.hint ? `<details><summary>Hint for this step</summary><p>${escapeHtml(step.hint)}</p></details>` : ""}</div>
+              <div class="practice-step-copy"><h4>${escapeHtml(step.action)}</h4>${step.why ? `<p><strong>Why this step matters:</strong> ${escapeHtml(step.why)}</p>` : ""}${step.observe ? `<p class="practice-observe"><strong>Look for:</strong> ${escapeHtml(step.observe)}</p>` : ""}${step.hint ? `<details><summary>Hint for this step</summary><p>${escapeHtml(step.hint)}</p></details>` : ""}</div>
             </li>`).join("")}
         </ol>
         <details class="practice-hints"><summary>Need a nudge?</summary>${practice.hints.map((hint) => `<div><strong>${escapeHtml(hint.title)}</strong><p>${escapeHtml(hint.body)}</p></div>`).join("")}</details>
@@ -401,6 +412,76 @@ handle = <span class="code-function">win32process.GetCurrentProcess</span>()
       </div>`).join("");
   }
 
+  function phaseDetails(lesson) {
+    const defaultsByModule = {
+      foundations: {
+        learn: ["Build the model", "Establish the idea and the distinctions this lesson depends on."],
+        windows: ["Connect it to Windows", "Relate the model to Windows interfaces and observable state."],
+        investigation: ["Test the model", "Use a controlled investigation to compare the model with evidence."],
+        review: ["Check your understanding", "Resolve the main decisions before continuing."]
+      },
+      "processes-handles": {
+        learn: ["Understand the mechanism", "Build the process and object model behind the lesson."],
+        windows: ["Find it in Windows", "Connect the mechanism to Windows objects, APIs, and tools."],
+        investigation: ["Inspect it", "Use live evidence to test the distinctions introduced above."],
+        review: ["Check the model", "Retain the process and lifetime rules that later lessons use."]
+      },
+      "threads-scheduling": {
+        learn: ["Follow the execution", "Build the thread and scheduling model for this lesson."],
+        windows: ["Observe the scheduler", "Connect execution state to Windows APIs and tool evidence."],
+        investigation: ["Run the experiment", "Compare predicted thread behaviour with what Windows reports."],
+        review: ["Check the reasoning", "Test the scheduling decisions and state changes that matter."]
+      },
+      memory: {
+        learn: ["Map the memory model", "Establish the address and lifetime relationships for this lesson."],
+        windows: ["Read Windows memory", "Connect the model to Windows regions, APIs, and inspection tools."],
+        investigation: ["Inspect the address space", "Use evidence to test the memory relationships introduced above."],
+        review: ["Check the map", "Retain the address, state, and protection distinctions."]
+      },
+      "linking-loading": {
+        learn: ["Follow the loader", "Build the file, symbol, and runtime relationship for this lesson."],
+        windows: ["Trace it in Windows", "Connect loader behavior to Windows structures, APIs, and tools."],
+        investigation: ["Inspect the load", "Observe the relevant files, modules, and addresses."],
+        review: ["Check the trace", "Test the loader relationships before continuing."]
+      },
+      management: {
+        learn: ["Build the management model", "Establish the configuration or service mechanism in this lesson."],
+        windows: ["Control it safely", "Connect the model to Windows management APIs and reversible actions."],
+        investigation: ["Verify the change", "Observe the requested state and confirm what actually changed."],
+        review: ["Check the operation", "Retain the access, state, and cleanup rules."]
+      },
+      security: {
+        learn: ["Build the security model", "Establish the identity, policy, and access relationships."],
+        windows: ["Read the security context", "Connect the model to Windows tokens, descriptors, and APIs."],
+        investigation: ["Test the boundary", "Compare a predicted access decision with controlled evidence."],
+        review: ["Check the decision", "Retain the security rules that explain the result."]
+      },
+      synchronisation: {
+        learn: ["Model the shared state", "Establish the ordering and coordination problem."],
+        windows: ["Choose the Windows primitive", "Connect the required behavior to waitable objects and APIs."],
+        investigation: ["Test the interleaving", "Observe the result under a controlled execution order."],
+        review: ["Check the coordination", "Test the state and wait-result decisions."]
+      },
+      ipc: {
+        learn: ["Map the communication", "Establish the endpoints, data flow, and lifetime rules."],
+        windows: ["Build the Windows channel", "Connect the design to Windows IPC objects and APIs."],
+        investigation: ["Trace the exchange", "Observe messages, handles, blocking, and shutdown behavior."],
+        review: ["Check the protocol", "Retain the framing, ownership, and failure rules."]
+      },
+      "hooking-injection": {
+        learn: ["Understand the mechanism", "Build a defensive model of the code and control-flow change."],
+        windows: ["Recognise it in Windows", "Connect the mechanism to modules, memory, and observable evidence."],
+        investigation: ["Inspect the evidence", "Use a constrained lab to distinguish facts from inference."],
+        review: ["Check the analysis", "Test the boundaries, indicators, and limitations."]
+      }
+    };
+    const defaults = defaultsByModule[lesson.module] || defaultsByModule.foundations;
+    return Object.fromEntries(Object.entries(defaults).map(([key, value]) => {
+      const custom = lesson.phases?.[key];
+      return [key, { title: custom?.[0] || value[0], subtitle: custom?.[1] || value[1] }];
+    }));
+  }
+
   function renderLesson(id) {
     const lesson = findLesson(id);
     const module = data.modules.find((item) => item.id === lesson.module) || data.modules[0];
@@ -410,7 +491,8 @@ handle = <span class="code-function">win32process.GetCurrentProcess</span>()
     const previous = lessons[allIndex - 1];
     const next = lessons[allIndex + 1];
     const optionLetters = ["A", "B", "C", "D", "E"];
-    const sections = [["learn", "Learn"], ["windows", "Use it on Windows"], ["investigation", "Investigate"], ["review", "Review"]];
+    const phases = phaseDetails(lesson);
+    const sections = [["learn", phases.learn.title], ["windows", phases.windows.title], ["investigation", phases.investigation.title], ["review", phases.review.title]];
     const learningBlocks = lesson.learning || [
       { title: "The core idea", paragraphs: lesson.core },
       { title: "How it works", paragraphs: lesson.mechanics }
@@ -425,16 +507,20 @@ handle = <span class="code-function">win32process.GetCurrentProcess</span>()
             <div class="lesson-position">Module ${module.number}, lesson ${String(moduleIndex + 1).padStart(2, "0")} of ${moduleLessonList.length}</div>
             <h1>${escapeHtml(lesson.title)}</h1>
             <p class="lesson-lead">${escapeHtml(lesson.lead)}</p>
+            <details class="mobile-lesson-sections">
+              <summary><span>Lesson sections</span><span class="details-chevron" aria-hidden="true">+</span></summary>
+              <nav aria-label="Lesson sections">${sections.map(([target, title], index) => `<a href="#/lesson/${lesson.id}" data-scroll-target="${target}"><span>${String(index + 1).padStart(2, "0")}</span>${escapeHtml(title)}</a>`).join("")}</nav>
+            </details>
 
             <section id="learn" class="lesson-phase">
-              <div class="phase-heading"><span>01</span><div><h2>Learn</h2><p>Build the mental model before using the tools.</p></div></div>
+              <div class="phase-heading"><span>01</span><div><h2>${escapeHtml(phases.learn.title)}</h2><p>${escapeHtml(phases.learn.subtitle)}</p></div></div>
               ${renderLearningBlocks(learningBlocks)}
               ${(lesson.visuals || []).filter((visual) => (visual.phase || "learn") === "learn").map(renderVisual).join("")}
               ${renderWorkedExamples(lesson.workedExamples)}
             </section>
 
             <section id="windows" class="lesson-phase">
-              <div class="phase-heading"><span>02</span><div><h2>Use it on Windows</h2><p>Connect the model to real APIs, types, and observable system state.</p></div></div>
+              <div class="phase-heading"><span>02</span><div><h2>${escapeHtml(phases.windows.title)}</h2><p>${escapeHtml(phases.windows.subtitle)}</p></div></div>
               ${renderLearningBlocks(windowsBlocks)}
               ${(lesson.visuals || []).filter((visual) => visual.phase === "windows").map(renderVisual).join("")}
               ${renderCodeWalkthroughs(lesson.codeWalkthroughs)}
@@ -445,12 +531,12 @@ handle = <span class="code-function">win32process.GetCurrentProcess</span>()
             </section>
 
             <section id="investigation" class="lesson-phase">
-              <div class="phase-heading"><span>03</span><div><h2>Investigate</h2><p>Follow the steps, inspect the evidence, and compare it with the expected result.</p></div></div>
+              <div class="phase-heading"><span>03</span><div><h2>${escapeHtml(phases.investigation.title)}</h2><p>${escapeHtml(phases.investigation.subtitle)}</p></div></div>
               ${renderPractice(lesson)}
             </section>
 
             <section id="review" class="lesson-phase review-phase">
-              <div class="phase-heading"><span>04</span><div><h2>Review</h2><p>Test the model, then retain the ideas that later lessons depend on.</p></div></div>
+              <div class="phase-heading"><span>04</span><div><h2>${escapeHtml(phases.review.title)}</h2><p>${escapeHtml(phases.review.subtitle)}</p></div></div>
               <div class="quiz-stack">${renderChecks(lesson, optionLetters)}</div>
               <div class="take-forward"><h3>What to take forward</h3><ul>${lesson.keys.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul></div>
               <div class="lesson-sources"><span>Continue with primary documentation</span>${lesson.sources.map(([label, url]) => `<a href="${escapeHtml(url)}" target="_blank" rel="noreferrer">${escapeHtml(label)} <span aria-hidden="true">&#8599;</span></a>`).join("")}</div>
@@ -1021,6 +1107,7 @@ except pywintypes.error as error:
         const target = document.getElementById(link.dataset.scrollTarget);
         if (!target) return;
         event.preventDefault();
+        link.closest(".mobile-lesson-sections")?.removeAttribute("open");
         target.scrollIntoView({ behavior: "smooth", block: "start" });
       });
     });

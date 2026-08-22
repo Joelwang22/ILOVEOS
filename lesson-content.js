@@ -129,8 +129,8 @@ window.ILOVEOS_LESSONS = [
   {
     id: "reading-winapi-docs",
     module: "foundations",
-    title: "How to read and call a Windows API",
-    lead: "Turn a C declaration into a safe Python call by reading direction annotations, types, return values, errors, and ownership as one contract.",
+    title: "How to read a Windows API contract",
+    lead: "Turn a WinAPI documentation page into a precise contract by reading purpose, parameters, results, failure rules, requirements, and ownership together.",
     core: [
       "Start with purpose and requirements. Confirm the correct function family, minimum supported client, header, library, and DLL. Then read every parameter. [in] means the caller supplies initialized data, [out] means the function writes a result, and [in, out] means both. optional qualifies a direction, for example [in, optional].",
       "Translate types by meaning. DWORD is a 32-bit unsigned value, BOOL is an integer truth value, HANDLE is pointer-sized and opaque, LPCWSTR points to read-only UTF-16 text, LPVOID is an untyped pointer, and a structure pointer must match the documented layout and lifetime."
@@ -140,14 +140,37 @@ window.ILOVEOS_LESSONS = [
       "Finally decide ownership. Ask whether the returned handle, allocated buffer, library reference, device context, or COM interface must be released, and with which matching function. CloseHandle is common but not universal. Registry keys, service handles, DLL references, sockets, and local allocations have their own release functions."
     ],
     windows: [
-      "pywin32 wrappers normally raise pywintypes.error for Win32 failures. Catch it only where you can add useful context or recover, inspect winerror, funcname, and strerror, and still close resources in finally. Wait functions are different: WAIT_OBJECT_0, WAIT_TIMEOUT, WAIT_ABANDONED, and WAIT_FAILED are results that your logic must interpret.",
-      "With ctypes, use WinDLL(..., use_last_error=True), set argtypes and restype, test the documented failure value, then raise ctypes.WinError(ctypes.get_last_error()). For output structures, allocate the structure first and pass ctypes.byref(instance)."
+      "Convert the documentation into a compact contract card before choosing a Python binding. Record the outcome, environment, data flow, return branches, error-detail rule, access requirements, and matching cleanup operation.",
+      "The contract card should remain valid whether the eventual caller uses pywin32, ctypes, C, or another binding. A wrapper may change representation, but it does not change the operating-system behavior documented by the API."
     ],
-    keys: ["Read parameters, result, failure, and ownership together", "Direction annotations describe data flow", "Not every failure uses the same sentinel", "Wait results are control flow, not ordinary exceptions"],
-    apis: ["ctypes.WinDLL", "ctypes.get_last_error", "ctypes.WinError", "win32event.WaitForSingleObject", "win32api.CloseHandle"],
-    practice: { title: "Build an API contract card", time: "25 min", intro: "Create a reusable checklist for an API you will meet later.", steps: ["Choose ControlService or VirtualQueryEx in Microsoft Learn.", "Record the DLL, Python binding, parameter names, direction, C type, and Python type.", "Record the success result, every relevant non-success result, and how to retrieve error detail.", "List every acquired resource and its matching cleanup operation.", "Write both a pywin32-style and ctypes-style error-handling outline."] },
-    check: ["What should code do after WaitForSingleObject returns WAIT_TIMEOUT?", ["Treat it as a successful acquisition", "Call CloseHandle on the object immediately", "Handle the timeout branch explicitly", "Assume pywintypes.error was raised"], 2, "A timeout is a documented wait result. The program should take its timeout path without pretending the object was acquired."],
+    keys: ["Read purpose, parameters, results, and ownership as one contract", "Direction annotations describe data flow", "A pointer does not automatically mean output", "Every acquired resource needs its documented lifetime rule"],
+    apis: ["CreateFileW", "GetLastError", "CloseHandle", "ControlService", "VirtualQueryEx"],
+    practice: { title: "Build an API contract card", time: "25 min", intro: "Create a binding-neutral contract for an API you will meet later.", steps: ["Choose ControlService or VirtualQueryEx in Microsoft Learn.", "Record the purpose, requirements, DLL, parameter names, directions, and native types.", "Record the success result, every relevant alternate or failure result, and the error-detail rule.", "List every acquired resource and its matching cleanup operation.", "Explain which facts any Python binding must preserve."] },
+    check: ["Which item belongs in a complete WinAPI contract?", ["Only the function name", "Parameters without their directions", "Return branches and matching cleanup", "A list of Python exceptions invented by the C function"], 2, "A usable contract includes results, error rules, ownership, and cleanup as well as the declaration."],
     sources: [["Windows data types", "https://learn.microsoft.com/windows/win32/winprog/windows-data-types"], ["GetLastError", "https://learn.microsoft.com/windows/win32/api/errhandlingapi/nf-errhandlingapi-getlasterror"]]
+  },
+  {
+    id: "calling-winapi-python",
+    module: "foundations",
+    title: "Calling Windows APIs safely from Python",
+    lead: "Choose pywin32 or ctypes deliberately, translate the native contract into Python types, handle every documented result, and make cleanup unavoidable.",
+    core: [
+      "Prefer pywin32 when its wrapper clearly represents the operation. It usually converts Python strings and buffers, wraps handles, returns output values as Python objects, and raises pywintypes.error for many native failures. The Microsoft contract still defines access rights, flags, lifetime, and operating-system behavior.",
+      "Use ctypes when a wrapper is unavailable or when structure layout, pointer levels, callbacks, calling conventions, or the native ABI are part of the task. Declare argtypes and restype before calling, use the documented DLL and Unicode export, and keep any memory passed to native code alive for the required lifetime."
+    ],
+    mechanics: [
+      "Separate returned statuses from wrapper failures. WAIT_OBJECT_0 and WAIT_TIMEOUT are normal branches that code compares explicitly, while pywintypes.error means a wrapper could not return a normal result. With ctypes, test the exact native failure sentinel and capture last error immediately when the documentation says it is available.",
+      "Write ownership into the code structure. Put acquired handles in try/finally or a small context manager, use the matching release API, and never assume every handle is closed with the same function. Safe foreign-function code is complete only when success, alternate results, failure, and cleanup all have visible paths."
+    ],
+    windows: [
+      "Compare the pywin32 wrapper signature with the native declaration by meaning rather than spelling. A Python str may represent LPCWSTR, None may represent a permitted null pointer, and a PyHANDLE may own a native handle even though the surface types differ.",
+      "For ctypes, WinDLL selects the Windows calling convention. use_last_error=True preserves Windows error state around the foreign call. wintypes supplies many common declarations, while custom structures must still match field order, size, alignment, and pointer width."
+    ],
+    keys: ["Prefer pywin32 when it communicates the task clearly", "ctypes requires an exact ABI declaration", "Status values and exceptions are different control-flow mechanisms", "Cleanup belongs beside acquisition"],
+    apis: ["ctypes.WinDLL", "ctypes.get_last_error", "ctypes.WinError", "win32event.WaitForSingleObject", "win32api.CloseHandle"],
+    practice: { title: "Plan one safe call through both bindings", time: "25 min", intro: "Use an existing contract card to expose what pywin32 handles and what ctypes requires you to declare.", steps: ["Choose CreateFileW or another harmless API with a pywin32 wrapper.", "Map the native parameters and result branches to the pywin32 signature.", "Write pywin32 pseudocode with specific exception handling and deterministic cleanup.", "Declare the ctypes DLL, argtypes, restype, failure check, and error retrieval without calling it.", "Choose the clearer binding for this task and justify the extra risk if you select ctypes."] },
+    check: ["What should code do after WaitForSingleObject returns WAIT_TIMEOUT?", ["Treat it as successful acquisition", "Close the waited object immediately", "Follow the documented timeout branch", "Assume pywintypes.error was raised"], 2, "A timeout is a normal documented wait result. It should follow an explicit timeout path."],
+    sources: [["Python ctypes", "https://docs.python.org/3/library/ctypes.html"], ["GetLastError", "https://learn.microsoft.com/windows/win32/api/errhandlingapi/nf-errhandlingapi-getlasterror"]]
   },
   {
     id: "inspect-windows",

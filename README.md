@@ -18,7 +18,7 @@ Then open `http://localhost:8000`.
 
 - Responsive course homepage and ordered module list.
 - Overview page for every module.
-- All 61 lessons across the ten modules, in a complete reading order.
+- All 62 lessons across the ten modules, in a complete reading order.
 - Windows-specific explanations, API connections, and primary documentation for every lesson.
 - Interactive knowledge checks and guided investigations throughout the curriculum.
 - Downloadable Markdown worksheets for every investigation, plus lesson-specific starter files where available.
