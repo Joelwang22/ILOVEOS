@@ -31,7 +31,7 @@ The site should feel like a clear interactive textbook, not an academy, game, or
 - Lessons must teach the reasoning behind a concept, not merely state the correct definition or direct the learner to a reference page.
 - Paragraphs should contain enough explanation, cause and effect, and concrete examples to build understanding without repeating the same point or adding unrelated history.
 - Hard-to-visualise mechanisms should use a step-by-step execution trace, diagram, state transition, address map, ownership map, or worked example when that materially improves understanding.
-- Every step in a worked example must explain what happens, why the step is necessary, what state changes, and how the result can be verified.
+- Every meaningful transition in a worked example must make the action, causal reason, changed state, and verification clear, using the format that best fits the topic.
 - The pywin32 guide, Sysinternals toolbox, and external documentation support the lessons. They must not carry teaching that the lesson itself should provide.
 - Navigation and presentation remain simple and focused.
 
@@ -117,17 +117,31 @@ Depth is measured by whether the learner can explain, apply, debug, and extend t
 
 ### Worked example standard
 
-A worked example should make the learner's changing mental state visible:
+A worked example should make the learner's changing mental state visible, but it must not force every kind of reasoning into the same repeated card layout. The author must first identify what relationship the learner needs to follow, then select the smallest presentation that makes that relationship clear.
 
-1. State the question, starting state, and prediction.
-2. Perform one meaningful action.
-3. Explain why that action is required.
-4. Show the state or value produced by the action.
-5. Connect that result to the next step.
-6. Identify the expected failure or alternative branch when it matters.
-7. Finish by interpreting the complete result rather than stopping at successful execution.
+Use the following formats selectively:
 
-Code examples should grow in understandable stages. New lines should be highlighted or explained, and the completed program should not appear before the learner understands the pieces that make it work.
+- **Calculation:** show the given value, continuous working, substitutions, intermediate values, and final answer. The result of one line should visibly become the input to the next.
+- **Execution trace:** use a timeline when a request, thread, object, or value moves through components over time. Show the state after each meaningful transition.
+- **State transition:** emphasise before state, triggering action, after state, and the condition that permitted the transition.
+- **Comparison:** place alternatives side by side when the learning goal is to distinguish two bindings, security contexts, architectures, or strategies. Keep shared properties visually aligned.
+- **Decision path:** use a compact decision tree or ordered decision when the learner must select an API, access right, synchronization primitive, or recovery action.
+- **API contract:** organise inputs, parameter choices, returned result, failure rule, ownership, and cleanup around the lifecycle of one call.
+- **Result branch:** show named result values and their distinct branches when a status code, wait result, partial result, or sentinel controls the next action.
+- **Code construction:** grow code in understandable stages, explain only the new or changed lines, and place expected output beside the stage that produces it.
+
+Not every example needs numbered steps. Numbering should be reserved for a real sequence. A comparison may need aligned columns, a calculation may need uninterrupted working, and a decision may need branches instead.
+
+Regardless of format, the example must:
+
+1. State the problem and starting conditions clearly.
+2. Keep one dominant visual reading path.
+3. Show the important value, state, choice, or output rather than only describing it.
+4. Explain the causal link needed to understand the next part.
+5. Include alternative or failure behavior only when it changes the model or the required action.
+6. Finish with a clear answer, resulting state, or decision and one concise takeaway.
+
+Avoid repeating labels such as "Do", "Why", and "Result" on every row when hierarchy and placement already communicate their roles. Do not place cards inside cards merely to make sections look interactive. Secondary detail can use a restrained disclosure, while the essential reasoning remains visible.
 
 ### Diagram standard
 
@@ -507,7 +521,7 @@ A practice is considered covered only when the preceding lessons provide or demo
 - Resource ownership, lifetime, cleanup, and the consequences of incorrect cleanup.
 - Architecture, Unicode, calling-convention, and pointer-width considerations where relevant.
 - Expected failures and a method for diagnosing them.
-- Step-by-step explanations for the important transformations, API calls, and state changes in worked examples.
+- Clear explanations for the important transformations, API calls, decisions, comparisons, and state changes in worked examples.
 - A Sysinternals or equivalent observation workflow when Windows can expose useful evidence.
 - An integrated practice scaffold and enough guidance to begin safely, plus a downloadable code artifact when execution requires one.
 - An independent extension that proves the learner can transfer the method to a new requirement.
@@ -562,7 +576,7 @@ The eventual implementation should favour:
 - Responsive layouts.
 - Readable typography and code blocks.
 - Accessible keyboard navigation and colour contrast.
-- Reusable lesson, question, callout, code, worked-example, diagram, and integrated practice components.
+- Reusable lesson, question, callout, code, worked-example format, diagram, and integrated practice components.
 - Compact expected-outcome disclosures and static observation guidance for practices.
 - Content that remains easy to edit as the course evolves.
 
@@ -592,7 +606,7 @@ The existing 61 lesson pages form a complete curriculum map, but many are still 
 
 Status: completed on 22 August 2026.
 
-- Build the reusable integrated practice workspace, step-by-step worked-example component, diagram patterns, expected-outcome disclosures, observation guidance, and expandable hints.
+- Build the reusable integrated practice workspace, context-specific worked-example formats, diagram patterns, expected-outcome disclosures, observation guidance, and expandable hints.
 - Remove the separate worksheet download behavior.
 - Deepen all seven OS foundations lessons.
 - Give particular attention to CPU architecture, binary and hexadecimal reasoning, Windows architecture, system-call flow, and reading WinAPI documentation.

@@ -1562,7 +1562,7 @@ pre {
   background: linear-gradient(150deg, rgba(96,165,250,.065), rgba(13,17,24,.92) 48%);
 }
 .visual-head > span,
-.worked-head > span,
+.worked-format-head > span,
 .code-walkthrough-head > span {
   color: var(--blue);
   font-size: 9px;
@@ -1570,8 +1570,8 @@ pre {
   letter-spacing: .1em;
   text-transform: uppercase;
 }
-.visual-head h3, .worked-head h3, .code-walkthrough-head h3 { margin: 4px 0 6px; font-size: 19px; }
-.visual-head p, .worked-head p, .code-walkthrough-head p { margin: 0; color: var(--muted); font-size: 12px; }
+.visual-head h3, .worked-format-head h3, .code-walkthrough-head h3 { margin: 4px 0 6px; font-size: 19px; }
+.visual-head p, .worked-format-head p, .code-walkthrough-head p { margin: 0; color: var(--muted); font-size: 12px; }
 .visual-track { display: flex; align-items: stretch; margin-top: 22px; overflow-x: auto; padding-bottom: 4px; }
 .visual-unit { display: flex; min-width: 0; flex: 1 1 0; align-items: center; }
 .visual-node { min-width: 145px; height: 100%; flex: 1; padding: 15px; border: 1px solid var(--line); border-top: 2px solid var(--blue); border-radius: 9px; background: #0b1017; }
@@ -1593,19 +1593,100 @@ pre {
 .visual-layers .visual-link i::after { top: auto; right: -3px; bottom: 0; transform: rotate(135deg); }
 .lesson-visual figcaption { margin-top: 16px; padding-top: 13px; border-top: 1px solid var(--line); color: var(--muted-2); font-size: 10px; line-height: 1.55; }
 
-.worked-example { margin: 40px 0; overflow: hidden; border: 1px solid var(--line-bright); border-radius: 14px; background: rgba(17,22,31,.72); }
-.worked-head { padding: 21px 23px; border-bottom: 1px solid var(--line); background: rgba(167,139,250,.045); }
-.worked-head > span { color: var(--violet); }
-.worked-steps { margin: 0; padding: 0; list-style: none; }
-.worked-steps > li { display: grid; grid-template-columns: 42px 1fr; gap: 14px; padding: 20px 23px; }
-.worked-steps > li + li { margin: 0; border-top: 1px solid var(--line); }
-.worked-number { display: grid; width: 32px; height: 32px; place-items: center; border-radius: 8px; color: var(--violet); background: var(--violet-soft); font: 700 9px/1 "Cascadia Code", Consolas, monospace; }
-.worked-steps h4 { margin: 1px 0 8px; color: #d8e0ea; font-size: 14px; }
-.worked-steps p { margin: 5px 0; font-size: 12px; line-height: 1.65; }
-.worked-steps pre, .code-stage pre { margin: 12px 0 0; padding: 14px; border: 1px solid var(--line); border-radius: 8px; background: #080c12; overflow-x: auto; }
-.worked-steps code, .code-stage code { color: #c4b5fd; font: 11px/1.65 "Cascadia Code", Consolas, monospace; white-space: pre; }
-.worked-result { color: #9ad6c3 !important; }
-.worked-conclusion { margin: 0; padding: 16px 22px; border-top: 1px solid rgba(84,214,155,.16); background: rgba(84,214,155,.04); font-size: 12px !important; }
+.worked-format { margin: 42px 0; }
+.worked-format-head { margin-bottom: 21px; padding-bottom: 16px; border-bottom: 1px solid var(--line); }
+.worked-format-head > span { color: var(--violet); }
+.worked-takeaway { margin-top: 18px; padding: 14px 16px; border-left: 2px solid var(--green); background: rgba(84,214,155,.035); }
+.worked-takeaway span { display: block; margin-bottom: 3px; color: var(--green); font-size: 9px; font-weight: 750; letter-spacing: .08em; text-transform: uppercase; }
+.worked-takeaway p { margin: 0; color: #aebdce; font-size: 12px; line-height: 1.65; }
+
+/* Calculations keep the working in one continuous reading path. */
+.calculation-working { margin: 0; padding: 0; border-left: 1px solid var(--line-bright); list-style: none; }
+.calculation-working > li { display: grid; grid-template-columns: minmax(170px, .55fr) minmax(0, 1.45fr); column-gap: 24px; margin: 0; padding: 18px 0 18px 20px; }
+.calculation-working > li + li { border-top: 1px solid var(--line); }
+.calculation-step { grid-row: 1 / span 3; }
+.calculation-step span { display: block; margin-bottom: 5px; color: var(--violet); font: 700 9px/1 "Cascadia Code", Consolas, monospace; }
+.calculation-step h4 { margin: 0; color: #d8e0ea; font-size: 13px; line-height: 1.45; }
+.calculation-action { margin: 0 0 9px !important; font-size: 12px !important; }
+.calculation-line { padding: 11px 13px; border-left: 2px solid var(--violet); background: rgba(167,139,250,.055); }
+.calculation-line code { color: #d8d0fa; font: 600 12px/1.6 "Cascadia Code", Consolas, monospace; }
+.calculation-explanation { margin: 8px 0 0 !important; color: var(--muted) !important; font-size: 11px !important; }
+
+/* Traces emphasize state changing over time. */
+.trace-path { position: relative; margin: 0; padding: 0; list-style: none; }
+.trace-path::before { position: absolute; top: 16px; bottom: 16px; left: 15px; width: 1px; background: var(--line-bright); content: ""; }
+.trace-path > li { position: relative; display: grid; grid-template-columns: 32px 1fr; gap: 16px; margin: 0; padding: 0 0 22px; }
+.trace-path > li:last-child { padding-bottom: 0; }
+.trace-marker { z-index: 1; display: grid; width: 31px; height: 31px; place-items: center; border: 1px solid rgba(96,165,250,.36); border-radius: 50%; color: var(--blue); background: var(--bg); font: 700 9px/1 "Cascadia Code", Consolas, monospace; }
+.trace-copy { padding: 2px 0 0; }
+.trace-copy h4 { margin: 0 0 5px; font-size: 13px; }
+.trace-copy > p { margin: 0 0 9px; font-size: 12px; }
+.trace-copy > small { display: block; margin-top: 7px; color: var(--muted-2); font-size: 10px; line-height: 1.55; }
+.trace-state { display: flex; align-items: baseline; gap: 9px; padding: 9px 11px; border-left: 2px solid var(--green); background: rgba(84,214,155,.035); }
+.trace-state span { color: var(--green); font-size: 8px; font-weight: 750; letter-spacing: .07em; text-transform: uppercase; }
+.trace-state strong { color: #a8cbbb; font-size: 11px; font-weight: 550; }
+
+/* Comparisons align the same questions instead of narrating two separate runs. */
+.comparison-columns { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+.comparison-column { border-top: 2px solid var(--blue); background: rgba(17,22,31,.6); }
+.comparison-tone-2 { border-top-color: var(--violet); }
+.comparison-column h4 { margin: 0; padding: 13px 15px; border-bottom: 1px solid var(--line); font-size: 13px; }
+.comparison-column dl { margin: 0; }
+.comparison-column dl > div { padding: 11px 15px; }
+.comparison-column dl > div + div { border-top: 1px solid var(--line); }
+.comparison-column dt { color: var(--muted-2); font-size: 8px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+.comparison-column dd { margin: 3px 0 0; color: #b8c4d3; font-size: 11px; line-height: 1.5; }
+.comparison-shared { margin-top: 12px; padding: 13px 15px; border: 1px solid var(--line); }
+.comparison-shared span { color: var(--green); font-size: 9px; font-weight: 750; text-transform: uppercase; }
+.comparison-shared p { margin: 4px 0 0; font-size: 11px; }
+
+/* Decisions show the narrowing logic without pretending each item is system state. */
+.decision-path { margin: 0; padding: 0; list-style: none; }
+.decision-path > li { display: grid; grid-template-columns: 28px 1fr; gap: 13px; margin: 0; padding: 15px 0; }
+.decision-path > li + li { border-top: 1px solid var(--line); }
+.decision-index { color: var(--amber); font: 700 10px/1.5 "Cascadia Code", Consolas, monospace; }
+.decision-path h4 { margin: 0 0 6px; font-size: 13px; }
+.decision-path p { margin: 0; font-size: 11px; }
+.decision-choice { margin-bottom: 5px !important; color: #d3c587 !important; font-weight: 600; }
+.decision-path small { display: block; margin-top: 6px; color: var(--muted-2); font-size: 10px; }
+
+/* API contracts align one call's responsibilities. */
+.contract-parts { border: 1px solid var(--line-bright); }
+.contract-parts > section { display: grid; grid-template-columns: minmax(180px, .55fr) minmax(0, 1.45fr); }
+.contract-parts > section + section { border-top: 1px solid var(--line); }
+.contract-key, .contract-value { padding: 15px 17px; }
+.contract-key { border-right: 1px solid var(--line); background: rgba(167,139,250,.035); }
+.contract-key span { display: block; margin-bottom: 5px; color: var(--violet); font: 700 8px/1 "Cascadia Code", Consolas, monospace; }
+.contract-key h4 { margin: 0; font-size: 12px; }
+.contract-value p { margin: 0 0 6px; font-size: 11px; }
+.contract-value small { display: block; color: var(--muted-2); font-size: 10px; line-height: 1.55; }
+.contract-value strong { display: block; margin-top: 8px; color: #9ad6c3; font-size: 10px; font-weight: 600; }
+
+/* Result branches make mutually exclusive outcomes visible at once. */
+.branch-input { display: grid; grid-template-columns: 120px 1fr; align-items: center; margin-bottom: 12px; border: 1px solid var(--line); }
+.branch-input > span { padding: 12px; color: var(--muted-2); font-size: 9px; text-transform: uppercase; }
+.branch-input pre { margin: 0; padding: 12px 14px; border-left: 1px solid var(--line); background: #090d13; overflow-x: auto; }
+.branch-input code { color: #c4b5fd; font: 11px/1.6 "Cascadia Code", Consolas, monospace; }
+.branch-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+.branch-card { padding: 14px 15px; border: 1px solid var(--line); border-top: 2px solid var(--green); background: rgba(17,22,31,.62); }
+.branch-card.branch-tone-2 { border-top-color: var(--amber); }
+.branch-card.branch-tone-3 { border-top-color: var(--violet); }
+.branch-card.branch-tone-4 { border-top-color: var(--rose); }
+.branch-card > code { color: #b5e3cd; font: 650 11px/1.5 "Cascadia Code", Consolas, monospace; }
+.branch-card p { margin: 7px 0; font-size: 11px; }
+.branch-card div { padding-top: 8px; border-top: 1px solid var(--line); color: var(--muted); font-size: 10px; line-height: 1.55; }
+
+/* State layouts remain available for before, trigger, after relationships. */
+.state-path { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; }
+.state-path article { padding: 14px; border-left: 2px solid var(--blue); background: rgba(17,22,31,.6); }
+.state-path article > span { color: var(--blue); font-size: 9px; font-weight: 750; text-transform: uppercase; }
+.state-path article p { margin: 6px 0; font-size: 11px; }
+.state-path article strong, .state-path article small { display: block; font-size: 10px; line-height: 1.55; }
+.state-path article strong { color: #9ad6c3; }
+.state-path article small { margin-top: 6px; color: var(--muted-2); }
+
+.code-stage pre { margin: 12px 0 0; padding: 14px; border: 1px solid var(--line); border-radius: 8px; background: #080c12; overflow-x: auto; }
+.code-stage code { color: #c4b5fd; font: 11px/1.65 "Cascadia Code", Consolas, monospace; white-space: pre; }
 
 .code-walkthrough { margin: 38px 0; overflow: hidden; border: 1px solid var(--line-bright); border-radius: 14px; background: rgba(12,16,23,.88); }
 .code-walkthrough-head { padding: 21px 23px; border-bottom: 1px solid var(--line); }
@@ -2170,6 +2251,13 @@ pre {
   .visual-link i { width: 1px; height: 18px; }
   .visual-link i::after { top: auto; right: -3px; bottom: 0; transform: rotate(135deg); }
   .code-stage { grid-template-columns: 1fr; }
+  .calculation-working > li { grid-template-columns: 1fr; gap: 9px; }
+  .calculation-step { grid-row: auto; }
+  .comparison-columns, .branch-grid { grid-template-columns: 1fr; }
+  .contract-parts > section { grid-template-columns: 1fr; }
+  .contract-key { border-right: 0; border-bottom: 1px solid var(--line); }
+  .branch-input { grid-template-columns: 1fr; }
+  .branch-input pre { border-top: 1px solid var(--line); border-left: 0; }
 }
 
 @media (max-width: 480px) {
@@ -2183,8 +2271,8 @@ pre {
   .feature-card { min-height: 330px; }
   .tool-orbit { opacity: .65; }
   .phase-heading { margin-top: 64px; }
-  .lesson-visual, .worked-example, .practice-workspace { margin-inline: -4px; }
-  .worked-steps > li, .practice-steps > li { grid-template-columns: 34px 1fr; padding-inline: 17px; }
+  .lesson-visual, .worked-format, .practice-workspace { margin-inline: -4px; }
+  .practice-steps > li { grid-template-columns: 34px 1fr; padding-inline: 17px; }
   .practice-intro, .cleanup-block { padding-inline: 17px; }
   .practice-expectation { margin-inline: 17px; }
 }

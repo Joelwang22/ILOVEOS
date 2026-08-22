@@ -228,25 +228,111 @@ handle = <span class="code-function">win32process.GetCurrentProcess</span>()
       </figure>`;
   }
 
-  function renderWorkedExamples(examples) {
-    return (examples || []).map((example) => `
-      <section class="worked-example">
-        <div class="worked-head"><span>Worked example</span><h3>${escapeHtml(example.title)}</h3><p>${escapeHtml(example.prompt)}</p></div>
-        <ol class="worked-steps">
-          ${example.steps.map((step, index) => `
-            <li>
-              <span class="worked-number">${String(index + 1).padStart(2, "0")}</span>
-              <div>
-                <h4>${escapeHtml(step.title)}</h4>
-                <p><strong>Do:</strong> ${escapeHtml(step.action)}</p>
-                <p><strong>Why:</strong> ${escapeHtml(step.why)}</p>
-                ${step.result ? `<p class="worked-result"><strong>Result:</strong> ${escapeHtml(step.result)}</p>` : ""}
-                ${step.code ? `<pre><code>${escapeHtml(step.code)}</code></pre>` : ""}
-              </div>
-            </li>`).join("")}
+  function workedHeader(example, label) {
+    return `<header class="worked-format-head"><span>${escapeHtml(label)}</span><h3>${escapeHtml(example.title)}</h3><p>${escapeHtml(example.prompt)}</p></header>`;
+  }
+
+  function workedTakeaway(example, label = "Key insight") {
+    return example.conclusion ? `<footer class="worked-takeaway"><span>${escapeHtml(label)}</span><p>${escapeHtml(example.conclusion)}</p></footer>` : "";
+  }
+
+  function renderCalculationExample(example) {
+    return `
+      <section class="worked-format worked-calculation">
+        ${workedHeader(example, "Worked calculation")}
+        <ol class="calculation-working">
+          ${example.steps.map((step, index) => `<li>
+            <div class="calculation-step"><span>${String(index + 1).padStart(2, "0")}</span><h4>${escapeHtml(step.title)}</h4></div>
+            <p class="calculation-action">${escapeHtml(step.action)}</p>
+            ${step.result ? `<div class="calculation-line"><code>${escapeHtml(step.result)}</code></div>` : ""}
+            <p class="calculation-explanation">${escapeHtml(step.why)}</p>
+          </li>`).join("")}
         </ol>
-        ${example.conclusion ? `<p class="worked-conclusion"><strong>What this proves:</strong> ${escapeHtml(example.conclusion)}</p>` : ""}
-      </section>`).join("");
+        ${workedTakeaway(example, "Answer and insight")}
+      </section>`;
+  }
+
+  function renderTraceExample(example) {
+    return `
+      <section class="worked-format worked-trace">
+        ${workedHeader(example, "Execution trace")}
+        <ol class="trace-path">
+          ${example.steps.map((step, index) => `<li>
+            <span class="trace-marker">${index + 1}</span>
+            <div class="trace-copy"><h4>${escapeHtml(step.title)}</h4><p>${escapeHtml(step.action)}</p>${step.result ? `<div class="trace-state"><span>State after</span><strong>${escapeHtml(step.result)}</strong></div>` : ""}<small>${escapeHtml(step.why)}</small></div>
+          </li>`).join("")}
+        </ol>
+        ${workedTakeaway(example, "Resulting model")}
+      </section>`;
+  }
+
+  function renderComparisonExample(example) {
+    const columns = example.columns || [];
+    return `
+      <section class="worked-format worked-comparison">
+        ${workedHeader(example, "Side-by-side comparison")}
+        <div class="comparison-columns">
+          ${columns.map((column, columnIndex) => `<article class="comparison-column comparison-tone-${columnIndex + 1}"><h4>${escapeHtml(column.title)}</h4><dl>${column.rows.map(([term, value]) => `<div><dt>${escapeHtml(term)}</dt><dd>${escapeHtml(value)}</dd></div>`).join("")}</dl></article>`).join("")}
+        </div>
+        ${example.shared ? `<div class="comparison-shared"><span>What remains the same</span><p>${escapeHtml(example.shared)}</p></div>` : ""}
+        ${workedTakeaway(example)}
+      </section>`;
+  }
+
+  function renderDecisionExample(example) {
+    return `
+      <section class="worked-format worked-decision">
+        ${workedHeader(example, "Decision guide")}
+        <ol class="decision-path">
+          ${example.steps.map((step, index) => `<li><span class="decision-index">${index + 1}</span><div><h4>${escapeHtml(step.title)}</h4><p class="decision-choice">${escapeHtml(step.action)}</p><p>${escapeHtml(step.why)}</p>${step.result ? `<small>${escapeHtml(step.result)}</small>` : ""}</div></li>`).join("")}
+        </ol>
+        ${workedTakeaway(example, "Decision")}
+      </section>`;
+  }
+
+  function renderContractExample(example) {
+    return `
+      <section class="worked-format worked-contract">
+        ${workedHeader(example, "API contract example")}
+        <div class="contract-parts">
+          ${example.steps.map((step, index) => `<section><div class="contract-key"><span>${String(index + 1).padStart(2, "0")}</span><h4>${escapeHtml(step.title)}</h4></div><div class="contract-value"><p>${escapeHtml(step.action)}</p><small>${escapeHtml(step.why)}</small>${step.result ? `<strong>${escapeHtml(step.result)}</strong>` : ""}</div></section>`).join("")}
+        </div>
+        ${workedTakeaway(example, "Complete contract")}
+      </section>`;
+  }
+
+  function renderBranchExample(example) {
+    return `
+      <section class="worked-format worked-branch">
+        ${workedHeader(example, "Result branches")}
+        ${example.setupCode ? `<div class="branch-input"><span>Returned status</span><pre><code>${escapeHtml(example.setupCode)}</code></pre></div>` : ""}
+        <div class="branch-grid">
+          ${(example.branches || []).map((branch, index) => `<article class="branch-card branch-tone-${(index % 4) + 1}"><code>${escapeHtml(branch.value)}</code><p>${escapeHtml(branch.meaning)}</p><div>${escapeHtml(branch.action)}</div></article>`).join("")}
+        </div>
+        ${workedTakeaway(example, "Handling rule")}
+      </section>`;
+  }
+
+  function renderStateExample(example) {
+    return `
+      <section class="worked-format worked-state">
+        ${workedHeader(example, "State transition")}
+        <div class="state-path">${example.steps.map((step) => `<article><span>${escapeHtml(step.title)}</span><p>${escapeHtml(step.action)}</p>${step.result ? `<strong>${escapeHtml(step.result)}</strong>` : ""}<small>${escapeHtml(step.why)}</small></article>`).join("")}</div>
+        ${workedTakeaway(example, "Resulting state")}
+      </section>`;
+  }
+
+  function renderWorkedExamples(examples) {
+    const renderers = {
+      calculation: renderCalculationExample,
+      trace: renderTraceExample,
+      comparison: renderComparisonExample,
+      decision: renderDecisionExample,
+      contract: renderContractExample,
+      branch: renderBranchExample,
+      state: renderStateExample
+    };
+    return (examples || []).map((example) => (renderers[example.type] || renderDecisionExample)(example)).join("");
   }
 
   function renderCodeWalkthroughs(walkthroughs) {

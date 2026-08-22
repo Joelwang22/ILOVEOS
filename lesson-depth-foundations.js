@@ -49,6 +49,7 @@ window.ILOVEOS_LESSON_DEPTH = {
     ],
     workedExamples: [
       {
+        type: "calculation",
         title: "Decode a hexadecimal value without guessing",
         prompt: "Convert 0x3A into binary and decimal, then explain why the representation is useful.",
         steps: [
@@ -59,6 +60,7 @@ window.ILOVEOS_LESSON_DEPTH = {
         conclusion: "Binary, decimal, and hexadecimal are different notations for the same bit pattern. Context gives that pattern meaning."
       },
       {
+        type: "calculation",
         title: "Calculate a 32-bit address range",
         prompt: "Explain why a 32-bit byte address is commonly associated with 4 GiB.",
         steps: [
@@ -160,6 +162,7 @@ window.ILOVEOS_LESSON_DEPTH = {
     ],
     workedExamples: [
       {
+        type: "trace",
         title: "Follow an application opening a file",
         prompt: "A text editor asks to open C:\\notes\\plan.txt. What work belongs to the operating system?",
         steps: [
@@ -269,6 +272,7 @@ window.ILOVEOS_LESSON_DEPTH = {
     ],
     workedExamples: [
       {
+        type: "trace",
         title: "Trace CreateFileW through the map",
         prompt: "A process opens an existing text file for reading. Follow the important responsibilities without claiming every internal implementation detail.",
         steps: [
@@ -358,8 +362,30 @@ window.ILOVEOS_LESSON_DEPTH = {
     ],
     workedExamples: [
       {
+        type: "comparison",
         title: "Elevation changes access, not execution mode",
         prompt: "The same Python script attempts to open a protected process from a standard terminal and an elevated terminal.",
+        columns: [
+          {
+            title: "Standard launch",
+            rows: [
+              ["Python code", "User mode"],
+              ["Typical integrity", "Medium"],
+              ["Token", "Standard user authorization context"],
+              ["OpenProcess result", "May be denied for a protected target"]
+            ]
+          },
+          {
+            title: "Elevated launch",
+            rows: [
+              ["Python code", "User mode"],
+              ["Typical integrity", "High"],
+              ["Token", "Elevated groups and privilege state"],
+              ["OpenProcess result", "May gain access, but target protection still applies"]
+            ]
+          }
+        ],
+        shared: "Both requests cross into kernel mode through a controlled system call. Windows evaluates the different caller tokens against the same requested access and target policy.",
         steps: [
           { title: "Run as a standard process", action: "The user-mode script calls OpenProcess with requested rights.", why: "The kernel must compare the caller token and target protection with the requested access.", result: "The call may fail with Access Denied." },
           { title: "Run an elevated copy", action: "The same user-mode code now has a higher-integrity token and may hold additional enabled privileges.", why: "Elevation changes authorization inputs, not processor mode for application instructions.", result: "Some targets may now open, while protected targets can still reject the request." },
@@ -454,6 +480,7 @@ window.ILOVEOS_LESSON_DEPTH = {
     ],
     workedExamples: [
       {
+        type: "decision",
         title: "Choose between pywin32 and ctypes",
         prompt: "You need a Windows function in Python. Make the choice from requirements instead of personal preference.",
         steps: [
@@ -568,6 +595,7 @@ window.ILOVEOS_LESSON_DEPTH = {
     ],
     workedExamples: [
       {
+        type: "contract",
         title: "Read CreateFileW before calling it",
         prompt: "You want to open an existing text file for read access without preventing another reader or writer.",
         steps: [
@@ -579,8 +607,16 @@ window.ILOVEOS_LESSON_DEPTH = {
         conclusion: "The correct call is defined by behavior, types, branching, and cleanup together."
       },
       {
+        type: "branch",
         title: "Handle wait results without treating them as Boolean",
         prompt: "A thread waits up to five seconds for an event handle using win32event.WaitForSingleObject.",
+        setupCode: "result = win32event.WaitForSingleObject(event, 5000)",
+        branches: [
+          { value: "WAIT_OBJECT_0", meaning: "The event became signaled before the timeout.", action: "Run the signaled path. Do not test this value with bool(), because it is numerically zero." },
+          { value: "WAIT_TIMEOUT", meaning: "Five seconds elapsed without the event becoming signaled.", action: "Run the timeout path. This is an expected result, not successful acquisition and not necessarily an exception." },
+          { value: "WAIT_ABANDONED", meaning: "This result applies to a mutex whose owning thread exited without releasing it.", action: "Treat the protected state as potentially inconsistent. An event wait does not normally produce this branch." },
+          { value: "pywintypes.error", meaning: "The wrapper could not return a normal wait status because the underlying call failed.", action: "Use the Windows error code and function context, then clean up without pretending that a wait result was returned." }
+        ],
         steps: [
           { title: "Store the returned status", action: "Assign the result instead of placing the call directly inside a generic truth test.", why: "WAIT_OBJECT_0 is numerically zero, so bool(result) would be false even though the wait succeeded.", code: "result = win32event.WaitForSingleObject(event, 5000)" },
           { title: "Name expected outcomes", action: "Compare explicitly with WAIT_OBJECT_0 and WAIT_TIMEOUT.", why: "Signal and timeout are different normal control-flow outcomes, not success versus exception.", code: "if result == win32event.WAIT_OBJECT_0:\n    handle_signal()\nelif result == win32event.WAIT_TIMEOUT:\n    handle_timeout()" },
@@ -697,6 +733,7 @@ window.ILOVEOS_LESSON_DEPTH = {
     ],
     workedExamples: [
       {
+        type: "trace",
         title: "Find which process opened a known file",
         prompt: "A controlled test application opens C:\\Lab\\sample.txt. Build a conclusion from trace and snapshot evidence.",
         steps: [
