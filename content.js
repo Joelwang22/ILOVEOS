@@ -6,17 +6,19 @@ window.ILOVEOS_DATA = {
       title: "OS foundations",
       kicker: "Start with the machine",
       description: "Build the mental model: hardware, abstraction, system calls, and the boundary between user mode and the Windows kernel.",
-      lessons: 5,
+      lessons: 7,
       lessonTitles: [
+        "CPU architecture and data representation",
         "Why does an operating system exist?",
         "How Windows is organised",
         "User mode and kernel mode",
         "System calls and the Win32 API",
+        "How to read and call a Windows API",
         "Inspecting the operating system"
       ],
-      time: "70 min",
+      time: "110 min",
       accent: "violet",
-      topics: ["Computer organisation", "Why an OS exists", "Windows NT", "User vs kernel mode", "System calls"],
+      topics: ["CPU architecture", "Binary and hexadecimal", "Why an OS exists", "Windows NT", "User vs kernel mode", "System calls", "WinAPI documentation"],
       tools: ["Process Explorer"],
       python: ["win32api", "ctypes"]
     },

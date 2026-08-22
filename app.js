@@ -2,6 +2,7 @@
   "use strict";
 
   const data = window.ILOVEOS_DATA;
+  const lessons = window.ILOVEOS_LESSONS || [];
   const referenceData = window.ILOVEOS_REFERENCE;
   const apiSignatures = window.ILOVEOS_API_SIGNATURES || {};
   const main = document.querySelector("#main-content");
@@ -28,13 +29,25 @@
     return `style="${property}: var(--${name})"`;
   }
 
+  function moduleLessons(moduleId) {
+    return lessons.filter((lesson) => lesson.module === moduleId);
+  }
+
+  function findLesson(id) {
+    return lessons.find((lesson) => lesson.id === id || (lesson.aliases || []).includes(id)) || lessons[0];
+  }
+
+  function firstLessonId(moduleId) {
+    return moduleLessons(moduleId)[0]?.id || lessons[0]?.id || "cpu-architecture-data";
+  }
+
   function renderHome() {
     main.innerHTML = `
       <div class="content-wrap">
         <section class="hero">
           <h1>Understand what Windows is actually doing.</h1>
           <div class="hero-actions">
-            <a class="button primary" href="#/lesson/os-foundations">Start the first lesson ${icons.arrow}</a>
+            <a class="button primary" href="#/lesson/${firstLessonId("foundations")}">Start the first lesson ${icons.arrow}</a>
             <a class="button" href="#/lessons">View all lessons</a>
           </div>
         </section>
@@ -114,14 +127,14 @@ handle = <span class="code-function">win32process.GetCurrentProcess</span>()
               </a>
               <ol>
                 ${module.lessonTitles.map((title, index) => {
-                  const isAvailable = module.id === "foundations" && index === 0;
-                  const href = isAvailable ? "#/lesson/os-foundations" : `#/module/${module.id}`;
+                  const lesson = moduleLessons(module.id)[index];
+                  const href = lesson ? `#/lesson/${lesson.id}` : `#/module/${module.id}`;
                   return `
                     <li>
-                      <a class="lesson-index-row${isAvailable ? " is-available" : ""}" href="${href}">
+                      <a class="lesson-index-row${lesson ? " is-available" : ""}" href="${href}">
                         <span class="lesson-sequence">${module.number}.${String(index + 1).padStart(2, "0")}</span>
                         <strong>${title}</strong>
-                        <span class="lesson-availability${isAvailable ? " available" : ""}">${isAvailable ? "Read lesson" : "Module outline"}</span>
+                        <span class="lesson-availability${lesson ? " available" : ""}">${lesson ? "Read lesson" : "Module outline"}</span>
                         <span class="lesson-row-arrow" aria-hidden="true">→</span>
                       </a>
                     </li>`;
@@ -148,7 +161,7 @@ handle = <span class="code-function">win32process.GetCurrentProcess</span>()
             <p class="hero-lead">${module.description}</p>
             <div class="topic-chips">${module.topics.map((topic) => `<span class="topic-chip">${topic}</span>`).join("")}</div>
             <div class="hero-actions">
-              ${module.id === "foundations" ? `<a class="button primary" href="#/lesson/os-foundations">Begin module ${icons.arrow}</a>` : `<span class="button" aria-disabled="true">Lesson content is next to be authored</span>`}
+              <a class="button primary" href="#/lesson/${firstLessonId(module.id)}">Begin module ${icons.arrow}</a>
             </div>
           </div>
           <aside class="module-facts" aria-label="Module details">
@@ -162,16 +175,177 @@ handle = <span class="code-function">win32process.GetCurrentProcess</span>()
         <section class="lesson-outline">
           <h2>Lesson sequence</h2>
           ${lessonNames.map((lesson, index) => `
-            <div class="outline-item">
+            <a class="outline-item" href="#/lesson/${moduleLessons(module.id)[index]?.id || firstLessonId(module.id)}">
               <span class="outline-number">${String(index + 1).padStart(2, "0")}</span>
               <strong>${lesson.title}</strong>
               <small>${lesson.type}</small>
-            </div>`).join("")}
+            </a>`).join("")}
         </section>
       </div>`;
   }
 
-  function renderLesson() {
+  function lessonApiChip(api) {
+    const featureName = api.includes(".") ? api.split(".").pop() : api;
+    const isInGuide = referenceData.pywin32Modules.some((module) =>
+      module.features.some((feature) => feature.name.toLowerCase() === featureName.toLowerCase())
+    );
+    if (!isInGuide) return `<span class="lesson-api-chip"><code>${escapeHtml(api)}</code></span>`;
+    return `<a class="lesson-api-chip linked" href="#/reference/pywin32?q=${encodeURIComponent(featureName)}&api=${encodeURIComponent(featureName)}"><code>${escapeHtml(api)}</code><span>Open guide</span></a>`;
+  }
+
+  function renderParagraphs(paragraphs) {
+    return paragraphs.map((paragraph) => `<p>${escapeHtml(paragraph)}</p>`).join("");
+  }
+
+  function renderLesson(id) {
+    const lesson = findLesson(id);
+    const module = data.modules.find((item) => item.id === lesson.module) || data.modules[0];
+    const moduleLessonList = moduleLessons(module.id);
+    const moduleIndex = moduleLessonList.indexOf(lesson);
+    const allIndex = lessons.indexOf(lesson);
+    const previous = lessons[allIndex - 1];
+    const next = lessons[allIndex + 1];
+    const optionLetters = ["A", "B", "C", "D", "E"];
+    const sections = [
+      ["core", "The core idea"],
+      ["mechanics", "How it works"],
+      ["windows", "Windows in practice"],
+      ["investigation", "Guided investigation"],
+      ["check", "Check your model"],
+      ["summary", "What to take forward"]
+    ];
+
+    main.innerHTML = `
+      <div class="content-wrap lesson-wrap">
+        <div class="lesson-page">
+          <article class="lesson-copy">
+            <div class="breadcrumb"><span><a href="#/">Course</a></span><span><a href="#/module/${module.id}">${escapeHtml(module.title)}</a></span><span>Lesson ${moduleIndex + 1}</span></div>
+            <div class="lesson-position">Module ${module.number}, lesson ${String(moduleIndex + 1).padStart(2, "0")} of ${moduleLessonList.length}</div>
+            <h1>${escapeHtml(lesson.title)}</h1>
+            <p class="lesson-lead">${escapeHtml(lesson.lead)}</p>
+
+            <section id="core">
+              <h2>The core idea</h2>
+              ${renderParagraphs(lesson.core)}
+            </section>
+
+            <section id="mechanics">
+              <h2>How it works</h2>
+              ${renderParagraphs(lesson.mechanics)}
+            </section>
+
+            <section id="windows">
+              <h2>Windows in practice</h2>
+              ${renderParagraphs(lesson.windows)}
+              <div class="lesson-api-panel">
+                <span>APIs and concepts to recognise</span>
+                <div>${lesson.apis.map(lessonApiChip).join("")}</div>
+              </div>
+            </section>
+
+            <section id="investigation">
+              <h2>Guided investigation</h2>
+              <div class="lab-card">
+                <div class="lab-head">
+                  <div><small>Practice</small><h3>${escapeHtml(lesson.practice.title)}</h3></div>
+                  <div class="lab-actions">
+                    ${lesson.practice.download ? `<a class="download-button" href="${escapeHtml(lesson.practice.download[0])}" download="${escapeHtml(lesson.practice.download[1])}">
+                      <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 3v12m-5-5 5 5 5-5M5 20h14"/></svg><span>Download starter</span></a>` : ""}
+                    <button class="download-button" type="button" data-lesson-download="${escapeHtml(lesson.id)}">
+                      <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 3v12m-5-5 5 5 5-5M5 20h14"/></svg><span>Download worksheet</span>
+                    </button>
+                    <span class="lab-time">${escapeHtml(lesson.practice.time)}</span>
+                  </div>
+                </div>
+                <div class="lab-body">
+                  <p>${escapeHtml(lesson.practice.intro)}</p>
+                  <ol>${lesson.practice.steps.map((step) => `<li>${escapeHtml(step)}</li>`).join("")}</ol>
+                </div>
+              </div>
+            </section>
+
+            <section id="check">
+              <h2>Check your model</h2>
+              <div class="quiz-card" data-answer="${optionLetters[lesson.check[2]].toLowerCase()}">
+                <h3>${escapeHtml(lesson.check[0])}</h3>
+                <div class="quiz-options">
+                  ${lesson.check[1].map((option, index) => `<button class="quiz-option" data-option="${optionLetters[index].toLowerCase()}"><span class="option-letter">${optionLetters[index]}</span>${escapeHtml(option)}</button>`).join("")}
+                </div>
+                <p class="quiz-feedback">${escapeHtml(lesson.check[3])}</p>
+              </div>
+            </section>
+
+            <section id="summary">
+              <h2>What to take forward</h2>
+              <ul>${lesson.keys.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>
+              <div class="lesson-sources"><span>Continue with primary documentation</span>${lesson.sources.map(([label, url]) => `<a href="${escapeHtml(url)}" target="_blank" rel="noreferrer">${escapeHtml(label)} <span aria-hidden="true">&#8599;</span></a>`).join("")}</div>
+            </section>
+
+            <nav class="lesson-footer-nav" aria-label="Lesson navigation">
+              ${previous ? `<a class="lesson-nav-card" href="#/lesson/${previous.id}">Previous lesson<strong>${escapeHtml(previous.title)}</strong></a>` : `<a class="lesson-nav-card" href="#/module/${module.id}">Module overview<strong>${escapeHtml(module.title)}</strong></a>`}
+              ${next ? `<a class="lesson-nav-card" href="#/lesson/${next.id}">Next lesson<strong>${escapeHtml(next.title)}</strong></a>` : `<a class="lesson-nav-card" href="#/lessons">Course index<strong>All lessons</strong></a>`}
+            </nav>
+          </article>
+
+          <aside class="lesson-aside">
+            <nav class="on-page" aria-label="On this page">
+              <p>On this page</p>
+              ${sections.map(([target, title]) => `<a href="#/lesson/${lesson.id}" data-scroll-target="${target}">${title}</a>`).join("")}
+            </nav>
+          </aside>
+        </div>
+      </div>`;
+
+    wireQuizzes();
+    wireLessonDownloads(lesson, module);
+  }
+
+  function wireLessonDownloads(lesson, module) {
+    document.querySelectorAll(`[data-lesson-download="${lesson.id}"]`).forEach((button) => {
+      button.addEventListener("click", () => {
+        const worksheet = [
+          `# ${lesson.title}`,
+          "",
+          `Module ${module.number}: ${module.title}`,
+          "",
+          `Goal: ${lesson.practice.intro}`,
+          "",
+          "## Before you begin",
+          "",
+          "Write your prediction and the evidence that would prove or disprove it.",
+          "",
+          "## Steps",
+          "",
+          ...lesson.practice.steps.map((step, index) => `${index + 1}. ${step}`),
+          "",
+          "## APIs and concepts",
+          "",
+          ...lesson.apis.map((api) => `- ${api}`),
+          "",
+          "## Evidence",
+          "",
+          "Record PIDs, TIDs, handles, paths, timestamps, return values, error codes, and screenshots that matter.",
+          "",
+          "## Explanation",
+          "",
+          "What happened, why did Windows behave that way, and what does the evidence not prove?",
+          "",
+          "## Cleanup",
+          "",
+          "List every handle, mapping, process, file, Registry value, or configuration change that must be released or restored.",
+          ""
+        ].join("\n");
+        const url = URL.createObjectURL(new Blob([worksheet], { type: "text/markdown;charset=utf-8" }));
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `${lesson.id}-worksheet.md`;
+        link.click();
+        URL.revokeObjectURL(url);
+      });
+    });
+  }
+
+  function renderLegacyLesson() {
     main.innerHTML = `
       <div class="content-wrap lesson-wrap">
         <div class="lesson-page">
@@ -490,7 +664,7 @@ user = <span class="code-function">win32api.GetUserName</span>()
 
     if (root === "module") renderModule(parts[1]);
     else if (root === "lessons") renderLessons();
-    else if (root === "lesson") renderLesson();
+    else if (root === "lesson") renderLesson(parts[1]);
     else if (root === "reference" && parts[1] === "pywin32") renderPywin32(params.get("q") || "", params.get("api") || "");
     else if (root === "toolbox") renderToolbox(params.get("q") || "");
     else renderHome();
@@ -769,12 +943,16 @@ except pywintypes.error as error:
   function allSearchItems() {
     return [
       ...data.modules.map((item) => ({ title: item.title, detail: item.description, kind: "Module", href: `#/module/${item.id}` })),
-      ...data.modules.flatMap((module) => module.lessonTitles.map((title, index) => ({
-        title,
-        detail: `${module.title} · Lesson ${index + 1}`,
-        kind: "Lesson",
-        href: module.id === "foundations" && index === 0 ? "#/lesson/os-foundations" : "#/lessons"
-      }))),
+      ...lessons.map((lesson) => {
+        const module = data.modules.find((item) => item.id === lesson.module);
+        const index = moduleLessons(lesson.module).indexOf(lesson);
+        return {
+          title: lesson.title,
+          detail: `${module.title} · Lesson ${index + 1} · ${lesson.lead} ${lesson.keys.join(" ")} ${lesson.apis.join(" ")}`,
+          kind: "Lesson",
+          href: `#/lesson/${lesson.id}`
+        };
+      }),
       ...referenceData.pywin32Modules.map((item) => ({ title: item.name, detail: `${item.label} · ${item.useWhen}`, kind: "pywin32 module", href: `#/reference/pywin32?q=${encodeURIComponent(item.name)}` })),
       ...referenceData.pywin32Modules.flatMap((module) => module.features.map((feature) => ({
         title: feature.name,

@@ -18,11 +18,13 @@ Then open `http://localhost:8000`.
 
 - Responsive course homepage and ordered module list.
 - Overview page for every module.
-- A complete representative lesson for OS foundations.
-- Interactive knowledge check and guided Process Explorer lab.
+- All 61 lessons across the ten modules, in a complete reading order.
+- Windows-specific explanations, API connections, and primary documentation for every lesson.
+- Interactive knowledge checks and guided investigations throughout the curriculum.
+- Downloadable Markdown worksheets for every investigation, plus lesson-specific starter files where available.
 - Purpose-first pywin32 module guide with filtering.
 - Sysinternals toolbox integrated with the curriculum.
-- Search across modules, pywin32 modules, and tools.
+- Search across lessons, their concepts and APIs, pywin32 modules, and tools.
 - Static architecture suitable for GitHub Pages.
 
 See [PLAN.md](PLAN.md) for the full curriculum and product direction.
