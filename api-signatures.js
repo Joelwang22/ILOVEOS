@@ -42,6 +42,46 @@ window.ILOVEOS_API_SIGNATURES = {
       "https://raw.githubusercontent.com/python/typeshed/main/stubs/pywin32/win32/win32api.pyi"
     ]
   },
+  "win32api::GetEnvironmentVariable": {
+    "kind": "function",
+    "signatures": [
+      {
+        "name": "GetEnvironmentVariable",
+        "parameters": [
+          {
+            "name": "name",
+            "type": "str",
+            "optional": false,
+            "description": "Name of the environment variable to read from the calling process environment."
+          }
+        ],
+        "returns": "str"
+      }
+    ],
+    "sources": [
+      "https://timgolden.me.uk/pywin32-docs/win32api__GetEnvironmentVariable_meth.html"
+    ]
+  },
+  "win32api::QueryDosDevice": {
+    "kind": "function",
+    "signatures": [
+      {
+        "name": "QueryDosDevice",
+        "parameters": [
+          {
+            "name": "deviceName",
+            "type": "str",
+            "optional": false,
+            "description": "DOS device name to translate, for example C:."
+          }
+        ],
+        "returns": "str"
+      }
+    ],
+    "sources": [
+      "https://timgolden.me.uk/pywin32-docs/win32api__QueryDosDevice_meth.html"
+    ]
+  },
   "win32api::OpenProcess": {
     "kind": "function",
     "signatures": [
@@ -766,6 +806,26 @@ window.ILOVEOS_API_SIGNATURES = {
     "sources": [
       "https://timgolden.me.uk/pywin32-docs/win32process__GetProcessTimes_meth.html",
       "https://raw.githubusercontent.com/python/typeshed/main/stubs/pywin32/win32/win32process.pyi"
+    ]
+  },
+  "win32process::GetThreadTimes": {
+    "kind": "function",
+    "signatures": [
+      {
+        "name": "GetThreadTimes",
+        "parameters": [
+          {
+            "name": "hThread",
+            "type": "PyHANDLE",
+            "optional": false,
+            "description": "Open handle to the thread whose timing information will be read."
+          }
+        ],
+        "returns": "dict"
+      }
+    ],
+    "sources": [
+      "https://timgolden.me.uk/pywin32-docs/win32process__GetThreadTimes_meth.html"
     ]
   },
   "win32process::GetProcessIoCounters": {

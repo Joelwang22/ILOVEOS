@@ -619,6 +619,8 @@ Status: completed on 22 August 2026.
 
 ### Stage 2: Processes, handles, threads, and scheduling
 
+Status: completed on 22 August 2026.
+
 - Deepen Modules 2 and 3.
 - Add process-creation timelines, object and handle ownership diagrams, context-switch traces, and scheduling examples.
 - Turn `hidden_process.py`, Good/Bad/Ugly, `prime_threads.py`, better-together, and thread-overdose into fully integrated guided pathways.

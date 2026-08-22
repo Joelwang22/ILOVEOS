@@ -38,7 +38,7 @@ window.ILOVEOS_DATA = {
         "Kernel objects and the Object Manager",
         "Handles, access rights, and reference counting"
       ],
-      time: "95 min",
+      time: "240 min",
       accent: "blue",
       topics: ["Process creation", "Kernel objects", "Handle tables", "Object Manager", "Reference counting"],
       tools: ["Process Explorer", "Handle", "WinObj"],
@@ -58,7 +58,7 @@ window.ILOVEOS_DATA = {
         "How the scheduler chooses a thread",
         "Priorities, boosts, and starvation"
       ],
-      time: "85 min",
+      time: "210 min",
       accent: "cyan",
       topics: ["Thread context", "Stacks", "Context switches", "Priorities", "Priority boosts"],
       tools: ["Process Explorer"],

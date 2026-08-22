@@ -19,9 +19,10 @@ Then open `http://localhost:8000`.
 - Responsive course homepage and ordered module list.
 - Overview page for every module.
 - All 62 lessons across the ten modules, in a complete reading order.
+- Fully deepened foundation, process, handle, thread, and scheduling lessons, with later modules retained as concise first-pass lessons for the next overhaul stages.
 - Windows-specific explanations, API connections, and primary documentation for every lesson.
 - Interactive knowledge checks and guided investigations throughout the curriculum.
-- Downloadable Markdown worksheets for every investigation, plus lesson-specific starter files where available.
+- Integrated investigation workspaces inside the lessons, plus downloadable starter files where a runnable artifact is useful.
 - Purpose-first pywin32 module guide with filtering.
 - Sysinternals toolbox integrated with the curriculum.
 - Search across lessons, their concepts and APIs, pywin32 modules, and tools.

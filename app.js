@@ -376,12 +376,13 @@ handle = <span class="code-function">win32process.GetCurrentProcess</span>()
 
   function renderPractice(lesson) {
     const practice = normalizedPractice(lesson);
+    const downloads = practice.downloads || (practice.download ? [practice.download] : []);
     return `
       <div class="practice-workspace" data-practice-workspace="${escapeHtml(lesson.id)}">
         <div class="lab-head">
           <div><small>Guided investigation</small><h3>${escapeHtml(practice.title)}</h3></div>
           <div class="lab-actions">
-            ${practice.download ? `<a class="download-button" href="${escapeHtml(practice.download[0])}" download="${escapeHtml(practice.download[1])}"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 3v12m-5-5 5 5 5-5M5 20h14"/></svg><span>Download starter</span></a>` : ""}
+            ${downloads.map((artifact) => `<a class="download-button" href="${escapeHtml(artifact[0])}" download="${escapeHtml(artifact[1])}"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 3v12m-5-5 5 5 5-5M5 20h14"/></svg><span>${escapeHtml(artifact[2] || "Download starter")}</span></a>`).join("")}
             <span class="lab-time">${escapeHtml(practice.time)}</span>
           </div>
         </div>
