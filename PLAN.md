@@ -670,6 +670,43 @@ Final audit record:
 - 63 distinct primary lesson or tool sources are included in the automated link review.
 - Module 10 demonstrations stay within the current process, static PE files, or owned baselines. They teach evidence and lifecycle reasoning without providing an operational cross-process payload.
 
+## 16. Post-overhaul roadmap
+
+The six-stage lesson-depth overhaul is complete. The remaining work extends the finished curriculum with course-level revision, focused supporting pages, systematic lab validation, and final product quality assurance. It does not reopen the completed module structure or introduce dashboards, accounts, stored progress, or gamification.
+
+The remaining work should proceed in the following order.
+
+### Stage 7: Module revision and final assessment
+
+- Add a compact review at the end of each module without turning reviews into visually heavy standalone lesson sections.
+- Combine conceptual reasoning, API selection, result and failure interpretation, resource ownership, debugging, and Sysinternals evidence questions.
+- Add varied activities where they improve the assessment, including execution-order puzzles, code-completion tasks, scenario diagnosis, and prediction questions.
+- Let the learner retry incorrect answers during the current session without storing scores or progress.
+- Build one consolidated final assessment that samples all ten modules instead of repeating every lesson check.
+- Include a final practical scenario that requires the learner to select APIs and tools, predict evidence, interpret expected failures, and explain cleanup.
+- Keep assessment explanations available after an attempt so revision also teaches the reasoning behind the answer.
+
+### Stage 8: Supporting study pages
+
+- Add a concise Setup page covering Python, pywin32, the Sysinternals Suite, permissions, architecture checks, and preparation of a safe Windows lab environment.
+- Add a searchable Glossary for operating-system, Windows-internals, Win32, pywin32, `ctypes`, PE, and Sysinternals terminology used by the lessons.
+- Add a Revision page that provides the module reviews, final assessment, and practical review activities in one predictable location.
+- Add a consolidated Sources page grouped by module, API family, and tool while retaining primary sources beside the lessons that use them.
+- Integrate these pages into the existing navigation and search without creating a dashboard or duplicating lesson explanations.
+- Keep the pywin32 guide and Sysinternals toolbox as the main task-oriented references rather than moving their content into the new pages.
+
+### Stage 9: Clean-machine validation and release quality
+
+- Run every relevant guided practice and downloadable artifact in a clean Windows lab environment with the intended Python architecture and permissions.
+- For each practice, record the stable expected outcome, machine-dependent values, expected non-success branches, observable Sysinternals evidence, and verified cleanup state.
+- Check the repository practice coverage matrix against the final lesson sequence and record any corrected script assumptions, leaks, fragile behavior, or version-specific differences.
+- Verify keyboard navigation, focus behavior, screen-reader labels, colour contrast, font-size controls, diagram scaling, disclosures, dialogs, and downloadable controls.
+- Review desktop, compact, and very narrow mobile layouts, plus the supported browsers, for clipping, overflow, excessive visual density, and inconsistent reading order.
+- Review search coverage for lesson concepts, outcome-oriented Win32 queries, APIs, constants, structures, pywin32 modules, and Sysinternals capabilities.
+- Run the structural course audit, Python parsing checks, JavaScript syntax checks, source-link audit, and live GitHub Pages asset checks as one repeatable release gate.
+- Automate the non-interactive audit checks during repository deployment where practical.
+- Update the final audit record after runtime validation, then mark the complete course release as verified.
+
 ### Completion gate for each stage
 
 A stage is complete only after:
