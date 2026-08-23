@@ -7,6 +7,8 @@
   lessons.forEach((lesson) => Object.assign(lesson, lessonDepth[lesson.id] || {}));
   const referenceData = window.ILOVEOS_REFERENCE;
   const apiSignatures = window.ILOVEOS_API_SIGNATURES || {};
+  const windowsApiGuide = window.ILOVEOS_WINDOWS_API_GUIDE;
+  const windowsApiView = window.ILOVEOS_WINDOWS_API_VIEW;
   const main = document.querySelector("#main-content");
   const sidebar = document.querySelector("#sidebar");
   const scrim = document.querySelector("#sidebar-scrim");
@@ -78,7 +80,7 @@ handle = <span class="code-function">win32process.GetCurrentProcess</span>()
 
 <span class="code-function">print</span>(<span class="code-string">f"PID: {pid}  Handle: {handle}"</span>)</pre>
             </div>
-            <div class="hero-actions"><a class="button" href="#/reference/pywin32">Open the pywin32 guide ${icons.arrow}</a></div>
+            <div class="hero-actions"><a class="button" href="#/reference/pywin32">Open the pywin32 guide ${icons.arrow}</a><a class="button" href="#/reference/windows-api">Open the Windows API guide</a></div>
           </article>
 
           <article class="feature-card">
@@ -191,6 +193,10 @@ handle = <span class="code-function">win32process.GetCurrentProcess</span>()
     const apiLower = api.toLowerCase();
     const featureLower = featureName.toLowerCase();
     const preferredModule = api.startsWith("ctypes.") ? "ctypes / ctypes.wintypes" : api.split(".")[0];
+    const nativeEntry = windowsApiGuide.entries.find((entry) => entry.name.toLowerCase() === featureLower);
+    if (nativeEntry && !api.includes(".")) {
+      return `<a class="lesson-api-chip linked" href="#/reference/windows-api?q=${encodeURIComponent(nativeEntry.name)}"><code>${escapeHtml(api)}</code><span>Open guide</span></a>`;
+    }
     const matches = referenceData.pywin32Modules.flatMap((module) => module.features.map((feature) => ({ module, feature }))).filter(({ feature }) => {
       const name = feature.name.toLowerCase();
       return name === apiLower || name === featureLower || name.endsWith(`.${featureLower}`);
@@ -821,6 +827,15 @@ user = <span class="code-function">win32api.GetUserName</span>()
     document.querySelector(".reference-count").textContent = `${modules.length} modules · ${featureCount} entries`;
   }
 
+  function renderWindowsApiGuide(filter = "") {
+    main.innerHTML = windowsApiView.render(windowsApiGuide, filter);
+    document.querySelector("#windows-api-filter").addEventListener("input", (event) => {
+      const matches = windowsApiView.filterEntries(windowsApiGuide.entries, event.target.value);
+      document.querySelector("#windows-api-results").innerHTML = windowsApiView.renderEntries(matches, matches.length === 1);
+      document.querySelector("#windows-api-count").textContent = `${matches.length} of ${windowsApiGuide.entries.length} APIs shown`;
+    });
+  }
+
   function manualList(items) {
     return `<ol class="manual-list">${items.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ol>`;
   }
@@ -887,10 +902,11 @@ user = <span class="code-function">win32api.GetUserName</span>()
     else if (root === "lessons") renderLessons();
     else if (root === "lesson") renderLesson(parts[1]);
     else if (root === "reference" && parts[1] === "pywin32") renderPywin32(params.get("q") || "", params.get("api") || "");
+    else if (root === "reference" && parts[1] === "windows-api") renderWindowsApiGuide(params.get("q") || "");
     else if (root === "toolbox") renderToolbox(params.get("q") || "");
     else renderHome();
 
-    updateActiveNav(root);
+    updateActiveNav(root, parts[1]);
     wireInPageLinks();
     closeSidebar();
     if (!hash.includes("#")) window.scrollTo(0, 0);
@@ -898,9 +914,9 @@ user = <span class="code-function">win32api.GetUserName</span>()
     main.focus({ preventScroll: true });
   }
 
-  function updateActiveNav(root) {
+  function updateActiveNav(root, referencePage = "") {
     document.querySelectorAll(".nav-item").forEach((item) => item.classList.remove("active"));
-    const key = root === "reference" ? "pywin32" : root === "module" ? "home" : root || "home";
+    const key = root === "reference" ? (referencePage === "windows-api" ? "windows-api" : "pywin32") : root === "module" ? "home" : root || "home";
     document.querySelector(`[data-route="${key}"]`)?.classList.add("active");
   }
 
@@ -1192,6 +1208,13 @@ except pywintypes.error as error:
         kind: "pywin32 API",
         href: `#/reference/pywin32?q=${encodeURIComponent(feature.name)}&api=${encodeURIComponent(feature.name)}`
       }))),
+      ...windowsApiGuide.entries.map((entry) => ({
+        title: entry.name,
+        detail: `${entry.category} · ${entry.dll} · ${entry.summary}`,
+        searchText: `${entry.nativeSignature} ${entry.python} ${entry.parameters.map((parameter) => `${parameter.name} ${parameter.native} ${parameter.python} ${parameter.explanation}`).join(" ")}`,
+        kind: "Windows API",
+        href: `#/reference/windows-api?q=${encodeURIComponent(entry.name)}`
+      })),
       ...referenceData.sysinternalsTools.map((item) => ({ title: item.name, detail: `${item.short} · ${item.description}`, kind: "Tool", href: `#/toolbox?q=${encodeURIComponent(item.name)}` })),
       ...referenceData.sysinternalsTools.flatMap((tool) => tool.capabilities.map(([name, detail]) => ({
         title: name,

@@ -61,7 +61,7 @@ Supporting pages will be limited to those that directly aid learning:
 
 - **Setup:** Python, pywin32, Sysinternals Suite, and a suitable Windows lab environment.
 - **Toolbox:** concise guidance for the Sysinternals tools used throughout the course.
-- **Win32 API reference:** APIs introduced by the lessons, with Python usage notes.
+- **Windows API guide:** plain-English native contracts, recommended pywin32 paths, complete `ctypes` translations where required, parameter mappings, result rules, ownership, cleanup, and primary Microsoft sources.
 - **Glossary:** important operating-system and Windows-internals terminology.
 - **Revision:** consolidated questions, practical review activities, and a final assessment.
 - **Sources:** the original repository materials and any authoritative external references used.
@@ -458,6 +458,8 @@ Likely pywin32 areas include:
 
 Examples should explain the associated Win32 API instead of presenting the wrapper as unexplained Python magic.
 
+The Windows API guide provides the bridge between Microsoft declarations and assignment-ready Python. Each covered native API shows the original contract, DLL, a complete `argtypes` and `restype` declaration, parameter-by-parameter type reasoning, result and extended-error behavior, ownership and cleanup, and the preferred pywin32 wrapper when one communicates the task clearly. The guide is scoped to APIs used by this course and its repository practices rather than attempting to reproduce the whole Windows SDK.
+
 ## 9. Questions and interactive content
 
 The site can remain simple while using varied learning activities:
@@ -673,6 +675,8 @@ Final audit record:
 ## 16. Post-overhaul roadmap
 
 The six-stage lesson-depth overhaul is complete. The remaining work extends the finished curriculum with course-level revision, focused supporting pages, systematic lab validation, and final product quality assurance. It does not reopen the completed module structure or introduce dashboards, accounts, stored progress, or gamification.
+
+The searchable Windows API guide was completed on 23 August 2026 ahead of the remaining roadmap because current assignments required a direct bridge from Microsoft native declarations to safe Python calls. Its initial catalogue covers all native API contracts already represented by the course plus the missing DLL-injection assignment chain. Future lesson or practice APIs must be added to this guide and its automated coverage audit in the same change.
 
 The remaining work should proceed in the following order.
 

@@ -23,6 +23,7 @@ const dataFiles = [
   "api-signatures-stage3.js",
   "api-signatures-stage4.js",
   "api-signatures-stage6.js",
+  "windows-api-data.js",
 ];
 
 globalThis.window = {};
@@ -36,6 +37,7 @@ const lessons = window.ILOVEOS_LESSONS;
 const depth = window.ILOVEOS_LESSON_DEPTH;
 const reference = window.ILOVEOS_REFERENCE;
 const signatures = window.ILOVEOS_API_SIGNATURES;
+const windowsApiGuide = window.ILOVEOS_WINDOWS_API_GUIDE;
 const errors = [];
 const warnings = [];
 
@@ -113,6 +115,22 @@ for (const tool of reference.sysinternalsTools) {
   for (const source of tool.sources || []) sourceUrls.push({ owner: `toolbox/${tool.name}`, url: source });
 }
 
+requireCondition((windowsApiGuide?.typeMappings || []).length >= 12, "Windows API guide has an incomplete type-translation table");
+requireCondition((windowsApiGuide?.entries || []).length >= 69, `expected at least 69 Windows API guide entries, found ${windowsApiGuide?.entries?.length || 0}`);
+const windowsApiEntries = new Map((windowsApiGuide?.entries || []).map((entry) => [entry.name, entry]));
+for (const [key, value] of Object.entries(signatures)) {
+  if (!key.startsWith("ctypes / ctypes.wintypes::")) continue;
+  if (!(value.sources || []).some((source) => source.includes("learn.microsoft.com"))) continue;
+  for (const signature of value.signatures || []) {
+    const entry = windowsApiEntries.get(signature.name);
+    requireCondition(Boolean(entry), `Windows API guide missing ${signature.name}`);
+    requireCondition(Boolean(entry?.nativeSignature && entry?.python && entry?.example), `Windows API guide has an incomplete translation for ${signature.name}`);
+  }
+}
+for (const entry of windowsApiGuide?.entries || []) {
+  for (const source of entry.sources || []) sourceUrls.push({ owner: `windows-api/${entry.name}`, url: source });
+}
+
 for (const item of sourceUrls) {
   try {
     const parsed = new URL(item.url);
@@ -164,6 +182,7 @@ console.log(`deep lessons: ${lessons.filter((lesson) => depth[lesson.id]).length
 console.log(`downloads checked: ${downloadPaths.length}`);
 console.log(`reference features: ${referenceNames.size}`);
 console.log(`API signature entries: ${Object.keys(signatures).length}`);
+console.log(`Windows API guide entries: ${windowsApiEntries.size}`);
 console.log(`unique lesson/tool sources: ${new Set(sourceUrls.map((item) => item.url)).size}`);
 console.log(`errors: ${errors.length}`);
 for (const error of errors) console.log(`ERROR ${error}`);

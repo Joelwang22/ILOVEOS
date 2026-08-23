@@ -24,9 +24,10 @@ Then open `http://localhost:8000`.
 - Interactive knowledge checks and guided investigations throughout the curriculum.
 - Integrated investigation workspaces inside the lessons, plus downloadable starter files where a runnable artifact is useful.
 - Purpose-first pywin32 module guide with filtering.
+- Windows API guide that turns native Microsoft declarations into approachable Python contracts, recommends pywin32 where it fits, and supplies complete `ctypes` declarations where it does not.
 - Sysinternals toolbox integrated with the curriculum.
 - Search across lessons, their concepts and APIs, pywin32 modules, and tools.
 - Static architecture suitable for GitHub Pages.
-- A repeatable course audit covering all lesson structures, downloads, reference entries, API signatures, source links, and prohibited punctuation.
+- A repeatable course audit covering all lesson structures, downloads, reference entries, API signatures, Windows API translations, source links, and prohibited punctuation.
 
 See [PLAN.md](PLAN.md) for the full curriculum and product direction.
