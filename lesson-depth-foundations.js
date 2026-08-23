@@ -107,7 +107,15 @@ window.ILOVEOS_LESSON_DEPTH = {
       expectedOutcome: "Your Python process will normally report a pointer size of either 4 bytes for 32-bit Python or 8 bytes for 64-bit Python. Process Explorer will show addresses in hexadecimal and identify the process image type. The final two hexadecimal digits should convert cleanly into two groups of four binary bits. Exact addresses will differ each time, but pointer width must follow the Python process architecture.",
       predictionPrompt: "Predict the pointer size of your Python process and the form in which Process Explorer will display a start address. Explain how you could be wrong.",
       steps: [
-        { action: "Run the ctypes pointer-size code from this lesson.", why: "The calling process architecture controls pointer width, even when the installed Windows system is 64-bit.", observe: "Record the Python executable path, reported architecture label, pointer bytes, and pointer bits." },
+        {
+          action: "In PowerShell, which can run from any folder, paste this command to print the Python executable, architecture label, pointer bytes, and pointer bits.",
+          commands: [{
+            label: "PowerShell",
+            code: "py -c \"import ctypes, platform, sys; pointer_bytes = ctypes.sizeof(ctypes.c_void_p); print(f'Python executable: {sys.executable}'); print(f'Architecture label: {platform.architecture()[0]}'); print(f'Pointer bytes: {pointer_bytes}'); print(f'Pointer bits: {pointer_bytes * 8}')\""
+          }],
+          why: "The calling process architecture controls pointer width, even when the installed Windows system is 64-bit.",
+          observe: "If PowerShell reports that py is not recognized, record that the Python launcher is missing or unavailable. Otherwise, record the Python executable path, architecture label, pointer bytes, and pointer bits as the architecture result."
+        },
         { action: "Open Process Explorer and add the Image Type and Start Address columns.", why: "Image Type distinguishes process architecture, while Start Address provides a real hexadecimal value to decode.", observe: "Record the image type and one start address for your Python process.", hint: "Right-click a column header, choose Select Columns, then inspect the Process Image and Process Performance tabs." },
         { action: "Convert the final two hexadecimal digits of the address to binary and decimal.", why: "Working on a small fragment practices the conversion without pretending that an address is merely a human-sized count.", observe: "Show the two four-bit groups and your place-value calculation." },
         { action: "Compare one 32-bit process with one 64-bit process if both are available.", why: "The comparison makes process architecture, not operating-system branding, the relevant pointer-size concept.", observe: "Record which process is 32-bit and which is 64-bit. If no 32-bit process exists, state that instead of inventing one." },

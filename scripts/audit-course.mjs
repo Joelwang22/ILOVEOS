@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import vm from "node:vm";
 import { fileURLToPath } from "node:url";
+import { practiceDownloads, validatePractice } from "./practice-audit.mjs";
 
 
 const scriptsDirectory = path.dirname(fileURLToPath(import.meta.url));
@@ -72,6 +73,8 @@ for (const module of modules) {
 
 const downloadPaths = [];
 const sourceUrls = [];
+let investigationCount = 0;
+let commandCount = 0;
 for (const lesson of lessons) {
   const expanded = { ...lesson, ...(depth[lesson.id] || {}) };
   const prefix = `${lesson.module}/${lesson.id}`;
@@ -88,7 +91,14 @@ for (const lesson of lessons) {
   requireCondition((expanded.checks || []).length >= 2, `${prefix}: fewer than two review questions`);
   requireCondition((expanded.keys || []).length >= 3, `${prefix}: fewer than three take-forward points`);
   requireCondition((expanded.sources || []).length >= 1, `${prefix}: missing primary source`);
-  if (expanded.practice?.download) downloadPaths.push({ lesson: prefix, path: expanded.practice.download[0] });
+  if (expanded.practice) {
+    investigationCount += 1;
+    const practiceResult = validatePractice(expanded.practice, prefix);
+    errors.push(...practiceResult.errors);
+    warnings.push(...practiceResult.warnings);
+    commandCount += practiceResult.commandCount;
+    for (const download of practiceDownloads(expanded.practice)) downloadPaths.push({ lesson: prefix, path: download.path });
+  }
   for (const [, url] of expanded.sources || []) sourceUrls.push({ owner: prefix, url });
 }
 
@@ -146,7 +156,7 @@ for (const item of sourceUrls) {
 }
 
 const textFiles = fs.readdirSync(root, { recursive: true }).filter((relative) => {
-  if (relative.startsWith(".git") || relative.includes("node_modules")) return false;
+  if (relative.startsWith(".git") || relative.startsWith(".superpowers") || relative.includes("node_modules")) return false;
   return /\.(?:js|mjs|html|css|md|py)$/.test(relative);
 });
 const disallowedDash = String.fromCodePoint(0x2014);
@@ -184,6 +194,8 @@ if (process.argv.includes("--check-links")) {
 console.log(`modules: ${modules.length}`);
 console.log(`lessons: ${lessons.length}`);
 console.log(`deep lessons: ${lessons.filter((lesson) => depth[lesson.id]).length}`);
+console.log(`guided investigations: ${investigationCount}`);
+console.log(`practice command blocks: ${commandCount}`);
 console.log(`downloads checked: ${downloadPaths.length}`);
 console.log(`reference features: ${referenceNames.size}`);
 console.log(`API signature entries: ${Object.keys(signatures).length}`);

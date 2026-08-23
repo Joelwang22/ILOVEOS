@@ -394,6 +394,22 @@ handle = <span class="code-function">win32process.GetCurrentProcess</span>()
     };
   }
 
+  function renderPracticeCommands(step, stepIndex) {
+    return (step.commands || []).map((command, commandIndex) => {
+      const commandId = `practice-command-${stepIndex}-${commandIndex}`;
+      const label = escapeHtml(command.label);
+      return `
+        <section class="practice-command" data-practice-command="${commandId}">
+          <div class="practice-command-head">
+            <span data-command-label>${label}</span>
+            <button class="practice-command-copy" type="button" data-copy-practice-command data-command-id="${commandId}" aria-label="Copy ${label} command">Copy</button>
+          </div>
+          <pre><code data-practice-command-code="${commandId}">${escapeHtml(command.code)}</code></pre>
+          <p data-copy-status aria-live="polite"></p>
+        </section>`;
+    }).join("");
+  }
+
   function renderPractice(lesson) {
     const practice = normalizedPractice(lesson);
     const downloads = practice.downloads || (practice.download ? [practice.download] : []);
@@ -413,7 +429,7 @@ handle = <span class="code-function">win32process.GetCurrentProcess</span>()
           ${practice.steps.map((step, index) => `
             <li>
               <span class="practice-number">${String(index + 1).padStart(2, "0")}</span>
-              <div class="practice-step-copy"><h4>${escapeHtml(step.action)}</h4>${step.why ? `<p><strong>Why this step matters:</strong> ${escapeHtml(step.why)}</p>` : ""}${step.observe ? `<p class="practice-observe"><strong>Look for:</strong> ${escapeHtml(step.observe)}</p>` : ""}${step.hint ? `<details><summary>Hint for this step</summary><p>${escapeHtml(step.hint)}</p></details>` : ""}</div>
+              <div class="practice-step-copy"><h4>${escapeHtml(step.action)}</h4>${renderPracticeCommands(step, index)}${step.why ? `<p><strong>Why this step matters:</strong> ${escapeHtml(step.why)}</p>` : ""}${step.observe ? `<p class="practice-observe"><strong>Look for:</strong> ${escapeHtml(step.observe)}</p>` : ""}${step.hint ? `<details><summary>Hint for this step</summary><p>${escapeHtml(step.hint)}</p></details>` : ""}</div>
             </li>`).join("")}
         </ol>
         <details class="practice-hints"><summary>Need a nudge?</summary>${practice.hints.map((hint) => `<div><strong>${escapeHtml(hint.title)}</strong><p>${escapeHtml(hint.body)}</p></div>`).join("")}</details>
@@ -579,6 +595,7 @@ handle = <span class="code-function">win32process.GetCurrentProcess</span>()
       </div>`;
 
     wireQuizzes();
+    wirePracticeCommands();
   }
 
   function renderLegacyLesson() {
@@ -725,6 +742,36 @@ user = <span class="code-function">win32api.GetUserName</span>()
           option.classList.add("correct");
           feedback.classList.add("visible");
         });
+      });
+    });
+  }
+
+  function wirePracticeCommands() {
+    document.querySelectorAll("[data-copy-practice-command]").forEach((button) => {
+      const command = button.closest("[data-practice-command]")?.querySelector("[data-practice-command-code]");
+      const status = button.closest("[data-practice-command]")?.querySelector("[data-copy-status]");
+      const label = button.closest("[data-practice-command]")?.querySelector("[data-command-label]")?.textContent.trim() || "Command";
+      if (!command || !status) return;
+
+      button.addEventListener("click", async () => {
+        try {
+          if (!navigator.clipboard?.writeText) throw new Error("Clipboard API unavailable");
+          await navigator.clipboard.writeText(command.textContent);
+          button.textContent = "Copied";
+          status.textContent = `${label} command copied.`;
+          button.focus();
+        } catch {
+          const range = document.createRange();
+          range.selectNodeContents(command);
+          const selection = window.getSelection();
+          selection.removeAllRanges();
+          selection.addRange(range);
+          status.textContent = "Command selected. Press Ctrl+C to copy.";
+          button.focus();
+        }
+      });
+      button.addEventListener("blur", () => {
+        if (button.textContent === "Copied") button.textContent = "Copy";
       });
     });
   }
