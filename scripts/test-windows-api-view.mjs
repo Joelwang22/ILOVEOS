@@ -15,8 +15,11 @@ if (!fs.existsSync(viewPath)) {
 }
 
 const indexHtml = fs.readFileSync(indexPath, "utf8");
+const appSource = fs.readFileSync(path.join(root, "app.js"), "utf8");
+const styles = fs.readFileSync(path.join(root, "styles.css"), "utf8");
 const dataVersion = indexHtml.match(/windows-api-data\.js\?v=([^"']+)/)?.[1];
 const viewVersion = indexHtml.match(/windows-api-view\.js\?v=([^"']+)/)?.[1];
+const appVersion = indexHtml.match(/app\.js\?v=([^"']+)/)?.[1];
 
 globalThis.window = {};
 for (const filename of [
@@ -39,9 +42,20 @@ function requireCondition(condition, message) {
   if (!condition) errors.push(message);
 }
 
-requireCondition(Boolean(dataVersion && viewVersion), "Windows API guide scripts are missing cache versions");
-requireCondition(dataVersion === viewVersion, "Windows API guide data and view cache versions do not match");
+requireCondition(Boolean(dataVersion && viewVersion && appVersion), "Windows API guide scripts are missing cache versions");
+requireCondition(dataVersion === viewVersion && viewVersion === appVersion, "Windows API guide data, view, and app cache versions do not match");
 requireCondition(dataVersion !== "windows-api-guide", "Windows API guide still uses the stale first-release cache key");
+requireCondition(dataVersion !== "windows-api-guide-2", "Windows API redesign still uses the pre-redesign cache key");
+for (const expected of [
+  "windowsApiView.renderDialog(entry)",
+  "trigger.dataset.windowsApi",
+  "openWindowsApiDetails(exact.name)",
+]) {
+  requireCondition(appSource.includes(expected), `Windows API popup integration is missing: ${expected}`);
+}
+for (const obsoleteSelector of [".windows-api-wrap", ".windows-api-entry", ".native-type-row", ".native-parameter-row"]) {
+  requireCondition(!styles.includes(obsoleteSelector), `obsolete Windows-only layout remains in CSS: ${obsoleteSelector}`);
+}
 
 const allocationMatches = view.filterEntries(guide.entries, "SIZE_T VirtualAllocEx");
 requireCondition(allocationMatches.length === 1, `expected one VirtualAllocEx match, found ${allocationMatches.length}`);
@@ -52,7 +66,25 @@ requireCondition(outputPointerMatches.some((entry) => entry.name === "WriteProce
 
 const html = view.render(guide, "VirtualAllocEx");
 for (const expected of [
-  "Windows API guide",
+  "content-wrap reference-width",
+  "reference-hero compact-reference-hero",
+  "reference-filter sticky-filter",
+  "reference-list",
+  "api-module",
+  "feature-table",
+  'data-windows-api="VirtualAllocEx"',
+]) {
+  requireCondition(html.includes(expected), `redesigned guide is missing shared pywin32 structure: ${expected}`);
+}
+requireCondition(!html.includes('class="windows-api-entry"'), "API items still render as inline accordions");
+requireCondition(!html.includes("VirtualAllocEx.argtypes"), "filtered page renders API details inline instead of in a dialog");
+requireCondition(!html.includes("WriteProcessMemory"), "filtered rendering includes an unrelated API entry");
+
+requireCondition(typeof view.renderDialog === "function", "Windows API view does not expose a dialog renderer");
+const dialogHtml = typeof view.renderDialog === "function" ? view.renderDialog(allocationMatches[0]) : "";
+for (const expected of [
+  'class="api-dialog-head"',
+  'id="api-detail-title"',
   "VirtualAllocEx.argtypes",
   "Native declaration",
   "Python translation",
@@ -62,13 +94,12 @@ for (const expected of [
   "Ownership and cleanup",
   "Microsoft Learn",
 ]) {
-  requireCondition(html.includes(expected), `rendered guide is missing: ${expected}`);
+  requireCondition(dialogHtml.includes(expected), `rendered Windows API dialog is missing: ${expected}`);
 }
-requireCondition(!html.includes("translation-workflow"), "a direct API result still places the full tutorial before the catalogue");
-requireCondition(!html.includes("WriteProcessMemory.argtypes"), "filtered rendering includes an unrelated API entry");
 
 const fullHtml = view.render(guide, "");
 requireCondition(fullHtml.includes("Native types to Python types"), "the unfiltered guide is missing its type map");
+requireCondition(fullHtml.includes("reference-patterns"), "native type map does not use the pywin32 pattern-card spacing");
 for (const unwanted of [
   "Start with the Windows operation",
   "Do not translate by resemblance",
@@ -78,7 +109,7 @@ for (const unwanted of [
 ]) {
   requireCondition(!fullHtml.includes(unwanted), `the unfiltered guide still renders unwanted introductory content: ${unwanted}`);
 }
-requireCondition(fullHtml.includes("Translated API catalogue"), "the unfiltered guide is missing its API catalogue");
+requireCondition(fullHtml.includes("APIs"), "the unfiltered guide is missing its API count");
 
 const escaped = view.render(guide, "<script>alert(1)</script>");
 requireCondition(!escaped.includes("<script>alert(1)</script>"), "guide renders the search query without HTML escaping");

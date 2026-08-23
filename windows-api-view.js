@@ -38,123 +38,124 @@
   }
 
   function renderTypeMappings(mappings) {
+    const midpoint = Math.ceil(mappings.length / 2);
+    const groups = [
+      ["Scalar, handle, and address types", mappings.slice(0, midpoint)],
+      ["Strings, pointers, structures, and callbacks", mappings.slice(midpoint)],
+    ];
     return `
-      <section class="windows-guide-section" aria-labelledby="type-map-title">
-        <div class="section-heading-row">
-          <div><span class="eyebrow">Translation table</span><h2 id="type-map-title">Native types to Python types</h2></div>
-          <p>Match width, pointer level, mutability, and ownership. Similar-looking typedefs are not interchangeable guesses.</p>
-        </div>
-        <div class="native-type-table" role="table" aria-label="Native Windows types translated to ctypes">
-          <div class="native-type-row native-type-head" role="row"><span>Microsoft type</span><span>Python declaration</span><span>How to reason about it</span></div>
-          ${mappings.map((mapping) => `
-            <div class="native-type-row" role="row">
-              <code>${escapeHtml(mapping.native)}</code>
-              <code>${escapeHtml(mapping.python)}</code>
-              <p>${escapeHtml(mapping.meaning)}</p>
-            </div>`).join("")}
-        </div>
+      <section class="reference-patterns windows-api-patterns" aria-label="Native types to Python types">
+        ${groups.map(([title, items]) => `
+          <details class="pattern-card windows-type-card">
+            <summary>${escapeHtml(title)}<span>+</span></summary>
+            <div class="windows-type-list">
+              ${items.map((mapping) => `
+                <div>
+                  <span><code>${escapeHtml(mapping.native)}</code><i aria-hidden="true">→</i><code>${escapeHtml(mapping.python)}</code></span>
+                  <p>${escapeHtml(mapping.meaning)}</p>
+                </div>`).join("")}
+            </div>
+          </details>`).join("")}
       </section>`;
   }
 
-  function renderParameterTable(entry) {
+  function renderParameterList(entry) {
     if (!entry.parameters.length) return '<p class="no-parameters">This function takes no parameters.</p>';
     return `
-      <div class="native-parameter-table" role="table" aria-label="${escapeHtml(entry.name)} parameter translations">
-        <div class="native-parameter-row native-parameter-head" role="row"><span>Parameter</span><span>Native</span><span>Python</span><span>Meaning</span></div>
+      <div class="parameter-list" aria-label="${escapeHtml(entry.name)} parameter translations">
         ${entry.parameters.map((parameter) => `
-          <div class="native-parameter-row" role="row">
-            <span><code>${escapeHtml(parameter.name)}</code><small>${escapeHtml(parameter.direction)}</small></span>
-            <code>${escapeHtml(parameter.native)}</code>
-            <code>${escapeHtml(parameter.python)}</code>
-            <p>${escapeHtml(parameter.explanation)}</p>
+          <div>
+            <code>${escapeHtml(parameter.name)}</code>
+            <span class="parameter-type">${escapeHtml(parameter.direction)} · ${escapeHtml(parameter.native)} → ${escapeHtml(parameter.python)}</span>
+            <span>${escapeHtml(parameter.explanation)}</span>
           </div>`).join("")}
       </div>`;
   }
 
-  function renderEntry(entry, open = false) {
+  function renderEntryRow(entry) {
     return `
-      <details class="windows-api-entry" data-windows-api="${escapeHtml(entry.name)}" ${open ? "open" : ""}>
-        <summary>
-          <span><code>${escapeHtml(entry.name)}</code><strong>${escapeHtml(entry.summary.split(".")[0])}</strong></span>
-          <span class="windows-api-meta"><span>${escapeHtml(entry.dll)}</span><span class="details-chevron" aria-hidden="true">+</span></span>
-        </summary>
-        <div class="windows-api-entry-body">
-          <p class="windows-api-summary">${escapeHtml(entry.summary)}</p>
-          <div class="binding-choice">
-            <span>Recommended Python path</span>
-            <p>${escapeHtml(entry.pywin32)}</p>
-          </div>
-          <div class="signature-pair">
-            <section>
-              <h3>Native declaration</h3>
-              <p>Read this as the operating-system contract.</p>
-              <pre><code>${escapeHtml(entry.nativeSignature)}</code></pre>
-            </section>
-            <section>
-              <h3>Python translation</h3>
-              <p>Declare the boundary before the first call.</p>
-              <pre><code>${escapeHtml(entry.python)}</code></pre>
-            </section>
-          </div>
-          <section class="parameter-translation">
-            <h3>Parameter-by-parameter translation</h3>
-            ${renderParameterTable(entry)}
-          </section>
-          <section class="checked-call-pattern">
-            <h3>Checked call pattern</h3>
-            <p>Replace the descriptive input names with values established by your program, while preserving the result and cleanup branches.</p>
-            <pre><code>${escapeHtml(entry.example)}</code></pre>
-          </section>
-          <div class="contract-outcomes">
-            <section><h3>Result and failure</h3><p>${escapeHtml(entry.result)}</p></section>
-            <section><h3>Ownership and cleanup</h3><p>${escapeHtml(entry.cleanup)}</p></section>
-          </div>
-          <div class="windows-api-sources">
-            ${entry.sources.map((source, index) => `<a href="${escapeHtml(source)}" target="_blank" rel="noreferrer">Microsoft Learn${entry.sources.length > 1 ? ` ${index + 1}` : ""}<span aria-hidden="true">↗</span></a>`).join("")}
-          </div>
-        </div>
-      </details>`;
+      <button class="feature-row api-detail-trigger windows-api-detail-trigger" type="button" data-windows-api="${escapeHtml(entry.name)}" aria-label="View the native and Python contracts for ${escapeHtml(entry.name)}">
+        <code>${escapeHtml(entry.name)}</code>
+        <strong>${escapeHtml(entry.dll)}</strong>
+        <span>${escapeHtml(entry.summary)}</span>
+        <span class="feature-open" aria-hidden="true">+</span>
+      </button>`;
   }
 
-  function renderEntries(entries, openFirst = false) {
+  function renderEntries(entries, openCategories = false) {
     const groups = new Map();
     for (const entry of entries) {
       if (!groups.has(entry.category)) groups.set(entry.category, []);
       groups.get(entry.category).push(entry);
     }
-    if (!entries.length) return '<div class="windows-api-empty"><h2>No matching Windows API</h2><p>Try an API name, native type, parameter, DLL, task, or result such as <code>SIZE_T</code>, <code>output pointer</code>, or <code>WAIT_TIMEOUT</code>.</p></div>';
+    if (!entries.length) return '<div class="search-empty">No matching API. Try its name, DLL, native type, parameter, result, failure, or cleanup rule.</div>';
     return [...groups.entries()].map(([category, categoryEntries]) => `
-      <section class="windows-api-category">
-        <div class="windows-api-category-head"><h2>${escapeHtml(category)}</h2><span>${categoryEntries.length} ${categoryEntries.length === 1 ? "API" : "APIs"}</span></div>
-        <div class="windows-api-list">${categoryEntries.map((entry, index) => renderEntry(entry, openFirst && index === 0)).join("")}</div>
-      </section>`).join("");
+      <details class="api-module windows-api-module" style="--reference-color: var(--violet)" ${openCategories ? "open" : ""}>
+        <summary>
+          <span class="api-module-title"><code>${escapeHtml(category)}</code><span>Native Windows contracts and Python translations</span></span>
+          <span class="api-summary-meta"><span class="entry-count">${categoryEntries.length} ${categoryEntries.length === 1 ? "entry" : "entries"}</span><span class="details-chevron">⌄</span></span>
+        </summary>
+        <div class="api-module-body windows-api-module-body">
+          <div class="feature-table" role="table" aria-label="${escapeHtml(category)} Windows APIs">
+            <div class="feature-row feature-head" role="row"><span>API</span><span>DLL</span><span>What it does</span><span></span></div>
+            ${categoryEntries.map(renderEntryRow).join("")}
+          </div>
+        </div>
+      </details>`).join("");
+  }
+
+  function renderDialog(entry) {
+    if (!entry) return '<div class="api-dialog-body"><p class="search-empty">This Windows API entry is unavailable.</p></div>';
+    return `
+      <header class="api-dialog-head">
+        <div><span>${escapeHtml(entry.category)} · ${escapeHtml(entry.dll)}</span><h2 id="api-detail-title">${escapeHtml(entry.name)}</h2><p>${escapeHtml(entry.summary)}</p></div>
+        <button class="api-dialog-close" type="button" aria-label="Close API details">×</button>
+      </header>
+      <div class="api-dialog-body windows-api-dialog-body">
+        <section class="api-dialog-summary"><p>${escapeHtml(entry.pywin32)}</p><span>Recommended Python path</span></section>
+        <section class="signature-block windows-contract-block">
+          <div class="windows-signature-grid">
+            <section><h3>Native declaration</h3><pre><code>${escapeHtml(entry.nativeSignature)}</code></pre></section>
+            <section><h3>Python translation</h3><pre><code>${escapeHtml(entry.python)}</code></pre></section>
+          </div>
+          <h3>Parameters</h3>
+          ${renderParameterList(entry)}
+        </section>
+        <section class="signature-block windows-call-block">
+          <h3>Checked call pattern</h3>
+          <pre><code>${escapeHtml(entry.example)}</code></pre>
+        </section>
+        <section class="signature-block windows-outcome-block">
+          <h3>Result and failure</h3>
+          <div class="return-card"><code>Result</code><span>${escapeHtml(entry.result)}</span></div>
+          <h3>Ownership and cleanup</h3>
+          <div class="return-card"><code>Cleanup</code><span>${escapeHtml(entry.cleanup)}</span></div>
+        </section>
+        <div class="api-source-links">
+          ${entry.sources.map((source, index) => `<a href="${escapeHtml(source)}" target="_blank" rel="noreferrer">Microsoft Learn${entry.sources.length > 1 ? ` ${index + 1}` : ""} ↗</a>`).join("")}
+        </div>
+      </div>`;
   }
 
   function render(guide, query = "") {
     const matches = filterEntries(guide.entries, query);
     return `
-      <div class="content-wrap windows-api-wrap">
-        <section class="reference-hero windows-api-hero">
-          <div>
-            <span class="eyebrow">Native contract, clear Python</span>
-            <h1>Windows API guide</h1>
-          </div>
-        </section>
+      <div class="content-wrap reference-width">
+        <div class="breadcrumb"><span><a href="#/">Course</a></span><span>Windows API guide</span></div>
+        <header class="reference-hero compact-reference-hero">
+          <h1>Find the native Windows API you need.</h1>
+          <span class="source-note">Cross-checked with <a href="https://learn.microsoft.com/windows/win32/apiindex/windows-api-list" target="_blank" rel="noreferrer">the Microsoft Windows API index ↗</a></span>
+        </header>
         ${query ? "" : renderTypeMappings(guide.typeMappings)}
-        <section class="windows-guide-section windows-api-catalogue" aria-labelledby="windows-api-catalogue-title">
-          <div class="section-heading-row">
-            <div><span class="eyebrow">Assignment reference</span><h2 id="windows-api-catalogue-title">Translated API catalogue</h2></div>
-            <p id="windows-api-count">${matches.length} of ${guide.entries.length} APIs shown</p>
-          </div>
-          <label class="reference-filter windows-api-filter">
-            <span class="sr-only">Filter the Windows API guide</span>
-            <svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6"/><path d="m16 16 4 4"/></svg>
-            <input id="windows-api-filter" type="search" value="${escapeHtml(query)}" placeholder="Try VirtualAllocEx, SIZE_T, output pointer, or Kernel32" autocomplete="off" />
-          </label>
-          <div id="windows-api-results">${renderEntries(matches, Boolean(query) && matches.length === 1)}</div>
+        <div class="reference-filter sticky-filter">
+          <input id="windows-api-filter" type="search" value="${escapeHtml(query)}" placeholder="Try: VirtualAllocEx, SIZE_T, output pointer, Kernel32…" aria-label="Search the Windows API guide" autocomplete="off" />
+          <span class="reference-count" id="windows-api-count">${matches.length} APIs</span>
+        </div>
+        <section class="reference-list" id="windows-api-results" aria-live="polite">
+          ${renderEntries(matches, Boolean(query))}
         </section>
       </div>`;
   }
 
-  window.ILOVEOS_WINDOWS_API_VIEW = { filterEntries, render, renderEntries };
+  window.ILOVEOS_WINDOWS_API_VIEW = { filterEntries, render, renderDialog, renderEntries };
 })();

@@ -2246,93 +2246,18 @@ pre {
 .api-source-links a { color: var(--violet); font-size: 10px; }
 
 /* Windows API guide */
-.sr-only {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border: 0;
-}
-
-.windows-api-wrap { width: min(1240px, calc(100% - 80px)); max-width: 100%; overflow: hidden; }
-.windows-api-hero {
-  max-width: none;
-  padding-bottom: 34px;
-  border-bottom: 1px solid var(--line);
-}
-.windows-api-hero h1 { max-width: 760px; margin: 8px 0 0; }
-.windows-api-hero > *, .windows-guide-section, .section-heading-row > * { min-width: 0; max-width: 100%; }
-.eyebrow { color: var(--violet); font: 700 10px/1.2 "Cascadia Code", Consolas, monospace; text-transform: uppercase; letter-spacing: .12em; }
-
-.windows-guide-section { padding: 58px 0; border-bottom: 1px solid var(--line); }
-.section-heading-row { display: flex; align-items: end; justify-content: space-between; gap: 40px; margin-bottom: 26px; }
-.section-heading-row h2 { margin-top: 7px; font-size: clamp(26px, 3vw, 38px); }
-.section-heading-row > p { max-width: 430px; color: var(--muted); font-size: 12px; line-height: 1.65; text-align: right; }
-.native-type-table, .native-parameter-table { overflow: hidden; border: 1px solid var(--line); border-radius: 10px; background: var(--panel); }
-.native-type-row { display: grid; grid-template-columns: minmax(150px, .7fr) minmax(220px, 1fr) minmax(320px, 1.7fr); align-items: stretch; }
-.native-type-row + .native-type-row, .native-parameter-row + .native-parameter-row { border-top: 1px solid var(--line); }
-.native-type-row > *, .native-parameter-row > * { min-width: 0; padding: 13px 15px; overflow-wrap: anywhere; }
-.native-type-row > * + *, .native-parameter-row > * + * { border-left: 1px solid var(--line); }
-.native-type-row code, .native-parameter-row code { color: var(--blue); font: 600 11px/1.55 "Cascadia Code", Consolas, monospace; }
-.native-type-row p, .native-parameter-row p { color: var(--muted); font-size: 11px; line-height: 1.6; }
-.native-type-head, .native-parameter-head { color: var(--muted-2); background: var(--panel-2); font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; }
-
-.windows-api-catalogue { border-bottom: 0; }
-.windows-api-filter { position: relative; margin: 0 0 30px; }
-.windows-api-filter svg { position: absolute; left: 15px; width: 17px; color: var(--muted-2); pointer-events: none; }
-.windows-api-filter input { min-width: 0; padding: 14px 16px 14px 44px; background: var(--bg-raised); }
-.windows-api-category + .windows-api-category { margin-top: 42px; }
-.windows-api-category-head { display: flex; align-items: center; justify-content: space-between; gap: 20px; margin-bottom: 13px; }
-.windows-api-category-head h2 { font-size: 18px; }
-.windows-api-category-head span { color: var(--muted-2); font: 650 9px/1 "Cascadia Code", Consolas, monospace; text-transform: uppercase; letter-spacing: .08em; }
-.windows-api-list { display: grid; gap: 10px; }
-.windows-api-entry { overflow: hidden; border: 1px solid var(--line); border-left: 3px solid color-mix(in srgb, var(--violet) 72%, var(--line)); border-radius: 11px; background: var(--bg-raised); }
-.windows-api-entry:hover { border-color: color-mix(in srgb, var(--violet) 42%, var(--line)); border-left-color: var(--violet); }
-.windows-api-entry summary { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 16px 20px; list-style: none; cursor: pointer; }
-.windows-api-entry summary::-webkit-details-marker { display: none; }
-.windows-api-entry[open] summary { border-bottom: 1px solid var(--line); background: var(--violet-soft); }
-.windows-api-entry summary > span:first-child { display: grid; grid-template-columns: minmax(150px, .65fr) minmax(260px, 1.35fr); align-items: baseline; gap: 24px; min-width: 0; }
-.windows-api-entry summary code { color: var(--text); font: 700 13px/1.4 "Cascadia Code", Consolas, monospace; }
-.windows-api-entry summary strong { overflow: hidden; color: var(--muted); font-size: 11px; font-weight: 500; text-overflow: ellipsis; white-space: nowrap; }
-.windows-api-meta { display: flex; align-items: center; gap: 18px; color: var(--muted-2); font: 600 9px/1.2 "Cascadia Code", Consolas, monospace; white-space: nowrap; }
-.windows-api-entry[open] .details-chevron { transform: rotate(45deg); }
-.windows-api-entry-body { padding: 24px; }
-.windows-api-summary { max-width: 850px; color: var(--muted); font-size: 13px; line-height: 1.7; }
-.binding-choice { display: grid; grid-template-columns: 190px 1fr; gap: 20px; margin: 20px 0; padding: 15px 17px; border: 1px solid var(--line); border-left: 2px solid var(--green); background: rgba(74,222,128,.035); }
-.binding-choice span { color: var(--green); font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; }
-.binding-choice p { color: var(--muted); font-size: 12px; }
-.signature-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 22px; }
-.signature-pair > section { min-width: 0; overflow: hidden; border: 1px solid var(--line); border-radius: 9px; background: var(--panel); }
-.signature-pair h3, .parameter-translation > h3, .checked-call-pattern h3, .contract-outcomes h3 { font-size: 12px; }
-.signature-pair > section > h3 { padding: 16px 17px 4px; }
-.signature-pair > section > p { padding: 0 17px 14px; color: var(--muted-2); font-size: 10px; }
-.signature-pair pre { overflow-x: auto; margin: 0; padding: 17px; border-top: 1px solid var(--line); background: #090d13; }
-.signature-pair pre code { color: #c7d2fe; font: 500 11px/1.65 "Cascadia Code", Consolas, monospace; }
-.parameter-translation { margin-top: 24px; }
-.parameter-translation > h3 { margin-bottom: 11px; }
-.native-parameter-row { display: grid; grid-template-columns: minmax(135px, .7fr) minmax(125px, .65fr) minmax(190px, 1fr) minmax(280px, 1.8fr); }
-.native-parameter-row > span:first-child { display: grid; gap: 5px; }
-.native-parameter-row small { color: var(--violet); font-size: 8px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; }
-.no-parameters { padding: 17px; border: 1px solid var(--line); border-radius: 9px; color: var(--muted); background: var(--panel); font-size: 11px; }
-.checked-call-pattern { margin-top: 20px; overflow: hidden; border: 1px solid var(--line); border-radius: 9px; background: var(--panel); }
-.checked-call-pattern h3 { padding: 16px 17px 4px; }
-.checked-call-pattern > p { padding: 0 17px 14px; color: var(--muted-2); font-size: 10px; }
-.checked-call-pattern pre { overflow-x: auto; margin: 0; padding: 17px; border-top: 1px solid var(--line); background: #090d13; }
-.checked-call-pattern code { color: #bbf7d0; font: 500 11px/1.65 "Cascadia Code", Consolas, monospace; }
-.contract-outcomes { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 20px; }
-.contract-outcomes section { padding: 17px; border: 1px solid var(--line); border-radius: 9px; background: var(--panel); }
-.contract-outcomes h3 { margin-bottom: 8px; color: var(--blue); }
-.contract-outcomes p { color: var(--muted); font-size: 11px; line-height: 1.65; }
-.windows-api-sources { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 18px; }
-.windows-api-sources a { display: inline-flex; align-items: center; gap: 7px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 7px; color: var(--violet); font-size: 10px; }
-.windows-api-sources a:hover { border-color: var(--violet); background: var(--violet-soft); }
-.windows-api-empty { padding: 60px 22px; border: 1px dashed var(--line-bright); border-radius: 11px; text-align: center; }
-.windows-api-empty h2 { margin-bottom: 8px; font-size: 20px; }
-.windows-api-empty p { color: var(--muted); font-size: 12px; }
+.windows-api-patterns { margin-bottom: 34px; }
+.windows-type-list { border-top: 1px solid var(--line); }
+.windows-type-list > div { padding: 13px 16px; }
+.windows-type-list > div + div { border-top: 1px solid var(--line); }
+.windows-type-list > div > span { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.windows-type-list code { color: #c4b5fd; font: 600 10px/1.55 "Cascadia Code", Consolas, monospace; overflow-wrap: anywhere; }
+.windows-type-list i { color: var(--muted-2); font-style: normal; }
+.windows-type-list p { margin-top: 5px; color: var(--muted); font-size: 10px; line-height: 1.6; }
+.windows-signature-grid { display: grid; gap: 22px; }
+.windows-signature-grid > section { min-width: 0; }
+.windows-signature-grid > section + section { padding-top: 22px; border-top: 1px solid var(--line); }
+.windows-outcome-block .return-card + h3 { margin-top: 18px; }
 
 /* Search */
 .search-dialog {
@@ -2402,9 +2327,6 @@ pre {
   .mobile-lesson-sections a span { color: var(--violet); font: 700 9px/1 "Cascadia Code", Consolas, monospace; }
   .mobile-lesson-sections a:hover { color: var(--text); }
   .feature-split { grid-template-columns: 1fr; }
-  .signature-pair { grid-template-columns: 1fr; }
-  .native-parameter-row { grid-template-columns: minmax(130px, .7fr) minmax(180px, 1fr) minmax(260px, 1.6fr); }
-  .native-parameter-row > :nth-child(2) { display: none; }
 }
 
 @media (max-width: 780px) {
@@ -2493,23 +2415,6 @@ pre {
   .contract-key { border-right: 0; border-bottom: 1px solid var(--line); }
   .branch-input { grid-template-columns: 1fr; }
   .branch-input pre { border-top: 1px solid var(--line); border-left: 0; }
-  .windows-api-wrap { width: calc(100vw - 34px); max-width: calc(100vw - 34px); }
-  .windows-api-hero { grid-template-columns: 1fr; gap: 24px; padding-bottom: 38px; }
-  .windows-api-hero p, .windows-guide-section p, .windows-api-entry code { overflow-wrap: anywhere; }
-  .windows-guide-section { padding: 44px 0; }
-  .section-heading-row { align-items: start; flex-direction: column; gap: 10px; }
-  .section-heading-row > p { text-align: left; }
-  .native-type-head, .native-parameter-head { display: none; }
-  .native-type-row, .native-parameter-row { grid-template-columns: 1fr; padding: 14px; gap: 5px; }
-  .native-type-row > *, .native-parameter-row > * { padding: 0; }
-  .native-type-row > * + *, .native-parameter-row > * + * { border-left: 0; }
-  .native-parameter-row > :nth-child(2) { display: block; }
-  .windows-api-entry summary { align-items: flex-start; padding: 14px 15px; }
-  .windows-api-entry summary > span:first-child { grid-template-columns: 1fr; gap: 4px; }
-  .windows-api-entry summary strong { white-space: normal; }
-  .windows-api-meta > span:first-child { display: none; }
-  .windows-api-entry-body { padding: 16px; }
-  .binding-choice, .contract-outcomes { grid-template-columns: 1fr; gap: 7px; }
 }
 
 @media (max-width: 480px) {

@@ -831,9 +831,11 @@ user = <span class="code-function">win32api.GetUserName</span>()
     main.innerHTML = windowsApiView.render(windowsApiGuide, filter);
     document.querySelector("#windows-api-filter").addEventListener("input", (event) => {
       const matches = windowsApiView.filterEntries(windowsApiGuide.entries, event.target.value);
-      document.querySelector("#windows-api-results").innerHTML = windowsApiView.renderEntries(matches, matches.length === 1);
-      document.querySelector("#windows-api-count").textContent = `${matches.length} of ${windowsApiGuide.entries.length} APIs shown`;
+      document.querySelector("#windows-api-results").innerHTML = windowsApiView.renderEntries(matches, Boolean(event.target.value.trim()));
+      document.querySelector("#windows-api-count").textContent = `${matches.length} APIs`;
     });
+    const exact = windowsApiView.filterEntries(windowsApiGuide.entries, filter).find((entry) => entry.name.toLowerCase() === filter.trim().toLowerCase());
+    if (exact) window.setTimeout(() => openWindowsApiDetails(exact.name), 0);
   }
 
   function manualList(items) {
@@ -1123,6 +1125,14 @@ except pywintypes.error as error:
     apiDialog.showModal();
   }
 
+  function openWindowsApiDetails(name) {
+    const entry = windowsApiGuide.entries.find((item) => item.name === name);
+    if (!entry) return;
+    apiDetailContent.innerHTML = windowsApiView.renderDialog(entry);
+    apiDetailContent.querySelector(".api-dialog-close").addEventListener("click", () => apiDialog.close());
+    apiDialog.showModal();
+  }
+
   function wireInPageLinks() {
     document.querySelectorAll("[data-scroll-target]").forEach((link) => {
       link.addEventListener("click", (event) => {
@@ -1260,7 +1270,9 @@ except pywintypes.error as error:
   searchResults.addEventListener("click", () => searchDialog.close());
   main.addEventListener("click", (event) => {
     const trigger = event.target.closest(".api-detail-trigger");
-    if (trigger) openApiDetails(trigger.dataset.apiModule, trigger.dataset.apiFeature);
+    if (!trigger) return;
+    if (trigger.dataset.windowsApi) openWindowsApiDetails(trigger.dataset.windowsApi);
+    else openApiDetails(trigger.dataset.apiModule, trigger.dataset.apiFeature);
   });
   apiDialog.addEventListener("click", (event) => {
     if (event.target === apiDialog) apiDialog.close();
