@@ -52,7 +52,9 @@ const probe = `<script>
       }
 
       await visit("#/review/foundations");
-      checks.reviewRoute = document.querySelector("h1")?.textContent === "OS foundations review" && document.querySelectorAll(".assessment-activity").length === 5;
+      checks.reviewRoute = document.querySelector("h1")?.textContent === "OS foundations review"
+        && document.querySelectorAll(".assessment-stack fieldset.assessment-activity").length === 5
+        && !document.querySelector(".assessment-activity.unavailable");
       checks.reviewNextModule = Boolean(document.querySelector('.assessment-next a[href="#/module/processes-handles"]'));
 
       await visit("#/review/hooking-injection");
@@ -63,7 +65,8 @@ const probe = `<script>
 
       await visit("#/assessment/final");
       checks.finalRoute = document.querySelector("h1")?.textContent === "Final operating systems assessment"
-        && document.querySelectorAll(".assessment-activity").length === 20
+        && document.querySelectorAll(".assessment-stack fieldset.assessment-activity").length === 20
+        && !document.querySelector(".assessment-activity.unavailable")
         && Boolean(document.querySelector(".assessment-practical"));
 
       await visit("#/");

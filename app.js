@@ -1245,7 +1245,7 @@ except pywintypes.error as error:
         const module = data.modules.find((item) => item.id === review.module);
         return {
           title: review.title,
-          detail: `${module?.title || review.module} Â· ${review.summary}`,
+          detail: `${module?.title || review.module} \u00b7 ${review.summary}`,
           searchText: JSON.stringify(review.activities),
           kind: "Module review",
           href: `#/review/${review.module}`
