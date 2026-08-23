@@ -9,6 +9,7 @@
   const apiSignatures = window.ILOVEOS_API_SIGNATURES || {};
   const windowsApiGuide = window.ILOVEOS_WINDOWS_API_GUIDE;
   const windowsApiView = window.ILOVEOS_WINDOWS_API_VIEW;
+  const referenceOverviewView = window.ILOVEOS_REFERENCE_OVERVIEW_VIEW;
   const main = document.querySelector("#main-content");
   const sidebar = document.querySelector("#sidebar");
   const scrim = document.querySelector("#sidebar-scrim");
@@ -801,9 +802,11 @@ user = <span class="code-function">win32api.GetUserName</span>()
           <h1>Find the Windows capability you need.</h1>
           <span class="source-note">Cross-checked with <a href="https://timgolden.me.uk/pywin32-docs/win32_modules.html" target="_blank" rel="noreferrer">the pywin32 module reference ↗</a></span>
         </header>
-        <section class="reference-patterns" aria-label="Patterns used throughout the guide">
-          ${referenceData.pywin32Patterns.map((pattern) => `<details class="pattern-card"><summary>${escapeHtml(pattern.title)}<span>+</span></summary><p>${escapeHtml(pattern.summary)}</p><pre><code>${escapeHtml(pattern.code)}</code></pre></details>`).join("")}
-        </section>
+        ${referenceOverviewView.renderButton({
+          kind: "pywin32-essentials",
+          title: "pywin32 essentials",
+          summary: "Installation, cleanup, errors, access rights, wrapper selection, and constants.",
+        })}
         <div class="reference-filter sticky-filter">
           <input id="module-filter" type="search" value="${escapeHtml(filter)}" placeholder="Try: create process, named pipe, token privilege, VirtualAllocEx…" aria-label="Search the pywin32 guide" autocomplete="off" />
           <span class="reference-count">${modules.length} modules · ${featureCount} entries</span>
@@ -1133,6 +1136,15 @@ except pywintypes.error as error:
     apiDialog.showModal();
   }
 
+  function openReferenceOverview(kind) {
+    apiDetailContent.innerHTML = referenceOverviewView.renderDialog(kind, {
+      mappings: windowsApiGuide.typeMappings,
+      patterns: referenceData.pywin32Patterns,
+    });
+    apiDetailContent.querySelector(".api-dialog-close").addEventListener("click", () => apiDialog.close());
+    apiDialog.showModal();
+  }
+
   function wireInPageLinks() {
     document.querySelectorAll("[data-scroll-target]").forEach((link) => {
       link.addEventListener("click", (event) => {
@@ -1269,6 +1281,11 @@ except pywintypes.error as error:
   searchInput.addEventListener("input", () => updateSearch(searchInput.value));
   searchResults.addEventListener("click", () => searchDialog.close());
   main.addEventListener("click", (event) => {
+    const overviewTrigger = event.target.closest("[data-reference-overview]");
+    if (overviewTrigger) {
+      openReferenceOverview(overviewTrigger.dataset.referenceOverview);
+      return;
+    }
     const trigger = event.target.closest(".api-detail-trigger");
     if (!trigger) return;
     if (trigger.dataset.windowsApi) openWindowsApiDetails(trigger.dataset.windowsApi);

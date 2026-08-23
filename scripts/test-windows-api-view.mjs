@@ -21,6 +21,7 @@ const dataVersion = indexHtml.match(/windows-api-data\.js\?v=([^"']+)/)?.[1];
 const viewVersion = indexHtml.match(/windows-api-view\.js\?v=([^"']+)/)?.[1];
 const appVersion = indexHtml.match(/app\.js\?v=([^"']+)/)?.[1];
 const styleVersion = indexHtml.match(/styles\.css\?v=([^"']+)/)?.[1];
+const overviewVersion = indexHtml.match(/reference-overview-view\.js\?v=([^"']+)/)?.[1];
 
 globalThis.window = {};
 for (const filename of [
@@ -30,6 +31,7 @@ for (const filename of [
   "api-signatures-stage4.js",
   "api-signatures-stage6.js",
   "windows-api-data.js",
+  "reference-overview-view.js",
   "windows-api-view.js",
 ]) {
   vm.runInThisContext(fs.readFileSync(path.join(root, filename), "utf8"), { filename });
@@ -43,11 +45,12 @@ function requireCondition(condition, message) {
   if (!condition) errors.push(message);
 }
 
-requireCondition(Boolean(dataVersion && viewVersion && appVersion && styleVersion), "Windows API guide assets are missing cache versions");
-requireCondition(dataVersion === viewVersion && viewVersion === appVersion && appVersion === styleVersion, "Windows API guide data, view, app, and stylesheet cache versions do not match");
+requireCondition(Boolean(dataVersion && viewVersion && appVersion && styleVersion && overviewVersion), "Windows API guide assets are missing cache versions");
+requireCondition(dataVersion === viewVersion && viewVersion === appVersion && appVersion === styleVersion && styleVersion === overviewVersion, "Windows API guide data, overview, view, app, and stylesheet cache versions do not match");
 requireCondition(dataVersion !== "windows-api-guide", "Windows API guide still uses the stale first-release cache key");
 requireCondition(dataVersion !== "windows-api-guide-2", "Windows API redesign still uses the pre-redesign cache key");
 requireCondition(dataVersion !== "windows-api-guide-3", "Windows API category colors still use the pre-color cache key");
+requireCondition(dataVersion !== "windows-api-guide-4", "Reference overview popups still use the pre-popup cache key");
 for (const expected of [
   "windowsApiView.renderDialog(entry)",
   "trigger.dataset.windowsApi",
@@ -116,8 +119,9 @@ for (const expected of [
 }
 
 const fullHtml = view.render(guide, "");
-requireCondition(fullHtml.includes("Native types to Python types"), "the unfiltered guide is missing its type map");
-requireCondition(fullHtml.includes("reference-patterns"), "native type map does not use the pywin32 pattern-card spacing");
+requireCondition(fullHtml.includes('data-reference-overview="windows-types"'), "the unfiltered guide is missing its native type popup button");
+requireCondition(fullHtml.includes("Native Windows type translations"), "the native type popup button is missing its title");
+requireCondition(!fullHtml.includes("windows-type-card") && !fullHtml.includes("<details class=\"pattern-card"), "native type translations still render as dropdowns");
 for (const unwanted of [
   "Start with the Windows operation",
   "Do not translate by resemblance",

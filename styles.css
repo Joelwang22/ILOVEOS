@@ -2052,6 +2052,34 @@ pre {
 .pattern-card pre { max-height: 320px; margin: 0; padding: 16px; border-top: 1px solid var(--line); border-radius: 0; overflow: auto; }
 .pattern-card pre code { white-space: pre; }
 
+.reference-overview { margin-bottom: 34px; }
+.reference-overview-button {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  width: 100%;
+  min-height: 76px;
+  padding: 15px 20px;
+  border: 1px solid var(--line);
+  border-left: 3px solid color-mix(in srgb, var(--violet) 72%, var(--line));
+  border-radius: 11px;
+  color: var(--text);
+  background: rgba(16,21,30,.72);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 140ms ease, background 140ms ease;
+}
+.reference-overview-button:hover { border-color: color-mix(in srgb, var(--violet) 45%, var(--line)); border-left-color: var(--violet); background: var(--violet-soft); }
+.reference-overview-button:focus-visible { outline: 2px solid var(--violet); outline-offset: 3px; }
+.reference-overview-button > span:first-child { display: grid; gap: 4px; min-width: 0; }
+.reference-overview-button strong { color: #cbd5e1; font-size: 13px; }
+.reference-overview-button small { color: var(--muted); font-size: 11px; line-height: 1.55; }
+.reference-overview-button > .feature-open { width: 30px; height: 30px; flex: 0 0 30px; border: 1px solid var(--line); border-radius: 8px; color: var(--violet); }
+.reference-overview-button:hover > .feature-open { border-color: color-mix(in srgb, var(--violet) 45%, var(--line)); background: rgba(167,139,250,.08); }
+.reference-overview-summary { margin: 0 0 12px; color: var(--muted); font-size: 11px; line-height: 1.65; }
+
 .sticky-filter {
   position: sticky;
   z-index: 4;
@@ -2246,8 +2274,7 @@ pre {
 .api-source-links a { color: var(--violet); font-size: 10px; }
 
 /* Windows API guide */
-.windows-api-patterns { margin-bottom: 34px; }
-.windows-type-list { border-top: 1px solid var(--line); }
+.windows-type-list { border: 1px solid var(--line); border-radius: 9px; overflow: hidden; }
 .windows-type-list > div { padding: 13px 16px; }
 .windows-type-list > div + div { border-top: 1px solid var(--line); }
 .windows-type-list > div > span { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }

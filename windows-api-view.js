@@ -1,4 +1,6 @@
 (() => {
+  const overviewView = window.ILOVEOS_REFERENCE_OVERVIEW_VIEW;
+
   function escapeHtml(value) {
     return String(value).replace(/[&<>'"]/g, (character) => ({
       "&": "&amp;",
@@ -38,25 +40,11 @@
   }
 
   function renderTypeMappings(mappings) {
-    const midpoint = Math.ceil(mappings.length / 2);
-    const groups = [
-      ["Scalar, handle, and address types", mappings.slice(0, midpoint)],
-      ["Strings, pointers, structures, and callbacks", mappings.slice(midpoint)],
-    ];
-    return `
-      <section class="reference-patterns windows-api-patterns" aria-label="Native types to Python types">
-        ${groups.map(([title, items]) => `
-          <details class="pattern-card windows-type-card">
-            <summary>${escapeHtml(title)}<span>+</span></summary>
-            <div class="windows-type-list">
-              ${items.map((mapping) => `
-                <div>
-                  <span><code>${escapeHtml(mapping.native)}</code><i aria-hidden="true">→</i><code>${escapeHtml(mapping.python)}</code></span>
-                  <p>${escapeHtml(mapping.meaning)}</p>
-                </div>`).join("")}
-            </div>
-          </details>`).join("")}
-      </section>`;
+    return overviewView.renderButton({
+      kind: "windows-types",
+      title: "Native Windows type translations",
+      summary: "Scalar, handle, address, string, pointer, structure, and callback mappings.",
+    });
   }
 
   function renderParameterList(entry) {
