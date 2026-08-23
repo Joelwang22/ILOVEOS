@@ -315,6 +315,7 @@
       } else if (action?.type === "reveal-practical") {
         target = renderRoot.querySelector("[data-assessment-model]");
       }
+      if (target?.matches("[data-assessment-feedback], [data-assessment-model]")) target.dataset.assessmentFocusTarget = "";
       target?.focus();
     };
 

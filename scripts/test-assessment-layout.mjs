@@ -25,7 +25,10 @@ if (!browser) {
 const scenarios = [
   { name: "desktop", width: 1440, height: 1000, hash: "#/review/foundations", size: "small" },
   { name: "compact", width: 900, height: 900, hash: "#/assessment/final", size: "default" },
-  { name: "narrow", width: 500, height: 844, hash: "#/assessment/final", size: "large", forcedWidth: 390 }
+  { name: "narrow", width: 500, height: 844, hash: "#/assessment/final", size: "large" },
+  { name: "size-small", width: 900, height: 900, hash: "#/assessment/final", size: "small", fontProbe: true },
+  { name: "size-default", width: 900, height: 900, hash: "#/assessment/final", size: "default", fontProbe: true },
+  { name: "size-large", width: 900, height: 900, hash: "#/assessment/final", size: "large", fontProbe: true }
 ];
 const tempRoot = path.resolve(os.tmpdir());
 const tempDirectory = fs.mkdtempSync(path.join(tempRoot, "iloveos-assessment-layout-"));
@@ -52,6 +55,14 @@ try {
         void page.offsetHeight;
         const heroSize = parseFloat(getComputedStyle(main.querySelector(".assessment-hero > p")).fontSize);
         const optionSize = parseFloat(getComputedStyle(main.querySelector(".assessment-option, .assessment-checkbox")).fontSize);
+        let continuationSize = null;
+        if (${Boolean(scenario.fontProbe)}) {
+          const continuation = document.createElement("nav");
+          continuation.className = "assessment-next";
+          continuation.innerHTML = '<a class="button">Continue</a>';
+          page.append(continuation);
+          continuationSize = parseFloat(getComputedStyle(continuation.querySelector(".button")).fontSize);
+        }
         const visibleElements = [...main.querySelectorAll("*")].filter((element) => {
           const style = getComputedStyle(element);
           return style.display !== "none" && style.position !== "fixed" && !element.classList.contains("sr-only");
@@ -72,10 +83,16 @@ try {
           activityCardStyled: activityStyle?.borderStyle === "solid" && activityStyle?.backgroundImage !== "none",
           heroSize,
           optionSize,
+          heroHeadingSize: parseFloat(getComputedStyle(main.querySelector(".assessment-hero h1")).fontSize),
+          practicalHeadingSize: main.querySelector(".assessment-practical h2") ? parseFloat(getComputedStyle(main.querySelector(".assessment-practical h2")).fontSize) : null,
+          orderingSize: parseFloat(getComputedStyle(main.querySelector('.assessment-order-actions button')).fontSize),
+          textareaSize: main.querySelector("textarea") ? parseFloat(getComputedStyle(main.querySelector("textarea")).fontSize) : null,
+          continuationSize,
           optionsColumns: firstOptions ? getComputedStyle(firstOptions).gridTemplateColumns.split(" ").length : 0,
           controlsFit: [...main.querySelectorAll("button, textarea")].every((control) => control.scrollWidth <= control.clientWidth + 1),
           orderingTargets: moveButtons.length === 0 || moveButtons.every((button) => button.getBoundingClientRect().height >= 40),
-          longTextWraps: [...main.querySelectorAll(".assessment-page p, .assessment-page strong, .assessment-page span")].every((element) => element.scrollWidth <= element.clientWidth + 1),
+          longTextWraps: [...main.querySelectorAll(".assessment-page p, .assessment-activity legend, .assessment-option, .assessment-checkbox, .assessment-order-list strong, .assessment-practical-prompts label")].every((element) => element.scrollWidth <= element.clientWidth + 1),
+          noVerticalClipping: [...main.querySelectorAll("button, textarea, .assessment-activity, .assessment-practical-prompts label")].every((element) => element.scrollHeight <= element.clientHeight + 1),
           practicalTextarea: !main.querySelector("textarea") || main.querySelector("textarea").getBoundingClientRect().width <= main.querySelector("textarea").parentElement.getBoundingClientRect().width + 1,
           diagnostics: {
             activityBorderStyle: activityStyle?.borderStyle,
@@ -94,7 +111,7 @@ try {
       });
     <\/script>`;
     const html = indexSource
-      .replace("<head>", `<head><base href="${baseUrl}"><script>localStorage.setItem("iloveos-content-size", "${scenario.size}");<\/script>${scenario.forcedWidth ? `<style>body,.page-column{width:${scenario.forcedWidth}px!important;max-width:${scenario.forcedWidth}px!important;min-width:0!important}</style>` : ""}`)
+      .replace("<head>", `<head><base href="${baseUrl}"><script>localStorage.setItem("iloveos-content-size", "${scenario.size}");<\/script>`)
       .replace("</body>", `${probe}</body>`);
     fs.writeFileSync(pagePath, html);
     const run = spawnSync(browser, [
@@ -114,19 +131,20 @@ try {
     const result = JSON.parse(match[1].replaceAll("&quot;", '"').replaceAll("&amp;", "&"));
     console.log(`${scenario.name}: ${JSON.stringify(result)}`);
     for (const [name, passed] of Object.entries(result)) {
-      if (["overflowers", "optionsColumns", "heroSize", "optionSize", "diagnostics"].includes(name)) continue;
+      if (["overflowers", "optionsColumns", "heroSize", "optionSize", "heroHeadingSize", "practicalHeadingSize", "orderingSize", "textareaSize", "continuationSize", "diagnostics"].includes(name)) continue;
       if (passed !== true) errors.push(`${scenario.name} ${name}: ${JSON.stringify(passed)}`);
     }
     if (scenario.name === "desktop" && result.optionsColumns < 2) errors.push("desktop assessment options do not use the available horizontal space");
     if (scenario.name === "narrow" && result.optionsColumns !== 1) errors.push("narrow assessment options do not collapse to one column");
-    sizeMetrics.push({ name: scenario.name, hero: result.heroSize, option: result.optionSize });
+    if (scenario.fontProbe) sizeMetrics.push({ name: scenario.name, lead: result.heroSize, heroHeading: result.heroHeadingSize, practicalHeading: result.practicalHeadingSize, option: result.optionSize, ordering: result.orderingSize, textarea: result.textareaSize, continuation: result.continuationSize });
   }
 } finally {
   if (tempDirectory.startsWith(`${tempRoot}${path.sep}`)) fs.rmSync(tempDirectory, { recursive: true, force: true });
 }
 
-if (!(sizeMetrics[0].hero < sizeMetrics[1].hero && sizeMetrics[1].hero < sizeMetrics[2].hero)) errors.push(`assessment lead does not scale small/default/large: ${JSON.stringify(sizeMetrics)}`);
-if (!(sizeMetrics[0].option < sizeMetrics[1].option && sizeMetrics[1].option < sizeMetrics[2].option)) errors.push(`assessment controls do not scale small/default/large: ${JSON.stringify(sizeMetrics)}`);
+for (const key of ["lead", "heroHeading", "practicalHeading", "option", "ordering", "textarea", "continuation"]) {
+  if (!(sizeMetrics[0][key] < sizeMetrics[1][key] && sizeMetrics[1][key] < sizeMetrics[2][key])) errors.push(`assessment ${key} does not scale small/default/large: ${JSON.stringify(sizeMetrics)}`);
+}
 
 console.log(`errors: ${errors.length}`);
 for (const error of errors) console.error(`ERROR ${error}`);

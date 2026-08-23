@@ -91,11 +91,17 @@ const html = `<!doctype html><html><head><meta charset="utf-8"><style>${stylesSo
 
       app.querySelector('[data-activity="single"][data-option="0"]').click();
       checks.wrongSingleFocus = document.activeElement?.matches('[data-activity="single"][data-option="1"]');
+      const wrongSingleStyle = getComputedStyle(app.querySelector('[data-activity="single"][data-option="0"]'));
+      checks.incorrectVisualState = wrongSingleStyle.borderColor === "rgba(248, 113, 113, 0.5)" && wrongSingleStyle.color === "rgb(254, 202, 202)";
       checks.announcerPersistent = Boolean(originalAnnouncer && originalAnnouncer.isSameNode(app.querySelector("[data-assessment-announcer]")));
       checks.wrongSingleAnnounced = app.querySelector("[data-assessment-announcer]")?.textContent.includes("Try another option") || false;
 
       app.querySelector('[data-activity="single"][data-option="1"]').click();
       checks.completionFocus = document.activeElement?.matches('[data-assessment-feedback="single"]');
+      const completionFocusStyle = getComputedStyle(document.activeElement);
+      checks.completionFocusVisible = completionFocusStyle.boxShadow.includes("rgb(167, 139, 250)");
+      const correctSingleStyle = getComputedStyle(app.querySelector('[data-activity="single"][data-option="1"]'));
+      checks.correctVisualState = correctSingleStyle.borderColor === "rgba(84, 214, 155, 0.5)" && correctSingleStyle.color === "rgb(198, 246, 223)";
 
       app.querySelector('[data-assessment-action="check-multiple"]').click();
       checks.emptyMultipleCheckFocus = document.activeElement?.matches('[data-assessment-action="check-multiple"]');
@@ -107,6 +113,10 @@ const html = `<!doctype html><html><head><meta charset="utf-8"><style>${stylesSo
       checks.checkboxClearsFeedback = !app.querySelector('[data-assessment-feedback="multiple"]').textContent.trim();
       app.querySelector('[data-assessment-action="check-multiple"]').click();
       checks.incorrectMultipleCheckFocus = document.activeElement?.matches('[data-assessment-action="check-multiple"]');
+      app.querySelector('[data-activity="multiple"][data-option="2"]').click();
+      app.querySelector('[data-assessment-action="check-multiple"]').click();
+      const completedMultipleCheck = app.querySelector('[data-assessment-action="check-multiple"]');
+      checks.completedCheckDisabledStyle = completedMultipleCheck.disabled && parseFloat(getComputedStyle(completedMultipleCheck).opacity) < 1;
 
       app.querySelector('[data-assessment-action="check-ordering"]').click();
       checks.incorrectOrderingCheckFocus = document.activeElement?.matches('[data-assessment-action="check-ordering"]');
@@ -123,7 +133,11 @@ const html = `<!doctype html><html><head><meta charset="utf-8"><style>${stylesSo
 
       app.querySelector('[data-assessment-action="reveal-practical"]').click();
       checks.practicalFocus = document.activeElement?.matches("[data-assessment-model]");
+      const practicalFocusStyle = getComputedStyle(document.activeElement);
+      checks.practicalFocusVisible = practicalFocusStyle.boxShadow.includes("rgb(167, 139, 250)");
       checks.practicalAnnounced = app.querySelector("[data-assessment-announcer]")?.textContent.includes("Model reasoning revealed") || false;
+      const completedReveal = app.querySelector('[data-assessment-action="reveal-practical"]');
+      checks.completedRevealDisabledStyle = completedReveal.disabled && parseFloat(getComputedStyle(completedReveal).opacity) < 1;
 
       app.querySelector('[data-assessment-action="reset"]').click();
       checks.resetFocus = document.activeElement?.matches('[data-assessment-action="reset"]');
