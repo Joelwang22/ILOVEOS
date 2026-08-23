@@ -2414,8 +2414,6 @@ html[data-content-size="large"] .assessment-page {
   outline-offset: 3px;
 }
 
-.assessment-feedback:focus,
-.assessment-model:focus,
 .assessment-feedback[data-assessment-focus-target],
 .assessment-model[data-assessment-focus-target] {
   outline: 2px solid var(--violet);

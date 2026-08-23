@@ -81,6 +81,7 @@ const html = `<!doctype html><html><head><meta charset="utf-8"><style>${stylesSo
   <script>${viewSource}</script>
   <script>
     const checks = {};
+    (async () => {
     try {
       const page = ${JSON.stringify(page)};
       const app = document.querySelector("#app");
@@ -102,6 +103,11 @@ const html = `<!doctype html><html><head><meta charset="utf-8"><style>${stylesSo
       checks.completionFocusVisible = completionFocusStyle.boxShadow.includes("rgb(167, 139, 250)");
       const correctSingleStyle = getComputedStyle(app.querySelector('[data-activity="single"][data-option="1"]'));
       checks.correctVisualState = correctSingleStyle.borderColor === "rgba(84, 214, 155, 0.5)" && correctSingleStyle.color === "rgb(198, 246, 223)";
+      const completedFeedback = document.activeElement;
+      app.querySelector('[data-assessment-action="reset"]').focus();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      checks.completionBlurMoved = document.activeElement?.matches('[data-assessment-action="reset"]');
+      checks.completionMarkerClears = !completedFeedback.hasAttribute("data-assessment-focus-target");
 
       app.querySelector('[data-assessment-action="check-multiple"]').click();
       checks.emptyMultipleCheckFocus = document.activeElement?.matches('[data-assessment-action="check-multiple"]');
@@ -138,6 +144,11 @@ const html = `<!doctype html><html><head><meta charset="utf-8"><style>${stylesSo
       checks.practicalAnnounced = app.querySelector("[data-assessment-announcer]")?.textContent.includes("Model reasoning revealed") || false;
       const completedReveal = app.querySelector('[data-assessment-action="reveal-practical"]');
       checks.completedRevealDisabledStyle = completedReveal.disabled && parseFloat(getComputedStyle(completedReveal).opacity) < 1;
+      const focusedModel = document.activeElement;
+      app.querySelector('[data-assessment-action="reset"]').focus();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      checks.practicalBlurMoved = document.activeElement?.matches('[data-assessment-action="reset"]');
+      checks.practicalMarkerClears = !focusedModel.hasAttribute("data-assessment-focus-target");
 
       app.querySelector('[data-assessment-action="reset"]').click();
       checks.resetFocus = document.activeElement?.matches('[data-assessment-action="reset"]');
@@ -146,6 +157,7 @@ const html = `<!doctype html><html><head><meta charset="utf-8"><style>${stylesSo
       checks.exception = error.message;
     }
     document.body.innerHTML = '<pre id="result">' + JSON.stringify(checks) + '</pre>';
+    })();
   <\/script>
 </body></html>`;
 
@@ -155,6 +167,7 @@ try {
     "--headless=new",
     "--disable-gpu",
     "--no-first-run",
+    "--virtual-time-budget=1000",
     `--user-data-dir=${profilePath}`,
     "--dump-dom",
     pathToFileURL(pagePath).href,
