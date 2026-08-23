@@ -72,5 +72,10 @@ const lessons = context.window.ILOVEOS_LESSONS.map((lesson) => ({
 const pointerLesson = lessons.find((lesson) => lesson.id === "cpu-architecture-data");
 const pointerResult = validatePractice(pointerLesson.practice, pointerLesson.id, { enforceClarity: true });
 assert.deepEqual(pointerResult.errors, [], pointerResult.errors.join("\n"));
+assert.match(
+  pointerLesson.practice.steps[2].action,
+  /one start address for your Python process that you recorded in the previous step/i,
+  "the conversion step must name the start address recorded by the previous step",
+);
 
 console.log("practice audit errors: 0");
