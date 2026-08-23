@@ -777,13 +777,5 @@ class PROCESS_INFORMATION(ctypes.Structure):
   window.ILOVEOS_WINDOWS_API_GUIDE = {
     typeMappings,
     entries,
-    workflow: [
-      ["Choose the Python path", "Use a clear pywin32 wrapper when one exists. Use ctypes for missing coverage or when the assignment is explicitly about the native ABI."],
-      ["Read the native declaration", "Identify the DLL, Unicode export, parameter directions, optional pointers, return type, failure sentinel, extended-error rule, and cleanup API."],
-      ["Translate the types", "Map each typedef by width and pointer level. SIZE_T is pointer-sized; SIZE_T * is a pointer to a c_size_t output object."],
-      ["Declare before calling", "Create an explicit WinDLL with use_last_error=True where appropriate, then assign every argtype and the exact restype before the first call."],
-      ["Build owned inputs and outputs", "Create writable strings, byte buffers, structures, output values, and callbacks explicitly, then pass pointers with byref where the declaration expects them."],
-      ["Check and clean up", "Test the API-specific result immediately, capture last error only when documented, verify partial outputs, and place every acquired resource in a guaranteed cleanup path."],
-    ],
   };
 })();

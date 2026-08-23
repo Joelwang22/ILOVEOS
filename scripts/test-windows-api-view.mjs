@@ -59,8 +59,17 @@ requireCondition(!html.includes("translation-workflow"), "a direct API result st
 requireCondition(!html.includes("WriteProcessMemory.argtypes"), "filtered rendering includes an unrelated API entry");
 
 const fullHtml = view.render(guide, "");
-requireCondition(fullHtml.includes("How to translate Microsoft declarations"), "the unfiltered guide is missing its translation tutorial");
 requireCondition(fullHtml.includes("Native types to Python types"), "the unfiltered guide is missing its type map");
+for (const unwanted of [
+  "Start with the Windows operation",
+  "Do not translate by resemblance",
+  "Controlled Windows lab only",
+  "How to translate Microsoft declarations",
+  "translation-workflow",
+]) {
+  requireCondition(!fullHtml.includes(unwanted), `the unfiltered guide still renders unwanted introductory content: ${unwanted}`);
+}
+requireCondition(fullHtml.includes("Translated API catalogue"), "the unfiltered guide is missing its API catalogue");
 
 const escaped = view.render(guide, "<script>alert(1)</script>");
 requireCondition(!escaped.includes("<script>alert(1)</script>"), "guide renders the search query without HTML escaping");

@@ -37,20 +37,6 @@
     });
   }
 
-  function renderWorkflow(workflow) {
-    return `
-      <section class="windows-guide-section" aria-labelledby="translation-workflow-title">
-        <div class="section-heading-row">
-          <div><span class="eyebrow">Start here</span><h2 id="translation-workflow-title">How to translate Microsoft declarations</h2></div>
-          <p>Follow the same six decisions for every unfamiliar API.</p>
-        </div>
-        <ol class="translation-workflow">
-          ${workflow.map(([title, detail], index) => `
-            <li><span>${String(index + 1).padStart(2, "0")}</span><div><h3>${escapeHtml(title)}</h3><p>${escapeHtml(detail)}</p></div></li>`).join("")}
-        </ol>
-      </section>`;
-  }
-
   function renderTypeMappings(mappings) {
     return `
       <section class="windows-guide-section" aria-labelledby="type-map-title">
@@ -152,12 +138,8 @@
           <div>
             <span class="eyebrow">Native contract, clear Python</span>
             <h1>Windows API guide</h1>
-            <p>Start with the Windows operation, use pywin32 when it represents the task clearly, and use the supplied ctypes translation when the wrapper is missing or the native ABI is the lesson.</p>
           </div>
-          <div class="windows-guide-principle"><strong>Do not translate by resemblance</strong><p>Follow the documented type width, pointer level, direction, result, error rule, and cleanup obligation.</p></div>
         </section>
-        <aside class="windows-api-safety"><strong>Controlled Windows lab only</strong><p>Cross-process memory, remote-thread, hook, token, and service examples are for systems and purpose-built targets you own or are explicitly authorised to test. Request minimum rights, match process architectures, preserve cleanup paths, and do not assume an address resolved in one process is valid in another.</p></aside>
-        ${query ? "" : renderWorkflow(guide.workflow)}
         ${query ? "" : renderTypeMappings(guide.typeMappings)}
         <section class="windows-guide-section windows-api-catalogue" aria-labelledby="windows-api-catalogue-title">
           <div class="section-heading-row">
