@@ -26,6 +26,7 @@ if (!browser) {
 const tempRoot = path.resolve(os.tmpdir());
 const tempDirectory = fs.mkdtempSync(path.join(tempRoot, "iloveos-dialog-test-"));
 const pagePath = path.join(tempDirectory, "dialog.html");
+const appPagePath = path.join(tempDirectory, "app-dialog.html");
 const profilePath = path.join(tempDirectory, "profile");
 
 const repeatedContent = Array.from({ length: 24 }, (_, index) => `<p>Reference content row ${index + 1}: enough material to require scrolling.</p>`).join("");
@@ -82,6 +83,47 @@ try {
   console.log(JSON.stringify(result));
   if (!result.visible || result.scrollOwner !== "dialog") {
     console.error("ERROR the popup's final content is not reachable through the dialog scroll container");
+    process.exitCode = 1;
+  }
+
+  const baseUrl = pathToFileURL(`${root}${path.sep}`).href;
+  const reopeningProbe = `<script>
+    window.addEventListener("DOMContentLoaded", () => {
+      const triggers = [...document.querySelectorAll(".windows-api-detail-trigger")];
+      const popup = document.querySelector("#api-detail-dialog");
+      triggers[0].click();
+      popup.scrollTop = popup.scrollHeight;
+      const firstScrollTop = popup.scrollTop;
+      popup.querySelector(".api-dialog-close").click();
+      triggers[1].click();
+      const result = { firstScrollTop, reopenedScrollTop: popup.scrollTop };
+      const output = document.createElement("pre");
+      output.id = "reopen-result";
+      output.textContent = JSON.stringify(result);
+      document.body.append(output);
+    });
+  <\/script>`;
+  const appHtml = fs.readFileSync(path.join(root, "index.html"), "utf8")
+    .replace("<head>", `<head><base href="${baseUrl}">`)
+    .replace("</body>", `${reopeningProbe}</body>`);
+  fs.writeFileSync(appPagePath, appHtml);
+  const reopenRun = spawnSync(browser, [
+    "--headless=new",
+    "--disable-gpu",
+    "--no-first-run",
+    `--user-data-dir=${path.join(tempDirectory, "reopen-profile")}`,
+    "--window-size=390,600",
+    "--force-device-scale-factor=1",
+    "--dump-dom",
+    `${pathToFileURL(appPagePath).href}#/reference/windows-api`,
+  ], { encoding: "utf8", timeout: 30000 });
+  if (reopenRun.error) throw reopenRun.error;
+  const reopenMatch = reopenRun.stdout.match(/<pre id="reopen-result">(\{.*?\})<\/pre>/);
+  if (!reopenMatch) throw new Error(`browser did not return popup reopening metrics (exit ${reopenRun.status}): ${reopenRun.stderr.trim()}`);
+  const reopenResult = JSON.parse(reopenMatch[1].replaceAll("&quot;", '"'));
+  console.log(JSON.stringify(reopenResult));
+  if (reopenResult.firstScrollTop <= 0 || reopenResult.reopenedScrollTop !== 0) {
+    console.error("ERROR a newly opened popup does not start at the top");
     process.exitCode = 1;
   }
 } finally {

@@ -1095,6 +1095,12 @@ except pywintypes.error as error:
       </details>`;
   }
 
+  function showApiDialog() {
+    apiDetailContent.querySelector(".api-dialog-close").addEventListener("click", () => apiDialog.close());
+    apiDialog.showModal();
+    apiDialog.scrollTop = 0;
+  }
+
   function openApiDetails(moduleName, featureName) {
     const module = referenceData.pywin32Modules.find((item) => item.name === moduleName);
     const feature = module?.features.find((item) => item.name === featureName);
@@ -1124,16 +1130,14 @@ except pywintypes.error as error:
         ${resultHandlingGuide(module, feature, Boolean(signatures.length))}
         ${detail?.sources?.length ? `<div class="api-source-links">${detail.sources.map((source, index) => `<a href="${source}" target="_blank" rel="noreferrer">${index ? "Additional type source" : "Type signature source"} ↗</a>`).join("")}</div>` : ""}
       </div>`;
-    apiDetailContent.querySelector(".api-dialog-close").addEventListener("click", () => apiDialog.close());
-    apiDialog.showModal();
+    showApiDialog();
   }
 
   function openWindowsApiDetails(name) {
     const entry = windowsApiGuide.entries.find((item) => item.name === name);
     if (!entry) return;
     apiDetailContent.innerHTML = windowsApiView.renderDialog(entry);
-    apiDetailContent.querySelector(".api-dialog-close").addEventListener("click", () => apiDialog.close());
-    apiDialog.showModal();
+    showApiDialog();
   }
 
   function openReferenceOverview(kind) {
@@ -1141,8 +1145,7 @@ except pywintypes.error as error:
       mappings: windowsApiGuide.typeMappings,
       patterns: referenceData.pywin32Patterns,
     });
-    apiDetailContent.querySelector(".api-dialog-close").addEventListener("click", () => apiDialog.close());
-    apiDialog.showModal();
+    showApiDialog();
   }
 
   function wireInPageLinks() {
