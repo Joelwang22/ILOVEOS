@@ -156,7 +156,7 @@ for (const item of sourceUrls) {
 }
 
 const textFiles = fs.readdirSync(root, { recursive: true }).filter((relative) => {
-  if (relative.startsWith(".git") || relative.startsWith(".superpowers") || relative.includes("node_modules")) return false;
+  if (relative.startsWith(".git") || relative.startsWith(".superpowers") || relative.startsWith(".worktrees") || relative.includes("node_modules")) return false;
   return /\.(?:js|mjs|html|css|md|py)$/.test(relative);
 });
 const disallowedDash = String.fromCodePoint(0x2014);
