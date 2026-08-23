@@ -18,7 +18,8 @@ if (fs.existsSync(dataPath)) vm.runInThisContext(fs.readFileSync(dataPath, "utf8
 
 const assessments = window.ILOVEOS_ASSESSMENTS;
 const moduleIds = window.ILOVEOS_DATA.modules.map((module) => module.id);
-const dimensions = ["mechanism", "interface", "failure", "ownership", "evidence"];
+const reviewDimensions = ["mechanism", "interface", "failure", "ownership", "evidence"];
+const finalDimensions = [...reviewDimensions, "debugging"];
 const allIds = new Set();
 
 requireCondition(Boolean(assessments), "Stage 7 assessment data is missing");
@@ -31,15 +32,19 @@ function validateActivity(activity, context) {
   requireCondition(["single", "multiple", "ordering"].includes(activity?.kind), `${context} has invalid kind ${activity?.kind}`);
   requireCondition(typeof activity?.prompt === "string" && activity.prompt.length >= 30, `${context} needs a substantive prompt`);
   requireCondition(typeof activity?.explanation === "string" && activity.explanation.length >= 70, `${context} needs a substantive explanation`);
-  requireCondition(dimensions.includes(activity?.dimension), `${context} has invalid reasoning dimension ${activity?.dimension}`);
+  requireCondition(finalDimensions.includes(activity?.dimension), `${context} has invalid reasoning dimension ${activity?.dimension}`);
   requireCondition(typeof activity?.skill === "string" && activity.skill.length >= 4, `${context} needs a searchable skill label`);
 
   if (activity?.kind === "single") {
     requireCondition(Array.isArray(activity.options) && activity.options.length >= 3, `${context} needs at least three options`);
+    requireCondition(activity.options?.every((option) => typeof option === "string" && option.trim().length >= 3), `${context} has a blank or weak option`);
+    requireCondition(new Set(activity.options || []).size === (activity.options?.length || 0), `${context} repeats option text`);
     requireCondition(Number.isInteger(activity.answer) && activity.answer >= 0 && activity.answer < (activity.options?.length || 0), `${context} has an invalid single-choice answer`);
   }
   if (activity?.kind === "multiple") {
     requireCondition(Array.isArray(activity.options) && activity.options.length >= 3, `${context} needs at least three options`);
+    requireCondition(activity.options?.every((option) => typeof option === "string" && option.trim().length >= 3), `${context} has a blank or weak option`);
+    requireCondition(new Set(activity.options || []).size === (activity.options?.length || 0), `${context} repeats option text`);
     requireCondition(Array.isArray(activity.answers) && activity.answers.length >= 2, `${context} needs at least two correct selections`);
     const uniqueAnswers = new Set(activity.answers || []);
     requireCondition(uniqueAnswers.size === (activity.answers?.length || 0), `${context} repeats a multiple-selection answer`);
@@ -48,6 +53,7 @@ function validateActivity(activity, context) {
   if (activity?.kind === "ordering") {
     const itemIds = new Set((activity.items || []).map((item) => item.id));
     requireCondition(Array.isArray(activity.items) && activity.items.length >= 3 && itemIds.size === activity.items.length, `${context} needs unique ordering items`);
+    requireCondition(activity.items?.every((item) => typeof item.label === "string" && item.label.length >= 20), `${context} has a weak ordering label`);
     requireCondition(Array.isArray(activity.answer) && activity.answer.length === activity.items?.length, `${context} ordering answer has the wrong length`);
     requireCondition((activity.answer || []).every((answer) => itemIds.has(answer)) && new Set(activity.answer || []).size === itemIds.size, `${context} ordering answer must contain every item exactly once`);
   }
@@ -63,7 +69,8 @@ if (assessments) {
     requireCondition(typeof review.title === "string" && review.title.includes("review"), `${review.module} review needs a clear title`);
     requireCondition(review.activities?.length === 5, `${review.module} review must contain exactly five activities`);
     requireCondition(new Set((review.activities || []).map((activity) => activity.kind)).size >= 2, `${review.module} review must use at least two activity formats`);
-    requireCondition(dimensions.every((dimension) => review.activities?.some((activity) => activity.dimension === dimension)), `${review.module} review does not cover all five reasoning dimensions`);
+    requireCondition(reviewDimensions.every((dimension) => review.activities?.some((activity) => activity.dimension === dimension)), `${review.module} review does not cover all five reasoning dimensions`);
+    requireCondition(review.activities?.every((activity) => activity.module === review.module), `${review.module} review contains an activity assigned to another module`);
     for (const [index, activity] of (review.activities || []).entries()) validateActivity(activity, `${review.module} activity ${index + 1}`);
   }
 
@@ -73,7 +80,19 @@ if (assessments) {
     requireCondition(finalQuestions.filter((question) => question.module === moduleId).length === 2, `final assessment must contain exactly two ${moduleId} questions`);
   }
   for (const [index, question] of finalQuestions.entries()) validateActivity(question, `final question ${index + 1}`);
-  requireCondition(dimensions.every((dimension) => finalQuestions.some((question) => question.dimension === dimension)), "final assessment does not sample every reasoning dimension");
+  requireCondition(finalDimensions.every((dimension) => finalQuestions.some((question) => question.dimension === dimension)), "final assessment does not sample all six reasoning dimensions");
+
+  const allActivities = [...reviews.flatMap((review) => review.activities), ...finalQuestions];
+  const allSingleCounts = allActivities.filter((activity) => activity.kind === "single").reduce((counts, activity) => counts.set(activity.answer, (counts.get(activity.answer) || 0) + 1), new Map());
+  const allSingleTotal = [...allSingleCounts.values()].reduce((total, count) => total + count, 0);
+  requireCondition(allSingleCounts.size >= 3, "single-choice answers use fewer than three positions");
+  requireCondition(Math.max(...allSingleCounts.values()) <= Math.ceil(allSingleTotal * 0.5), "one single-choice answer position dominates more than half the assessment data");
+  const finalSingleCounts = finalQuestions.filter((activity) => activity.kind === "single").reduce((counts, activity) => counts.set(activity.answer, (counts.get(activity.answer) || 0) + 1), new Map());
+  requireCondition(finalSingleCounts.size >= 3 && Math.max(...finalSingleCounts.values()) <= 5, "final single-choice answer positions are predictable");
+  const multipleSets = allActivities.filter((activity) => activity.kind === "multiple").map((activity) => [...activity.answers].sort((left, right) => left - right).join(","));
+  requireCondition(new Set(multipleSets).size >= 4, "multiple-selection activities reuse too few answer-position patterns");
+  const finalMultipleSets = finalQuestions.filter((activity) => activity.kind === "multiple").map((activity) => [...activity.answers].sort((left, right) => left - right).join(","));
+  requireCondition(new Set(finalMultipleSets).size >= 3, "final multiple-selection answer positions are predictable");
 
   const practical = assessments.finalAssessment?.practical;
   const requiredPrompts = ["contract", "compatibility", "outcomes", "evidence", "ownership", "cleanup"];
@@ -82,6 +101,13 @@ if (assessments) {
   requireCondition(requiredPrompts.every((id) => practical?.prompts?.some((prompt) => prompt.id === id && prompt.prompt.length >= 50)), "final practical is missing a required structured prompt");
   requireCondition(Array.isArray(practical?.evidenceExpectations) && practical.evidenceExpectations.length >= 4, "final practical needs evidence expectations");
   requireCondition(Array.isArray(practical?.modelReasoning) && practical.modelReasoning.length >= 6, "final practical needs a complete model-reasoning checklist");
+  requireCondition(new Set((practical?.prompts || []).map((prompt) => prompt.id)).size === practical?.prompts?.length, "final practical repeats a prompt ID");
+  requireCondition(practical?.prompts?.every((prompt) => typeof prompt.label === "string" && prompt.label.length >= 8), "final practical has a weak prompt label");
+  requireCondition(new Set((practical?.modelReasoning || []).map((item) => item.id)).size === practical?.modelReasoning?.length, "final practical repeats a model-reasoning ID");
+  requireCondition(practical?.modelReasoning?.every((item) => item.title.length >= 8 && item.body.length >= 90), "final practical has a weak model-reasoning item");
+  const safetyText = `${practical?.scenario || ""} ${(practical?.modelReasoning || []).map((item) => item.body).join(" ")}`.toLowerCase();
+  requireCondition(safetyText.includes("owned") && safetyText.includes("read-only"), "final practical does not establish owned, read-only scope");
+  requireCondition(safetyText.includes("remote") && safetyText.includes("without modifying"), "final practical does not explicitly exclude mutation and remote execution");
 }
 
 console.log(`module reviews: ${assessments?.moduleReviews?.length || 0}`);
