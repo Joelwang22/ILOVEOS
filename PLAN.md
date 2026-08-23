@@ -682,6 +682,8 @@ The remaining work should proceed in the following order.
 
 ### Stage 7: Module revision and final assessment
 
+Status: completed on 24 August 2026.
+
 - Add a compact review at the end of each module without turning reviews into visually heavy standalone lesson sections.
 - Combine conceptual reasoning, API selection, result and failure interpretation, resource ownership, debugging, and Sysinternals evidence questions.
 - Add varied activities where they improve the assessment, including execution-order puzzles, code-completion tasks, scenario diagnosis, and prediction questions.
@@ -689,6 +691,16 @@ The remaining work should proceed in the following order.
 - Build one consolidated final assessment that samples all ten modules instead of repeating every lesson check.
 - Include a final practical scenario that requires the learner to select APIs and tools, predict evidence, interpret expected failures, and explain cleanup.
 - Keep assessment explanations available after an attempt so revision also teaches the reasoning behind the answer.
+
+Final audit record:
+
+- All ten modules have one review containing exactly five activities. Every review covers mechanism, interface choice, failure interpretation, ownership, and observable evidence while using at least two of the single-choice, multiple-selection, and ordering formats.
+- The consolidated final assessment contains twenty automatically checked questions, exactly two from each module, and samples all six Stage 7 reasoning dimensions. Its ungraded practical adds contract selection, compatibility, outcome prediction, evidence, ownership, and cleanup prompts with a revealable model-reasoning path.
+- Incorrect answers remain retryable, correct answers lock, and reset restores the initial state. Answers and practical notes remain in the current rendered page's JavaScript state and are not written to browser storage, a URL, or a network endpoint.
+- Module outlines, final-lesson links, review continuation links, the course-level entry point, global search, and unavailable-route handling were exercised through the integration suite.
+- Desktop, compact, Edge-minimum, and true 390-pixel device-emulation checks found no page overflow or clipped assessment content. Small, default, and large content-size settings apply across assessment headings, options, ordering controls, notes, and continuation controls.
+- The final release gate covered JavaScript syntax, assessment data and state transitions, browser interaction and focus behavior, responsive layout, routing, search, supporting-reference dialogs, the complete course audit, and whitespace validation. The audit reports 10 reviews, 50 module activities, 20 final questions, 62 deep lessons, 43 downloads, 347 reference features, 0 errors, and 0 warnings.
+- Each Stage 7 implementation task was published to `main`, followed by a successful GitHub Pages deployment check before work continued to the next task.
 
 ### Stage 8: Supporting study pages
 

@@ -29,8 +29,12 @@ async function waitForDevTools(profilePath) {
   const deadline = Date.now() + 10_000;
   while (Date.now() < deadline) {
     if (fs.existsSync(portPath)) {
-      const [port, browserPath] = fs.readFileSync(portPath, "utf8").trim().split(/\r?\n/);
-      if (port && browserPath) return { port: Number(port), browserPath };
+      try {
+        const [port, browserPath] = fs.readFileSync(portPath, "utf8").trim().split(/\r?\n/);
+        if (port && browserPath) return { port: Number(port), browserPath };
+      } catch (error) {
+        if (!["EBUSY", "ENOENT"].includes(error.code)) throw error;
+      }
     }
     await delay(50);
   }
