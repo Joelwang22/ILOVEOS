@@ -108,15 +108,15 @@ window.ILOVEOS_LESSON_DEPTH = {
       predictionPrompt: "Predict the pointer size of your Python process and the form in which Process Explorer will display a start address. Explain how you could be wrong.",
       steps: [
         {
-          action: "In PowerShell, which can run from any folder, paste this command to print the Python executable, architecture label, pointer bytes, and pointer bits.",
+          action: "In PowerShell, which can run from any folder, paste this command to print the Python executable, PID, architecture label, pointer bytes, and pointer bits; leave it at the Enter prompt.",
           commands: [{
             label: "PowerShell",
-            code: "py -c \"import ctypes, platform, sys; pointer_bytes = ctypes.sizeof(ctypes.c_void_p); print(f'Python executable: {sys.executable}'); print(f'Architecture label: {platform.architecture()[0]}'); print(f'Pointer bytes: {pointer_bytes}'); print(f'Pointer bits: {pointer_bytes * 8}')\""
+            code: "py -c \"import ctypes, os, platform, sys; pointer_bytes = ctypes.sizeof(ctypes.c_void_p); print(f'Python executable: {sys.executable}'); print(f'PID: {os.getpid()}'); print(f'Architecture label: {platform.architecture()[0]}'); print(f'Pointer bytes: {pointer_bytes}'); print(f'Pointer bits: {pointer_bytes * 8}'); input('Press Enter after Process Explorer inspection...')\""
           }],
           why: "The calling process architecture controls pointer width, even when the installed Windows system is 64-bit.",
-          observe: "If PowerShell reports that py is not recognized, record that the Python launcher is missing or unavailable. Otherwise, record the Python executable path, architecture label, pointer bytes, and pointer bits as the architecture result."
+          observe: "If PowerShell reports that py is not recognized, record that the Python launcher is missing or unavailable. Otherwise, record the Python executable path, PID, architecture label, pointer bytes, and pointer bits as the architecture result."
         },
-        { action: "Open Process Explorer and add the Image Type and Start Address columns.", why: "Image Type distinguishes process architecture, while Start Address provides a real hexadecimal value to decode.", observe: "Record the image type and one start address for your Python process.", hint: "Right-click a column header, choose Select Columns, then inspect the Process Image and Process Performance tabs." },
+        { action: "In Process Explorer, choose View > Select Columns. On Process Image enable Image Type; on Process Performance enable Start Address. Match the live PID and Python executable path printed in step 1.", why: "Image Type distinguishes process architecture, while Start Address provides a real hexadecimal value to decode.", observe: "Record the matched Python PID, executable path, image type, and one Start Address value. If Start Address is unavailable for that live PID, record the unavailable column instead of inventing an address.", hint: "The two checkboxes are on different tabs in Select Columns: Process Image and Process Performance." },
         { action: "Convert the final two hexadecimal digits of the one start address for your Python process that you recorded in the previous step to binary and decimal.", why: "Working on a small fragment practices the conversion without pretending that an address is merely a human-sized count.", observe: "Show the two four-bit groups and your place-value calculation." },
         { action: "Compare one 32-bit process with one 64-bit process if both are available.", why: "The comparison makes process architecture, not operating-system branding, the relevant pointer-size concept.", observe: "Record which process is 32-bit and which is 64-bit. If no 32-bit process exists, state that instead of inventing one." },
         { action: "Write a five-part distinction: package, physical core, logical processor, process, and thread.", why: "Later scheduling lessons fail if hardware execution resources and software execution state are mixed together.", observe: "Give each noun one sentence and connect a scheduled thread to a logical processor." }
@@ -126,7 +126,7 @@ window.ILOVEOS_LESSON_DEPTH = {
         { id: "model", label: "Architecture model", prompt: "Explain what pointer size tells you, and what it does not tell you about installed RAM, address-space use, or CPU throughput." }
       ],
       hints: [{ title: "Image Type is missing", body: "Use Select Columns in Process Explorer. You can also inspect the process Properties window and the executable path. Do not use Task Manager's operating-system architecture as a substitute for the Python process architecture." }],
-      cleanup: ["Close Process Explorer if you do not need it for the next lesson.", "Keep the small Python file only if you want it as an architecture diagnostic."],
+      cleanup: ["Press Enter in the py -c architecture process so it exits normally.", "Close Process Explorer if you do not need it for the next lesson; the command creates no lab file."],
       extension: { title: "Optional extension", prompt: "Print ctypes.sizeof for c_byte, c_ushort, c_uint32, c_uint64, c_void_p, and wintypes.BOOL. Explain which sizes are fixed and which follow the process ABI." }
     },
     checks: [
@@ -228,11 +228,16 @@ window.ILOVEOS_LESSON_DEPTH = {
       download: ["downloads/who_am_i.py", "who_am_i.py"],
       intro: "Run a small pywin32 program, then connect its Python-level output to the operating-system objects and resources around it.",
       expectedOutcome: "The script will print a PID and user that match the same process in Process Explorer. Process Explorer should also reveal a parent process, token details, one or more threads, handles, and loaded modules that were not written directly into the script. When you let the process exit, its row and current resources disappear, although Windows may reuse the numeric PID later.",
-      predictionPrompt: "Before running the starter, predict its parent process, user, integrity level, and whether it will have more than one thread. State why.",
+      predictionPrompt: "Before running who_am_i.py, predict its parent process, user, integrity level, and whether it will have more than one thread. State why.",
       steps: [
-        { action: "Open Process Explorer and enable Process ID, Parent PID, User Name, Integrity Level, Image Type, and Threads.", why: "These columns connect identity, security, architecture, and scheduling without opening several unrelated tools.", observe: "Record which columns you enabled and any permission limitation Process Explorer reports." },
-        { action: "Download and run who_am_i.py from the terminal you normally use.", why: "Launching from a known parent lets you test process ancestry rather than merely reading a PID.", observe: "Record the printed PID and user, then locate exactly that PID in Process Explorer." },
-        { action: "Open the process Properties window and inspect Image, Performance, Threads, Security, Handles, and DLLs.", why: "The script is small, but Windows still surrounds it with an address space, token, threads, handles, and loaded code.", observe: "Choose one concrete observation from each available view. If a tab is unavailable, record the limitation." },
+        { action: "Open Process Explorer. Choose View > Select Columns; on Process Image enable PID, Parent PID, User Name, Integrity Level, and Image Type, and on Process Performance enable Threads.", why: "These columns connect identity, security, architecture, and scheduling without opening several unrelated tools.", observe: "Record which columns you enabled and any permission limitation Process Explorer reports." },
+        {
+          action: "Download who_am_i.py, open PowerShell in the folder containing it, and run this command. Leave who_am_i.py at its Enter prompt.",
+          commands: [{ label: "PowerShell", code: "py .\\who_am_i.py" }],
+          why: "Launching from a known parent lets you test process ancestry rather than merely reading a PID.",
+          observe: "Record the user and PID printed by who_am_i.py, then locate exactly that PID in Process Explorer. If py or pywin32 is unavailable, record that dependency failure and do not substitute an unrelated Python process."
+        },
+        { action: "Select the recorded PID in Process Explorer. Open Properties and inspect Image, Performance, Threads, and Security. Then choose View > Show Lower Pane and switch View > Lower Pane View between Handles and DLLs.", why: "who_am_i.py is small, but Windows still surrounds it with an address space, token, threads, handles, and loaded code.", observe: "Choose one concrete observation from each available tab or lower-pane mode. If access is denied or a view is unavailable, record that limitation separately from an exited process." },
         { action: "Classify each observation as program data, an OS abstraction, an OS-managed resource, or evidence about execution.", why: "Classification forces you to explain why the operating system owns or mediates the state.", observe: "Create at least five classifications, including PID, token, thread, handle, and one loaded module." },
         { action: "Press Enter to let the process exit, then refresh Process Explorer.", why: "Process termination shows that identity and resources have a managed lifetime.", observe: "Record what disappears and explain why a later process could eventually reuse the same numeric PID." }
       ],
@@ -240,8 +245,8 @@ window.ILOVEOS_LESSON_DEPTH = {
         { id: "classification", label: "Object and resource classification", prompt: "List each observation, its category, and why Windows must manage it." },
         { id: "explanation", label: "Explain the boundary", prompt: "Using intent, interface, policy, and mechanism, explain one thing the script asked Windows to do." }
       ],
-      hints: [{ title: "The process exits too quickly", body: "The provided starter waits for Enter. If you changed it, add input() after printing. Match the numeric PID rather than relying only on the python.exe name." }],
-      cleanup: ["Press Enter in the starter process so it exits normally.", "Close Process Explorer, or leave it open only if continuing to the next lesson."],
+      hints: [{ title: "who_am_i.py exits too quickly", body: "The downloaded who_am_i.py waits for Enter after printing. Match its numeric PID rather than relying only on the python.exe name." }],
+      cleanup: ["Press Enter in who_am_i.py so it exits normally.", "Close Process Explorer, or leave it open only if continuing to the next lesson."],
       extension: { title: "Optional extension", prompt: "Launch the script once from PowerShell and once from an IDE. Compare parent processes and inherited environment without assuming one launch method is more correct." }
     },
     checks: [
@@ -325,20 +330,30 @@ window.ILOVEOS_LESSON_DEPTH = {
       time: "25 min",
       intro: "Use Process Monitor evidence to turn the layer diagram into an observed request path.",
       expectedOutcome: "Process Monitor should capture one or more file operations from the chosen editor against the exact test path. A successful open will show a success result and request details. The event stack may begin with application and user-mode DLL frames, then cross into kernel and filesystem or filter-driver frames. The precise modules vary by Windows build and installed software.",
-      predictionPrompt: "Predict which process, operation name, path, result, user-mode DLLs, and kernel drivers you expect when Notepad opens a harmless text file.",
+      predictionPrompt: "Predict which process, operation name, path, result, user-mode DLLs, and kernel drivers you expect when Notepad opens the controlled ILOVEOS_windows_layers.txt file.",
       steps: [
-        { action: "Create or choose a harmless text file, then start Process Monitor and pause capture.", why: "A controlled target and a paused initial capture reduce unrelated events before filters are ready.", observe: "Record the test file's full path and the Process Monitor elevation state." },
-        { action: "Clear existing events and filter Path is your exact file path, then add a Process Name filter for the chosen editor.", why: "Path plus process identity is stronger than searching a large trace after the event.", observe: "Record the exact filters and whether each is Include or Exclude.", hint: "Use Filter, Filter. Confirm that the status bar shows active filters before capture." },
-        { action: "Resume capture, open the file once, then pause capture immediately.", why: "Capturing a single deliberate action makes sequence and causality easier to reason about.", observe: "Record the first relevant operation, its result, and the count of visible events." },
-        { action: "Open the main successful create or open event and inspect Event and Stack.", why: "The event describes the contract-level request, while the stack can expose participating user-mode modules and drivers.", observe: "List the user-mode API-side modules, the point at which kernel components appear, and at least one filesystem or filter driver if shown." },
-        { action: "Draw the request using the lesson's five layers and attach each observation to one layer.", why: "A trace is only useful when its details update a mental model.", observe: "State which boxes have direct evidence and which remain a reasoned simplification." }
+        {
+          action: "In PowerShell, create the owned ILOVEOS_windows_layers.txt target and print its full path. Leave Notepad closed for now.",
+          commands: [{ label: "PowerShell", code: "$tracePath = Join-Path $env:TEMP 'ILOVEOS_windows_layers.txt'\nif (Test-Path -LiteralPath $tracePath) { throw \"Remove or rename the existing lab file first: $tracePath\" }\nSet-Content -LiteralPath $tracePath -Value 'ILOVEOS controlled Windows-layer trace' -Encoding utf8\n$tracePath" }],
+          why: "A controlled target gives the trace one known path and keeps cleanup ownership explicit.",
+          observe: "Record the full path printed by PowerShell and the Process Monitor elevation state."
+        },
+        { action: "In Process Monitor, pause capture with File > Capture Events, choose Edit > Clear Display, then open Filter > Filter. Add Path is the full path printed in step 1 Include, and Operation is CreateFile Include; click Add after each row, then OK.", why: "Exact Path and Operation fields bound the experiment before the open occurs.", observe: "Record both Include filters exactly and confirm that capture is still paused." },
+        {
+          action: "Resume Process Monitor capture, then run this complete PowerShell block to open the controlled target in Notepad. As soon as the document appears, pause Process Monitor.",
+          commands: [{ label: "PowerShell", code: "$tracePath = Join-Path $env:TEMP 'ILOVEOS_windows_layers.txt'\nif (-not (Test-Path -LiteralPath $tracePath)) { throw \"Controlled lab file is missing: $tracePath\" }\nStart-Process -FilePath notepad.exe -ArgumentList $tracePath" }],
+          why: "Starting capture before Notepad preserves the deliberate open while keeping the trace window short.",
+          observe: "Record notepad.exe, its PID from the Process Start event or Process Explorer, the exact path, first relevant CreateFile event, Result, timestamp, and visible-event count."
+        },
+        { action: "Open the successful CreateFile row in Process Monitor and inspect Event and Stack. In Event, record Desired Access, Disposition, Options, ShareMode, and Result. In Stack, identify user-mode frames above the first kernel frame and any filesystem or filter-driver frame shown.", why: "The event describes the contract-level request, while the stack can expose participating user-mode modules and drivers.", observe: "If symbols resolve, record module and function names. If symbols are unavailable, record raw module names or addresses and mark the user/kernel boundary as unavailable rather than guessing hidden frames." },
+        { action: "Draw the request using application, Win32 or Ntdll, executive or kernel, driver, and hardware layers; attach the recorded PID, CreateFile fields, and available stack frames to the layer that produced each value.", why: "A trace is only useful when its details update a mental model.", observe: "State which layers have direct evidence and which remain a reasoned simplification." }
       ],
       fields: [
         { id: "trace", label: "Observed request trace", prompt: "Write the operations in time order with process, path, result, and important stack components." },
         { id: "boundaries", label: "Layer analysis", prompt: "Map the evidence to application, Win32 or Ntdll, executive or kernel, drivers, and hardware. Mark anything the trace cannot prove." }
       ],
       hints: [{ title: "No events are visible", body: "Check that capture was resumed, the path filter matches the normalized path Process Monitor reports, and the application actually reopened the file after capture began. Temporarily disable one filter to identify which one is too narrow." }],
-      cleanup: ["Stop Process Monitor capture and save the PML only if you want it for later review.", "Close the test file and delete it only if you created it solely for this investigation."],
+      cleanup: ["Close Notepad without saving changes and stop Process Monitor capture; save the PML only if you want it for later review.", "In File Explorer, delete only the ILOVEOS_windows_layers.txt path printed in step 1."],
       extension: { title: "Optional extension", prompt: "Use Process Explorer's lower pane to find the open file handle while the editor keeps it open. Explain why this snapshot complements but cannot replace the Process Monitor trace." }
     },
     checks: [
@@ -451,11 +466,22 @@ window.ILOVEOS_LESSON_DEPTH = {
       predictionPrompt: "Predict which Process Explorer properties will differ between a Python process launched normally and one launched from an elevated terminal. Also list two properties you expect to remain the same.",
       safety: "Use only your own short-lived Python processes. Do not attempt to open, suspend, terminate, or modify protected system processes.",
       steps: [
-        { action: "Open one normal terminal and one terminal using Run as administrator.", why: "The two launch contexts create a controlled token and integrity comparison.", observe: "Record how Windows indicated elevation and which account each terminal uses." },
-        { action: "From each terminal, run a Python command that prints its PID and waits for Enter.", why: "Matching exact PIDs prevents you from comparing unrelated Python or IDE processes.", observe: "Record both PIDs and label them standard or elevated." },
-        { action: "In Process Explorer, compare User, Integrity, UAC Virtualization, Image Type, path, and parent process.", why: "This separates security attributes from architecture, executable identity, and ancestry.", observe: "Create a two-column comparison and explain every difference rather than only listing it." },
-        { action: "Open each process's Security properties if available.", why: "Group and privilege state explains why later access checks can produce different results.", observe: "Record one group or privilege difference, or state precisely why the view was unavailable." },
-        { action: "Explain why both processes are still user mode.", why: "The goal is to correct the common admin-equals-kernel misconception before driver and security lessons.", observe: "Use the words token, authorization, system call, and processor mode in your explanation." }
+        { action: "Open one ordinary PowerShell window and use its taskbar or Windows-search context menu's administrator option to open a second PowerShell window.", why: "The two launch contexts create a controlled token and integrity comparison.", observe: "Record how Windows indicated elevation and which account each PowerShell window uses." },
+        {
+          action: "In the normal PowerShell window, run this complete command and leave it waiting at the Enter prompt.",
+          commands: [{ label: "Normal PowerShell", code: "py -c \"import os, sys; print(f'Python executable: {sys.executable}'); print(f'PID: {os.getpid()}'); input('Standard process: press Enter after inspection...')\"" }],
+          why: "Matching the exact executable path and PID prevents you from comparing an unrelated Python or IDE process.",
+          observe: "Record the printed executable path and PID as the standard process. If py is unavailable, record that dependency branch."
+        },
+        {
+          action: "In the PowerShell window opened with Run as administrator, run this complete command and leave it waiting at the Enter prompt.",
+          commands: [{ label: "Elevated PowerShell", code: "py -c \"import os, sys; print(f'Python executable: {sys.executable}'); print(f'PID: {os.getpid()}'); input('Elevated process: press Enter after inspection...')\"" }],
+          why: "The same code isolates the launch token as the intended changed condition.",
+          observe: "Record the printed executable path and PID as the elevated process; do not continue if it accidentally matches the standard PID."
+        },
+        { action: "In Process Explorer choose View > Select Columns > Process Image and enable User Name, Integrity Level, UAC Virtualization, Image Type, Path, and Parent PID. Match the two recorded PIDs and compare those columns.", why: "This separates security attributes from architecture, executable identity, and ancestry.", observe: "Create a standard-versus-elevated table containing both recorded PIDs and executable paths; explain every difference rather than only listing it." },
+        { action: "For each recorded PID, open Process Explorer Properties > Security and compare Groups and Privileges.", why: "Group and privilege state explains why later access checks can produce different results.", observe: "Record one group or privilege difference. If access is denied, distinguish that from the process having exited; if the Security tab is unavailable, record the tool limitation." },
+        { action: "Explain why the standard and elevated Python processes are both user-mode applications.", why: "The goal is to correct the common admin-equals-kernel misconception before driver and security lessons.", observe: "Use the words token, authorization, system call, and processor mode in your explanation." }
       ],
       fields: [
         { id: "comparison", label: "Context comparison", prompt: "Compare the two PIDs, parents, paths, users, integrity levels, architecture, and token observations." },
@@ -561,18 +587,24 @@ window.ILOVEOS_LESSON_DEPTH = {
     practice: {
       title: "Separate contract from implementation",
       time: "25 min",
+      download: ["downloads/file_open_trace_lab.py", "file_open_trace_lab.py"],
       intro: "Trace one harmless file open and distinguish the documented Win32 promise from the internal route observed on this Windows build.",
       expectedOutcome: "The CreateFileW page should define stable application-facing behavior, while a Process Monitor stack may show Python, pywin32, public Win32 libraries, native transition code, kernel components, and file-system drivers. The exact frames can vary with Windows build, symbols, filters, and implementation. One captured path does not prove that every Win32 API maps to exactly one system call.",
       predictionPrompt: "Before capture, predict which parts of the file-open behavior are documented contracts and which stack frames are implementation details.",
       steps: [
         { action: "Read the Microsoft Learn page for CreateFileW and list only its supported contract.", why: "Starting with public documentation makes it easier to recognise which later observations are not promises.", observe: "Record behavior, parameters, result, last-error rule, requirements, and cleanup, but not an assumed system-service number." },
-        { action: "Run a small pywin32 script that opens an existing temporary file, pauses briefly, and closes the handle.", why: "A controlled actor and path give the trace a precise identity and time window.", observe: "Print the PID and exact path so Process Monitor evidence can be correlated without relying on process name alone." },
-        { action: "Capture only that PID and file path in Process Monitor, then inspect the successful CreateFile event and its stack.", why: "The event and stack expose an observed route through user-mode and kernel components.", observe: "Look for application or Python frames, Windows libraries, the transition boundary, kernel components, and file-system drivers when symbols permit." },
+        {
+          action: "Download file_open_trace_lab.py. In PowerShell from that download folder, verify the owned target path is absent, then run the file-open program while Process Monitor capture is already active. Leave it at the first pause, where the handle is open.",
+          commands: [{ label: "PowerShell", code: "$tracePath = Join-Path $env:TEMP 'ILOVEOS_CreateFileW_contract.txt'\nif (Test-Path -LiteralPath $tracePath) { throw \"Remove or rename the existing lab file first: $tracePath\" }\npy .\\file_open_trace_lab.py $tracePath --cleanup" }],
+          why: "A controlled actor and path give the trace a precise identity and time window.",
+          observe: "Record the Python executable, PID, exact path, and the first-pause text. If py is unavailable, record the dependency failure and stop."
+        },
+        { action: "Before running the command, configure Process Monitor Filter > Filter with Path is the owned target path Include and Operation is CreateFile Include, clear the display, and resume capture. At the first pause, add PID is the printed PID Include and pause capture. Open the successful CreateFile event and its Stack tab.", why: "The event and stack expose an observed route through user-mode and kernel components.", observe: "Record Desired Access, ShareMode, Disposition, Options, Result, application or Python frames, Windows libraries, the transition boundary, kernel components, and filesystem drivers. If symbols are unavailable, record module names or raw addresses and do not invent function names." },
         { action: "Label every observation as public contract or implementation evidence.", why: "The distinction prevents one build's stack from becoming an invented programming guarantee.", observe: "Treat documented access, sharing, result, and cleanup as contract; treat exact frames and internal routing as evidence from this capture." },
         { action: "Explain why the trace does not establish a one-API-to-one-system-call rule.", why: "Wrappers can validate, transform, cache, or issue more than one protected request.", observe: "State what the capture proves, what may differ on another Windows build, and what additional evidence would be required." }
       ],
       hints: [{ title: "The stack is shallow or missing symbols", body: "The exact stack is not required for the contract lesson. Record the limitation, confirm stack capture is enabled, and use the frames that are available without guessing the hidden ones." }],
-      cleanup: ["Close the file handle and stop the test process if it is still paused.", "Clear or close the Process Monitor capture and delete only the temporary file created for this investigation."],
+      cleanup: ["Press Enter at both file_open_trace_lab.py pauses; --cleanup removes only a target created by this run.", "Stop and close the Process Monitor capture."],
       extension: { title: "Optional extension", prompt: "Repeat with GetCurrentProcessId and compare how much observable kernel work appears. Explain why a public API name alone does not predict an exact system-call path." }
     },
     checks: [
@@ -907,16 +939,27 @@ window.ILOVEOS_LESSON_DEPTH = {
     practice: {
       title: "Investigate one file open with three views",
       time: "35 min",
+      download: ["downloads/file_open_trace_lab.py", "file_open_trace_lab.py"],
       intro: "Combine a controlled Python action, a Process Monitor trace, and a Process Explorer snapshot, then state the evidence and its limits.",
       expectedOutcome: "While the script is at its first pause, Process Monitor should retain the successful file-open event and Process Explorer should show a live handle to the same path in the matching PID. After the script closes the file, the handle should disappear from the Process Explorer snapshot while the earlier Process Monitor event remains in the trace. Exact PIDs, handle values, and timestamps will differ.",
       predictionPrompt: "Predict the process name and PID, Procmon operation and result, handle path, requested access, and whether the handle will still exist after Python closes the file.",
       safety: "Use a temporary file in a directory you own. Do not capture passwords or unrelated private activity, and do not close handles from Process Explorer.",
       steps: [
-        { action: "Create a Python script that opens a temporary text file for reading, prints its PID, waits once while the file is open, closes it, then waits again.", why: "Two pauses create a deliberate before-and-after handle lifetime that snapshots can test.", observe: "Record the script path, temporary file path, and the exact points at which the handle should exist." },
-        { action: "Configure Process Monitor before running the script: include the exact file path and later add the printed PID.", why: "Path captures the early event even before you know the new PID, while the PID filter removes unrelated access afterward.", observe: "Record all filters, capture start time, and whether event dropping is reported." },
-        { action: "Run the script, stop at the first pause, and inspect the successful open event.", why: "The trace records the request while the first pause keeps its resulting handle alive.", observe: "Record operation, result, desired access, share mode, disposition, options, sequence, and useful stack frames." },
-        { action: "Find the exact PID in Process Explorer and locate the file in its handles.", why: "The snapshot independently confirms that the process currently retains access to the same named object.", observe: "Record handle value, type, name, and any granted-access detail available." },
-        { action: "Continue past close but stop at the second pause, then refresh Process Explorer.", why: "A controlled state change tests the distinction between an event history and a current-state snapshot.", observe: "Record whether the handle disappeared while the original Procmon event remained." },
+        {
+          action: "Download file_open_trace_lab.py. In PowerShell from that download folder, print the owned target path and verify that it does not already exist.",
+          commands: [{ label: "PowerShell", code: "$tracePath = Join-Path $env:TEMP 'ILOVEOS_three_view_file.txt'\nif (Test-Path -LiteralPath $tracePath) { throw \"Remove or rename the existing lab file first: $tracePath\" }\n$tracePath" }],
+          why: "A stable absent path lets file_open_trace_lab.py own creation and cleanup without risking an existing file.",
+          observe: "Record file_open_trace_lab.py as the program and the full target path printed by PowerShell."
+        },
+        { action: "In Process Monitor pause File > Capture Events, choose Edit > Clear Display, then use Filter > Filter to add Path is the full target path Include and Operation is CreateFile Include. Resume capture only after both filters are active.", why: "The exact path filter captures the early event before the new PID is known; Operation limits the trace to open attempts.", observe: "Record both filter rows, the capture start time, and whether Process Monitor reports dropped events." },
+        {
+          action: "Run file_open_trace_lab.py from the PowerShell folder containing it. When it reaches 'File handle is open', leave it paused and pause Process Monitor.",
+          commands: [{ label: "PowerShell", code: "$tracePath = Join-Path $env:TEMP 'ILOVEOS_three_view_file.txt'\nif (Test-Path -LiteralPath $tracePath) { throw \"Remove or rename the existing lab file first: $tracePath\" }\npy .\\file_open_trace_lab.py $tracePath --cleanup" }],
+          why: "The trace records the request while the first pause keeps its resulting handle alive.",
+          observe: "Record the Python executable, PID, exact path, operation, result, Desired Access, ShareMode, Disposition, Options, sequence, and available stack frames. If py is unavailable, record the dependency branch and stop."
+        },
+        { action: "In Process Explorer select the recorded PID, choose View > Show Lower Pane, then View > Lower Pane View > Handles. Search the lower pane for the exact target path.", why: "The snapshot independently confirms that the process currently retains access to the same named object.", observe: "Record handle value, Type, Name, and any granted-access detail. Distinguish access denied from an absent handle and from an exited PID." },
+        { action: "Press Enter once in file_open_trace_lab.py to close the handle but leave it at 'File handle is closed'. Refresh Process Explorer without resuming Process Monitor capture.", why: "A controlled state change tests the distinction between an event history and a current-state snapshot.", observe: "Record whether the handle disappeared while the original Process Monitor CreateFile event remained. If it remains, verify the exact PID and path before concluding another handle exists." },
         { action: "Write observation, interpretation, and limitation as separate paragraphs.", why: "Separating them prevents an accurate trace from turning into an unsupported causal story.", observe: "Include at least one alternative explanation that your controlled setup ruled out and one claim it could not rule out." }
       ],
       fields: [
@@ -927,7 +970,7 @@ window.ILOVEOS_LESSON_DEPTH = {
         { title: "The handle is not visible", body: "Confirm the script is still at the first pause, refresh Process Explorer, use the lower pane in Handle mode, and run Process Explorer elevated if access is limited. Match the exact PID." },
         { title: "Procmon is too noisy", body: "Pause capture, clear the display, confirm the exact Path filter, resume only for the open, then pause again. Add PID after the script prints it rather than filtering only by python.exe." }
       ],
-      cleanup: ["Let the Python script close the file and exit normally.", "Stop Process Monitor capture and close the temporary file in any editor.", "Delete the temporary file and script only if you do not want to retain them as a practice artifact."],
+      cleanup: ["Press Enter at the second file_open_trace_lab.py pause; --cleanup removes only the target created by this run.", "Stop Process Monitor capture.", "Keep or delete the downloaded file_open_trace_lab.py as you prefer."],
       extension: { title: "Optional extension", prompt: "Replace the ordinary file with a named event created through win32event. Use WinObj to find its namespace name and Process Explorer to find the process handle, then explain why the two views are related but not identical." }
     },
     checks: [

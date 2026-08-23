@@ -65,7 +65,7 @@ vm.createContext(context);
 for (const filename of ["lesson-content.js", ...fs.readdirSync(root).filter((name) => /^lesson-depth-.*\.js$/.test(name)).sort()]) {
   vm.runInContext(fs.readFileSync(path.join(root, filename), "utf8"), context, { filename });
 }
-const lessons = context.window.ILOVEOS_LESSONS.map((lesson) => ({
+const lessons = Array.from(context.window.ILOVEOS_LESSONS, (lesson) => ({
   ...lesson,
   ...(context.window.ILOVEOS_LESSON_DEPTH[lesson.id] || {}),
 }));
@@ -77,5 +77,14 @@ assert.match(
   /one start address for your Python process that you recorded in the previous step/i,
   "the conversion step must name the start address recorded by the previous step",
 );
+
+const firstBatch = new Set(["foundations", "processes-handles", "threads-scheduling", "memory", "linking-loading"]);
+const firstBatchFindings = lessons
+  .filter((lesson) => firstBatch.has(lesson.module))
+  .flatMap((lesson) => {
+    const result = validatePractice(lesson.practice, lesson.id, { enforceClarity: true });
+    return [...result.errors, ...result.warnings];
+  });
+assert.deepEqual(firstBatchFindings, [], firstBatchFindings.join("\n"));
 
 console.log("practice audit errors: 0");
