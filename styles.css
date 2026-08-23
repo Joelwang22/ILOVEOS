@@ -2411,7 +2411,7 @@ pre {
   .feature-row > * { padding: 0; }
   .feature-row > * + * { border-left: 0; }
   .api-detail-trigger { position: relative; padding-right: 40px; }
-  .feature-open { position: absolute; top: 50%; right: 13px; width: 24px; height: 24px; transform: translateY(-50%); }
+  .api-detail-trigger > .feature-open { position: absolute; top: 50%; right: 13px; width: 24px; height: 24px; transform: translateY(-50%); }
   .api-dialog-head { padding: 17px; }
   .api-dialog-head h2 { font-size: 19px; }
   .api-dialog-body { padding: 17px; }

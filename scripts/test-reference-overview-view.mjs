@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 const scriptsDirectory = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(scriptsDirectory, "..");
 const viewPath = path.join(root, "reference-overview-view.js");
+const stylesPath = path.join(root, "styles.css");
 const errors = [];
 
 function requireCondition(condition, message) {
@@ -19,6 +20,16 @@ if (fs.existsSync(viewPath)) {
 
 const view = window.ILOVEOS_REFERENCE_OVERVIEW_VIEW;
 requireCondition(Boolean(view), "shared reference overview renderer is missing");
+
+const styles = fs.readFileSync(stylesPath, "utf8");
+requireCondition(
+  !/^\s{2}\.feature-open\s*\{\s*position:\s*absolute;/m.test(styles),
+  "compact API-row icon positioning leaks into the reference overview button",
+);
+requireCondition(
+  /\.api-detail-trigger\s*>\s*\.feature-open\s*\{\s*position:\s*absolute;/m.test(styles),
+  "compact API-row icon positioning is not scoped to API detail triggers",
+);
 
 if (view) {
   const windowsButton = view.renderButton({
