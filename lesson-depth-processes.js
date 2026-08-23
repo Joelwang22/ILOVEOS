@@ -442,10 +442,10 @@ window.ILOVEOS_LESSON_DEPTH = {
           observe: "Record hide requested True, child PID, and initial TID. The initial window behavior may differ by target, but the process and thread remain observable until exit."
         },
         {
-          action: "After closing the hidden test child and allowing that launcher to finish, run this explicit nonexistent-target failure command.",
-          commands: [{ label: "PowerShell", code: "py .\\create_process_lab.py C:\\ILOVEOS\\does-not-exist.exe" }],
+          action: "After closing the hidden test child and allowing that launcher to finish, run this guarded absent-target failure command.",
+          commands: [{ label: "PowerShell", code: "$missingTarget = Join-Path $env:TEMP 'ILOVEOS-does-not-exist.exe'\nif (Test-Path -LiteralPath $missingTarget) { throw \"Remove or rename the existing collision before this failure test: $missingTarget\" }\npy .\\create_process_lab.py $missingTarget" }],
           why: "The failure path proves last-error handling without creating partial ownership.",
-          observe: "Record the numeric Windows error. Distinguish file-not-found from access denied, and confirm no child PID or handle-cleanup success messages are printed for the failed creation."
+          observe: "Record the full absent path and numeric Windows error. Distinguish file-not-found from access denied, and confirm no child PID or handle-cleanup success messages are printed for the failed creation. If the collision guard fires, do not delete an unknown file merely to force the test; choose another owned absent name and repeat the complete guarded block."
         }
       ],
       hints: [{ title: "Notepad does not stay hidden", body: "Modern applications can delegate or control their own windows. The lesson tests that the startup request is not a process-hiding mechanism, not that every target must honor SW_HIDE indefinitely." }],

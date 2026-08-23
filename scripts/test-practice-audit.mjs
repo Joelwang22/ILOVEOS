@@ -87,4 +87,64 @@ const firstBatchFindings = lessons
   });
 assert.deepEqual(firstBatchFindings, [], firstBatchFindings.join("\n"));
 
+const lessonById = new Map(lessons.map((lesson) => [lesson.id, lesson]));
+const reviewFindings = [];
+const requireReview = (condition, message) => {
+  if (!condition) reviewFindings.push(message);
+};
+
+const linkingPracticeText = lessons
+  .filter((lesson) => lesson.module === "linking-loading")
+  .map((lesson) => JSON.stringify(lesson.practice))
+  .join("\n");
+requireReview(
+  !/\b(?:a PE viewer|a hex viewer|your PE editor|your hash\/signature verifier)\b/i.test(linkingPracticeText),
+  "linking practices must name CFF Explorer, HxD, or Sigcheck instead of a generic binary tool",
+);
+for (const tool of ["CFF Explorer", "HxD", "Sigcheck"]) {
+  requireReview(linkingPracticeText.includes(tool), `linking practices must name ${tool}`);
+}
+
+const systemCallPractice = lessonById.get("system-calls-win32").practice;
+const procmonSetupIndex = systemCallPractice.steps.findIndex((step) => /Process Monitor.*Filter > Filter/i.test(step.action));
+const fileOpenRunIndex = systemCallPractice.steps.findIndex((step) => step.commands?.some((command) => /file_open_trace_lab\.py/.test(command.code)));
+requireReview(procmonSetupIndex >= 0 && procmonSetupIndex < fileOpenRunIndex, "Process Monitor setup must precede file_open_trace_lab.py");
+requireReview(!/pywin32/i.test(systemCallPractice.expectedOutcome), "file_open_trace_lab.py stack prediction must not name pywin32");
+requireReview(
+  systemCallPractice.steps.some((step) => /held-open read handle/i.test(`${step.action} ${step.observe}`) && /Desired Access.*read/i.test(step.observe)),
+  "system call trace must identify the successful CreateFile row for the held-open read handle",
+);
+
+const heapPractice = lessonById.get("virtualalloc-heaps-protection").practice;
+const heapActions = heapPractice.steps.map((step) => step.action).join("\n");
+for (const stage of ["commit page 0", "commit page 1", "make page 1 read-only"]) {
+  requireReview(heapActions.includes(stage), `heap comparison must explicitly ${stage}`);
+}
+
+for (const lessonId of ["binary-hex-addresses", "sections-rvas"]) {
+  const restartStep = lessonById.get(lessonId).practice.steps.find((step) => /restart/i.test(step.action));
+  requireReview(restartStep?.commands?.length > 0, `${lessonId} restart must provide a complete launch block`);
+  requireReview(/PID/i.test(`${restartStep?.action || ""} ${restartStep?.observe || ""}`), `${lessonId} restart must reacquire a PID`);
+  requireReview(/exited|redirect/i.test(restartStep?.observe || ""), `${lessonId} restart must describe the exited or redirected launcher branch`);
+}
+
+const pageFaultCounterStep = lessonById.get("page-faults-pagefile").practice.steps.find((step) => /Performance Monitor/i.test(step.action));
+for (const requiredText of ["Monitoring Tools > Performance Monitor", "Add Counters", "Process V2", "ID Process"]) {
+  requireReview(pageFaultCounterStep?.action.includes(requiredText), `page-fault counter setup must name ${requiredText}`);
+}
+requireReview(/exited/i.test(pageFaultCounterStep?.observe || ""), "page-fault counter setup must include an exited-instance branch");
+
+const windowsLayersCommand = lessonById.get("windows-organisation").practice.steps
+  .flatMap((step) => step.commands || [])
+  .find((command) => /notepad\.exe/i.test(command.code))?.code || "";
+requireReview(/ArgumentList \('\"\{0\}\"' -f \$tracePath\)/.test(windowsLayersCommand), "Notepad launch must quote the owned path as one argument");
+
+const missingTargetCommand = lessonById.get("createprocess-lifecycle").practice.steps
+  .flatMap((step) => step.commands || [])
+  .find((command) => /does-not-exist/i.test(command.code))?.code || "";
+requireReview(/Test-Path -LiteralPath \$missingTarget/.test(missingTargetCommand), "CreateProcess failure target must be guarded absent");
+requireReview(!/C:\\ILOVEOS\\does-not-exist\.exe/i.test(missingTargetCommand), "CreateProcess failure target must not use an unguarded global path");
+
+assert.deepEqual(reviewFindings, [], reviewFindings.join("\n"));
+
 console.log("practice audit errors: 0");

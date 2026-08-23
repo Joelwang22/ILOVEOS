@@ -67,7 +67,7 @@ window.ILOVEOS_LESSON_DEPTH = {
         title: "Architecture appears in both file metadata and process behavior",
         paragraphs: [
           "The COFF Machine field identifies the target machine type, and Optional Header Magic distinguishes PE32 from PE32+. These values must be interpreted together. A 32-bit process on 64-bit Windows also runs under WoW64, which affects module compatibility, paths, and inspection tools.",
-          "Sigcheck can report architecture, hashes, version, and signature information without modifying the file. A PE viewer exposes headers and directories. Process Explorer then shows the image path, process type, mapped base, and loaded modules for the live instance."
+          "Sigcheck can report architecture, hashes, version, and signature information without modifying the file. CFF Explorer exposes headers and directories. Process Explorer then shows the image path, process type, mapped base, and loaded modules for the live instance."
         ]
       },
       {
@@ -83,7 +83,7 @@ window.ILOVEOS_LESSON_DEPTH = {
       time: "30 min",
       intro: "Use a safe parser on a known Windows binary, then compare the reported metadata with one live instance.",
       download: ["downloads/pe_inspector_lab.py", "pe_inspector_lab.py"],
-      expectedOutcome: "The parser and PE viewer should agree on MZ, PE signature, Machine, Optional Header Magic, section count, entry-point RVA, and preferred image base. The live image base may differ from the preferred base because of ASLR, but live base plus entry-point RVA should fall inside an executable image region.",
+      expectedOutcome: "The parser and CFF Explorer should agree on MZ, PE signature, Machine, Optional Header Magic, section count, entry-point RVA, and preferred image base. The live image base may differ from the preferred base because of ASLR, but live base plus entry-point RVA should fall inside an executable image region.",
       safety: "Inspect a known Microsoft-signed system binary or a harmless binary you built. Parsing does not require execution. Never run an unknown sample merely to populate the live-process half of the exercise.",
       steps: [
         {
@@ -92,7 +92,7 @@ window.ILOVEOS_LESSON_DEPTH = {
           why: "An owned copy preserves the signed System32 original and gives pe_inspector_lab.py a stable input.",
           observe: "Record resolved file path, file size, Machine, Optional Header Magic, section count, AddressOfEntryPoint RVA, preferred ImageBase, and every section row. A missing MZ/PE signature or unsupported Magic is a malformed-PE branch, not an architecture mismatch."
         },
-        { action: "Open the same .\\iloveos-pe-lab\\notepad-lab.exe copy in a PE viewer and compare DOS header, NT Headers > File Header, NT Headers > Optional Header, and Section Headers with pe_inspector_lab.py output.", why: "Independent parsing catches field-offset and architecture mistakes.", observe: "Compare MZ, PE signature, Machine, Magic, section count, entry RVA, ImageBase, alignments, image size, and each section; explain hexadecimal formatting differences without changing values." },
+        { action: "In CFF Explorer choose File > Open and select .\\iloveos-pe-lab\\notepad-lab.exe. In the left tree inspect DOS Header, NT Headers > File Header, NT Headers > Optional Header, and Section Headers, then compare those fields with pe_inspector_lab.py output.", why: "Independent parsing catches field-offset and architecture mistakes.", observe: "Compare MZ, PE signature, Machine, Magic, section count, entry RVA, ImageBase, alignments, image size, and each section; explain hexadecimal formatting differences without changing values. If CFF Explorer is unavailable, record the missing-tool branch rather than substituting an unnamed viewer." },
         {
           action: "Run the trusted System32 original and print its PID, then inspect that exact live PID in Process Explorer Properties > Image and View > Lower Pane View > DLLs.",
           commands: [{ label: "PowerShell", code: "$live = Start-Process -FilePath (Join-Path $env:SystemRoot 'System32\\notepad.exe') -PassThru\n\"Live PID: $($live.Id)\"\n\"Creation time: $($live.StartTime.ToString('o'))\"" }],
@@ -288,7 +288,7 @@ window.ILOVEOS_LESSON_DEPTH = {
       {
         title: "Static inspection should remain non-executing",
         paragraphs: [
-          "The starter opens the file as bytes, validates bounds, and reports a limited set of fields. A PE viewer supplies a second interpretation, while Sigcheck adds hashes, signature, version, and entropy-related metadata. None requires launching the target.",
+          "pe_inspector_lab.py opens the file as bytes, validates bounds, and reports a limited set of fields. CFF Explorer supplies a second interpretation, while Sigcheck adds hashes, signature, version, and entropy-related metadata. None requires launching the target.",
           "Do not use LoadLibrary as a general PE parser. Loading executes loader behavior and can run DLL initialization code. Data-file loading flags exist for specialized resource use, but ordinary structural analysis should read the file format."
         ]
       }
@@ -298,7 +298,7 @@ window.ILOVEOS_LESSON_DEPTH = {
       time: "35 min",
       intro: "Use the shared PE inspector against a known file and deliberately test one truncated copy.",
       download: ["downloads/pe_inspector_lab.py", "pe_inspector_lab.py"],
-      expectedOutcome: "The parser should report the same Machine, Magic, section count, entry RVA, image base, alignments, image size, and section rows as the PE viewer. A deliberately truncated copy should be rejected with a bounded error rather than a crash or invented fields.",
+      expectedOutcome: "The parser should report the same Machine, Magic, section count, entry RVA, image base, alignments, image size, and section rows as CFF Explorer. A deliberately truncated copy should be rejected with a bounded error rather than a crash or invented fields.",
       steps: [
         {
           action: "Download pe_inspector_lab.py and open PowerShell in its folder. Create the owned .\\iloveos-pe-anatomy\\notepad-intact.exe copy and parse it.",
@@ -307,10 +307,10 @@ window.ILOVEOS_LESSON_DEPTH = {
           observe: "Record resolved file path, MZ, e_lfanew, PE signature, Machine, section count, Magic, entry RVA, preferred ImageBase, alignments, SizeOfImage, SizeOfHeaders, and section rows."
         },
         {
-          action: "Hash and verify the exact intact copy with PowerShell and Sigcheck, then open it in a PE viewer.",
+          action: "Hash and verify the exact intact copy with PowerShell and Sigcheck, then in CFF Explorer choose File > Open and select .\\iloveos-pe-anatomy\\notepad-intact.exe; use the left tree's NT Headers > File Header, NT Headers > Optional Header, and Section Headers views.",
           commands: [{ label: "PowerShell", code: "$intact = Join-Path $PWD 'iloveos-pe-anatomy\\notepad-intact.exe'\nGet-FileHash -Algorithm SHA256 -LiteralPath $intact\nsigcheck.exe -nobanner -h -a $intact" }],
           why: "Three views test field offsets, architecture interpretation, and provenance separately.",
-          observe: "Record full path, SHA-256, signature status, Machine and Magic from Sigcheck, and matching PE-viewer fields. If Sigcheck is unavailable, record that tool branch and retain the hash plus parser/viewer comparison."
+          observe: "Record full path, SHA-256, signature status, Machine and Magic from Sigcheck, and matching CFF Explorer fields. If Sigcheck is unavailable, record that tool branch and retain the hash plus parser/CFF Explorer comparison."
         },
         { action: "Map each section's raw range and virtual range on paper.", why: "The section table prepares the RVA lesson and exposes padding.", observe: "Identify which sections are readable, writable, or executable by characteristics." },
         {
@@ -322,7 +322,7 @@ window.ILOVEOS_LESSON_DEPTH = {
         { action: "Explain why the security directory needs special address handling.", why: "Remembering one exception prevents a parser from treating every directory address as an RVA.", observe: "State that the certificate table uses a file-position interpretation and is not mapped as an ordinary section directory." }
       ],
       hints: [{ title: "The section table offset is wrong", body: "Use e_lfanew + 4-byte signature + 20-byte COFF header + SizeOfOptionalHeader. Do not assume PE32 and PE32+ optional headers have one fixed common size." }],
-      cleanup: ["Delete only .\\iloveos-pe-anatomy\\notepad-intact.exe, .\\iloveos-pe-anatomy\\notepad-truncated.exe, and the now-empty .\\iloveos-pe-anatomy folder.", "Close the PE viewer without saving modifications."],
+      cleanup: ["Delete only .\\iloveos-pe-anatomy\\notepad-intact.exe, .\\iloveos-pe-anatomy\\notepad-truncated.exe, and the now-empty .\\iloveos-pe-anatomy folder.", "Close CFF Explorer without saving modifications."],
       extension: { title: "Independent variation", prompt: "Add read-only reporting for the import-directory RVA and size, with bounds validation but without parsing descriptors yet." }
     },
     checks: [
@@ -403,7 +403,7 @@ window.ILOVEOS_LESSON_DEPTH = {
       {
         title: "Tools expose each coordinate system separately",
         paragraphs: [
-          "A PE viewer and the starter expose raw pointers, RVAs, sizes, and characteristics. Process Explorer reports module bases. VMMap shows live image ranges and protections. A debugger or hex viewer can compare the byte at the calculated file offset with the byte at the live VA for a process you own.",
+          "CFF Explorer and pe_inspector_lab.py expose raw pointers, RVAs, sizes, and characteristics. Process Explorer reports module bases. VMMap shows live image ranges and protections. HxD can verify the calculated raw file offset, while WinDbg can inspect the calculated live VA in a process you own.",
           "Relocations can change address-bearing bytes after mapping, so not every live byte must equal the raw file byte. Choose ordinary instruction or constant bytes for a simple comparison and explain relocation as a limitation."
         ]
       }
@@ -427,7 +427,7 @@ window.ILOVEOS_LESSON_DEPTH = {
           why: "The parser validates the entered RVA against the same file and section bounds.",
           observe: "Record containing section, its RVA and raw ranges from the section table, within-section offset, raw file offset, and byte at offset. A zero-filled virtual tail reports no raw file offset; an RVA outside all ranges is a malformed input branch."
         },
-        { action: "Recalculate the file offset manually and inspect that byte range in a hex viewer.", why: "Manual verification tests the formula independently of pe_inspector_lab.py.", observe: "Confirm the raw offset is within notepad-rva.exe's file size and the containing section's SizeOfRawData." },
+        { action: "Open HxD, choose File > Open, and select .\\iloveos-rva-lab\\notepad-rva.exe. Choose Search > Goto (Ctrl+G), enter the raw file offset printed by pe_inspector_lab.py as a hexadecimal offset relative to the beginning of the file, and inspect that byte range without editing it.", why: "Manual verification in HxD tests the formula independently of pe_inspector_lab.py.", observe: "Confirm HxD selects the same byte reported by pe_inspector_lab.py and that the raw offset is within notepad-rva.exe's file size and the containing section's SizeOfRawData. If HxD is unavailable, record the missing-tool branch rather than substituting an unnamed hex viewer." },
         {
           action: "Start the trusted System32 original, print its PID and creation time, and record its actual notepad.exe module base in Process Explorer's DLL lower pane.",
           commands: [{ label: "PowerShell", code: "$live = Start-Process -FilePath (Join-Path $env:SystemRoot 'System32\\notepad.exe') -PassThru\n\"Live PID: $($live.Id)\"\n\"Creation time: $($live.StartTime.ToString('o'))\"" }],
@@ -435,10 +435,15 @@ window.ILOVEOS_LESSON_DEPTH = {
           observe: "Match exact live PID, System32 path, creation time, and architecture. If the launcher PID redirects, record the surviving Notepad PID selected by path and creation time."
         },
         { action: "Calculate live VA = the recorded actual module base + the recorded AddressOfEntryPoint RVA, then locate that VA in VMMap's Image details for the same PID.", why: "The final check connects structural metadata to memory protection.", observe: "Confirm the VA lies inside the notepad.exe Image range and record Protection. If the module or target has unloaded or exited, reacquire a live PID and base before calculating." },
-        { action: "Restart once and repeat only the base and VA calculation.", why: "The comparison demonstrates which values are image relative and which are process specific.", observe: "Record whether ASLR changed the base and preserve any unchanged RVA and file offset." }
+        {
+          action: "Restart the trusted-original experiment: close the recorded Notepad through its own window, run this complete launch block in PowerShell from any folder, then use Process Explorer to reacquire the newly identified live PID and its actual notepad.exe module base before repeating live VA = new base + the unchanged AddressOfEntryPoint RVA.",
+          commands: [{ label: "PowerShell", code: "$notepadPath = Join-Path $env:SystemRoot 'System32\\notepad.exe'\n$restart = Start-Process -FilePath $notepadPath -PassThru\n\"Restart requested path: $notepadPath\"\n\"Restart launcher PID: $($restart.Id)\"\n\"Restart creation time: $($restart.StartTime.ToString('o'))\"" }],
+          why: "A complete second launch and explicit base reacquisition demonstrate which values are image relative and which are process specific.",
+          observe: "Record the new live PID, creation time, actual module base, and recalculated VA; preserve the unchanged RVA and raw file offset. If the returned launcher PID exited or redirected, match the surviving Notepad by requested path and creation time in Process Explorer, record the redirected branch, and stop if no unique live PID/base can be reacquired. Record whether ASLR changed the base."
+        }
       ],
       hints: [{ title: "The tool reports no raw file byte", body: "The RVA may lie in a zero-filled virtual tail or outside every valid section. Choose an RVA within min(VirtualSize, SizeOfRawData) for a byte comparison." }],
-      cleanup: ["Close the recorded Notepad PID, PE viewer, and hex viewer.", "Delete only .\\iloveos-rva-lab\\notepad-rva.exe and its now-empty .\\iloveos-rva-lab folder."],
+      cleanup: ["Close the recorded Notepad PID, CFF Explorer, and HxD.", "Delete only .\\iloveos-rva-lab\\notepad-rva.exe and its now-empty .\\iloveos-rva-lab folder."],
       extension: { title: "Independent variation", prompt: "Resolve an RVA inside .data whose live byte changes at runtime and explain why address mapping can be correct even when byte contents differ." }
     },
     checks: [
@@ -541,7 +546,7 @@ window.ILOVEOS_LESSON_DEPTH = {
           observe: "Record PID, exact module path, HMODULE, MessageBoxW address, and printed prototype. In Process Explorer select the PID and use the DLL lower pane to verify user32.dll's base and size contain the address. If GetProcAddress returned null, explicit_load_lab.py would report the missing-export branch and must not construct or call the pointer."
         },
         { action: "Continue, select OK, and interpret the integer return.", why: "Return values remain part of a UI API contract even when only one button is offered.", observe: "Confirm the reported identifier corresponds to the selected button." },
-        { action: "Open the exact System32\\user32.dll path printed by explicit_load_lab.py in a PE viewer. Inspect its Export Directory for MessageBoxW and inspect an owned executable's Import Directory for one ordinary imported function.", why: "The static views connect explicit lookup and loader-resolved imports to their PE structures.", observe: "For MessageBoxW record name, ordinal, RVA, and any forwarder. If MessageBoxW is absent on an unexpected target, do not substitute a guessed ordinal; treat it as a missing-export branch." },
+        { action: "In CFF Explorer choose File > Open and select the exact System32\\user32.dll path printed by explicit_load_lab.py, then select Export Directory in the left tree and find MessageBoxW. Use File > Open for an executable you own, select Import Directory in the left tree, expand one DLL descriptor, and select one ordinary imported function.", why: "The named CFF Explorer views connect explicit lookup and loader-resolved imports to their PE structures.", observe: "For MessageBoxW record name, ordinal, RVA, and any forwarder; for the owned executable record DLL, imported name or ordinal, and thunk. If MessageBoxW is absent on an unexpected target, do not substitute a guessed ordinal; treat it as a missing-export branch. If CFF Explorer is unavailable, record that tool branch." },
         { action: "Compare on paper with MessageBoxA and the original script.", why: "The comparison isolates encoding and prototype safety improvements.", observe: "List LPCSTR plus bytes for A, LPCWSTR plus str for W, and explain why private call_function is unnecessary." }
       ],
       hints: [{ title: "The function address is outside the expected module", body: "Confirm the correct PID and user32 module range, then check whether the export is forwarded or the tool displays a different mapped implementation module. Do not force the pointer into a guessed range." }],
@@ -642,13 +647,19 @@ window.ILOVEOS_LESSON_DEPTH = {
       safety: "Modify only a disposable executable copy and a lab DLL you own. Keep matching architectures, preserve the originals, do not patch production or signed system files in place, and perform the exercise in a disposable VM if the binary's behavior is not fully known.",
       steps: [
         {
-          action: "Download pe_inspector_lab.py and open PowerShell in its folder. Enter paths to a harmless executable and DLL that you own; this block creates only .\\iloveos-loader-lab\\host-lab.exe and .\\iloveos-loader-lab\\msgbox-lab.dll copies, then hashes and parses both copies.",
-          commands: [{ label: "PowerShell", code: "$hostOriginal = Read-Host 'Enter the full path to an owned harmless executable'\n$dllOriginal = Read-Host 'Enter the full path to an owned lab DLL'\n$lab = Join-Path $PWD 'iloveos-loader-lab'\nif (Test-Path -LiteralPath $lab) { throw \"Remove or rename the existing lab folder first: $lab\" }\nNew-Item -ItemType Directory -Path $lab | Out-Null\nCopy-Item -LiteralPath $hostOriginal -Destination (Join-Path $lab 'host-lab.exe')\nCopy-Item -LiteralPath $dllOriginal -Destination (Join-Path $lab 'msgbox-lab.dll')\nGet-FileHash -Algorithm SHA256 -LiteralPath $hostOriginal,$dllOriginal,(Join-Path $lab 'host-lab.exe'),(Join-Path $lab 'msgbox-lab.dll')\npy .\\pe_inspector_lab.py .\\iloveos-loader-lab\\host-lab.exe\npy .\\pe_inspector_lab.py .\\iloveos-loader-lab\\msgbox-lab.dll" }],
+          action: "Download pe_inspector_lab.py and open PowerShell in its folder. Enter paths to a harmless executable and DLL that you own; this block creates only .\\iloveos-loader-lab\\host-lab.exe and .\\iloveos-loader-lab\\msgbox-lab.dll copies, then uses Get-FileHash, Sigcheck, and pe_inspector_lab.py on the exact originals and copies.",
+          commands: [{ label: "PowerShell", code: "$hostOriginal = Read-Host 'Enter the full path to an owned harmless executable'\n$dllOriginal = Read-Host 'Enter the full path to an owned lab DLL'\n$lab = Join-Path $PWD 'iloveos-loader-lab'\nif (Test-Path -LiteralPath $lab) { throw \"Remove or rename the existing lab folder first: $lab\" }\nNew-Item -ItemType Directory -Path $lab | Out-Null\n$hostCopy = Join-Path $lab 'host-lab.exe'\n$dllCopy = Join-Path $lab 'msgbox-lab.dll'\nCopy-Item -LiteralPath $hostOriginal -Destination $hostCopy\nCopy-Item -LiteralPath $dllOriginal -Destination $dllCopy\n$candidates = @($hostOriginal, $dllOriginal, $hostCopy, $dllCopy)\nGet-FileHash -Algorithm SHA256 -LiteralPath $candidates\n$sigcheck = Get-Command sigcheck.exe -ErrorAction SilentlyContinue\nif ($null -eq $sigcheck) {\n  'Sigcheck unavailable; retain the Get-FileHash and parser evidence.'\n} else {\n  foreach ($candidate in $candidates) { & $sigcheck.Source -nobanner -h -a $candidate }\n}\npy .\\pe_inspector_lab.py $hostCopy\npy .\\pe_inspector_lab.py $dllCopy" }],
           why: "Provenance, disposable names, and matching architecture are prerequisites before any import edit.",
-          observe: "Record original and copy SHA-256 values, signature states from your verifier, and Machine plus Optional Header Magic for host-lab.exe and msgbox-lab.dll. If Machine or Magic differ, stop with the architecture-mismatch branch; do not edit or run the pair."
+          observe: "Record original and copy SHA-256 values, Sigcheck Verified and MachineType fields when available, and Machine plus Optional Header Magic from pe_inspector_lab.py for host-lab.exe and msgbox-lab.dll. If Sigcheck is unavailable, record that branch and retain Get-FileHash plus parser evidence. If Machine or Magic differ, stop with the architecture-mismatch branch; do not edit or run the pair."
         },
-        { action: "Open .\\iloveos-loader-lab\\msgbox-lab.dll in a PE viewer and inspect its Export Directory. Record the exact owned export name, ordinal, RVA, and decoration; use that exact name in the next step.", why: "The import must request a symbol that the owned DLL actually publishes with a compatible ABI.", observe: "If the intended export is absent, stop with the missing-export branch rather than reconstructing ?MyExport@@YAXXZ from the walkthrough. A decorated name must be copied exactly." },
-        { action: "In your PE editor, open only .\\iloveos-loader-lab\\host-lab.exe, add an import descriptor for msgbox-lab.dll and the exact export recorded in step 2, rebuild to the same host-lab.exe copy, and close the editor without touching either original path.", why: "This changes startup dependency metadata and usually changes hash or signature validity.", observe: "Reopen host-lab.exe and prove the new descriptor and thunk name exist. Re-run your hash/signature verifier and record the changed copy hash and invalidated or absent signature before execution." },
+        { action: "In CFF Explorer choose File > Open and select .\\iloveos-loader-lab\\msgbox-lab.dll, then select Export Directory in the left tree. Record the exact owned export name, ordinal, RVA, and decoration; use that exact name in the next step.", why: "The import must request a symbol that the owned DLL actually publishes with a compatible ABI.", observe: "If the intended export is absent, stop with the missing-export branch rather than reconstructing ?MyExport@@YAXXZ from the walkthrough. A decorated name must be copied exactly. If CFF Explorer is unavailable, record the missing-tool branch and do not edit the host." },
+        { action: "In CFF Explorer choose File > Open and select only .\\iloveos-loader-lab\\host-lab.exe. Select Import Adder in the left tree, choose Add, select .\\iloveos-loader-lab\\msgbox-lab.dll, select the exact export recorded in step 2, choose Import By Name, then choose Rebuild Import Table and File > Save. Reopen host-lab.exe with File > Open and select Import Directory in the left tree.", why: "CFF Explorer's named Import Adder path changes only the disposable host metadata and makes the edit reproducible.", observe: "Confirm Import Directory contains a msgbox-lab.dll descriptor and the exact thunk name. If this CFF Explorer build does not expose Import Adder, Import By Name, or Rebuild Import Table, record the missing-interface branch and stop; do not guess another editor workflow or touch either original path." },
+        {
+          action: "In PowerShell from the folder containing pe_inspector_lab.py, hash and verify only the rebuilt .\\iloveos-loader-lab\\host-lab.exe before execution.",
+          commands: [{ label: "PowerShell", code: "$modified = (Resolve-Path .\\iloveos-loader-lab\\host-lab.exe).Path\nGet-FileHash -Algorithm SHA256 -LiteralPath $modified\n$sigcheck = Get-Command sigcheck.exe -ErrorAction SilentlyContinue\nif ($null -eq $sigcheck) {\n  'Sigcheck unavailable; retain the Get-FileHash and CFF Explorer evidence.'\n} else {\n  & $sigcheck.Source -nobanner -h -a $modified\n}" }],
+          why: "The post-edit identity check establishes the exact bytes and signature state that the next step will execute.",
+          observe: "Compare the rebuilt SHA-256 with the original host hash and record Sigcheck Verified and MachineType when available. Expect a changed hash and an invalidated or absent signature; if Sigcheck is unavailable, record that tool branch rather than calling the file verified."
+        },
         {
           action: "In Process Monitor, clear the display and add Process Name is host-lab.exe Include plus Operation is Image Load Include, then resume capture. Run the owned host-lab.exe copy from its lab directory and print the returned PID; pause capture as soon as startup succeeds or fails.",
           commands: [{ label: "PowerShell", code: "$host = (Resolve-Path .\\iloveos-loader-lab\\host-lab.exe).Path\n$process = Start-Process -FilePath $host -WorkingDirectory (Split-Path $host) -PassThru\n\"host-lab.exe PID: $($process.Id)\"" }],
