@@ -2213,7 +2213,8 @@ pre {
   color: var(--text);
   background: var(--bg-raised);
   box-shadow: 0 35px 100px rgba(0,0,0,.62);
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 .api-dialog::backdrop { background: rgba(2,4,8,.78); backdrop-filter: blur(6px); }
 .api-dialog-head {
@@ -2233,7 +2234,7 @@ pre {
 .api-dialog-head p { color: var(--muted); font-size: 11px; }
 .api-dialog-close { display: grid; width: 31px; height: 31px; flex: 0 0 31px; place-items: center; border: 1px solid var(--line); border-radius: 8px; color: var(--muted); background: var(--panel); font-size: 20px; line-height: 1; cursor: pointer; }
 .api-dialog-close:hover { border-color: var(--line-bright); color: var(--text); }
-.api-dialog-body { max-height: calc(min(820px, 100vh - 50px) - 104px); padding: 22px; overflow-y: auto; }
+.api-dialog-body { padding: 22px; }
 .api-dialog-summary { margin-bottom: 22px; }
 .api-dialog-summary p { color: #c4ccd8; font-size: 13px; }
 .api-dialog-summary > span { display: block; margin-top: 9px; color: var(--muted-2); font-size: 9px; }

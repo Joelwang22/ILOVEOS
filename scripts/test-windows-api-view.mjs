@@ -51,6 +51,7 @@ requireCondition(dataVersion !== "windows-api-guide", "Windows API guide still u
 requireCondition(dataVersion !== "windows-api-guide-2", "Windows API redesign still uses the pre-redesign cache key");
 requireCondition(dataVersion !== "windows-api-guide-3", "Windows API category colors still use the pre-color cache key");
 requireCondition(dataVersion !== "windows-api-guide-4", "Reference overview popups still use the pre-popup cache key");
+requireCondition(dataVersion !== "windows-api-guide-5", "Popup scrolling fix still uses the pre-fix cache key");
 for (const expected of [
   "windowsApiView.renderDialog(entry)",
   "trigger.dataset.windowsApi",
