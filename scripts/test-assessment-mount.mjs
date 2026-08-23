@@ -98,13 +98,18 @@ const html = `<!doctype html><html><head><meta charset="utf-8"><style>${stylesSo
       checks.completionFocus = document.activeElement?.matches('[data-assessment-feedback="single"]');
 
       app.querySelector('[data-assessment-action="check-multiple"]').click();
+      checks.emptyMultipleCheckFocus = document.activeElement?.matches('[data-assessment-action="check-multiple"]');
       const checkbox = app.querySelector('[data-activity="multiple"][data-option="0"]');
       checkbox.click();
       const currentCheckbox = app.querySelector('[data-activity="multiple"][data-option="0"]');
       checks.checkboxRedraw = currentCheckbox.checked && currentCheckbox.closest("label").classList.contains("selected");
       checks.checkboxFocus = document.activeElement === currentCheckbox;
       checks.checkboxClearsFeedback = !app.querySelector('[data-assessment-feedback="multiple"]').textContent.trim();
+      app.querySelector('[data-assessment-action="check-multiple"]').click();
+      checks.incorrectMultipleCheckFocus = document.activeElement?.matches('[data-assessment-action="check-multiple"]');
 
+      app.querySelector('[data-assessment-action="check-ordering"]').click();
+      checks.incorrectOrderingCheckFocus = document.activeElement?.matches('[data-assessment-action="check-ordering"]');
       app.querySelector('[data-activity="ordering"][data-item="open"][data-direction="up"]').click();
       checks.orderingFocus = document.activeElement?.dataset.item === "open" && document.activeElement?.dataset.assessmentAction === "move";
       document.activeElement?.click();

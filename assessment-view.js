@@ -305,7 +305,9 @@
       } else if (action?.type === "toggle-multiple") {
         target = activityControl(action.id, (control) => control.dataset.assessmentAction === "multiple" && Number(control.dataset.option) === action.option);
       } else if (action?.type === "check-multiple" || action?.type === "check-ordering") {
-        target = [...renderRoot.querySelectorAll("[data-assessment-feedback]")].find((control) => control.dataset.assessmentFeedback === action.id);
+        target = activityState?.completed
+          ? [...renderRoot.querySelectorAll("[data-assessment-feedback]")].find((control) => control.dataset.assessmentFeedback === action.id)
+          : activityControl(action.id, (control) => control.dataset.assessmentAction === action.type);
       } else if (action?.type === "move-ordering") {
         const itemControls = [...renderRoot.querySelectorAll('[data-assessment-action="move"]')]
           .filter((control) => control.dataset.activity === action.id && control.dataset.item === action.item && !control.disabled);
