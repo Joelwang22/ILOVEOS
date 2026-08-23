@@ -47,6 +47,7 @@ requireCondition(Boolean(dataVersion && viewVersion && appVersion && styleVersio
 requireCondition(dataVersion === viewVersion && viewVersion === appVersion && appVersion === styleVersion, "Windows API guide data, view, app, and stylesheet cache versions do not match");
 requireCondition(dataVersion !== "windows-api-guide", "Windows API guide still uses the stale first-release cache key");
 requireCondition(dataVersion !== "windows-api-guide-2", "Windows API redesign still uses the pre-redesign cache key");
+requireCondition(dataVersion !== "windows-api-guide-3", "Windows API category colors still use the pre-color cache key");
 for (const expected of [
   "windowsApiView.renderDialog(entry)",
   "trigger.dataset.windowsApi",
@@ -64,6 +65,21 @@ requireCondition(allocationMatches[0]?.name === "VirtualAllocEx", "search did no
 
 const outputPointerMatches = view.filterEntries(guide.entries, "output count pointer");
 requireCondition(outputPointerMatches.some((entry) => entry.name === "WriteProcessMemory"), "parameter explanations are not searchable");
+
+const categoryAccents = {
+  "Files, pipes, and devices": "green",
+  "Hooks and desktop APIs": "orange",
+  "Memory and address spaces": "teal",
+  "Modules and loading": "violet",
+  "Processes, threads, and handles": "blue",
+  "Security and trust": "rose",
+  "Services and Registry": "amber",
+  "System information and errors": "cyan",
+};
+for (const [category, accent] of Object.entries(categoryAccents)) {
+  const categoryHtml = view.renderEntries(guide.entries.filter((entry) => entry.category === category));
+  requireCondition(categoryHtml.includes(`style="--reference-color: var(--${accent})"`), `${category} does not use its ${accent} accent`);
+}
 
 const html = view.render(guide, "VirtualAllocEx");
 for (const expected of [

@@ -82,6 +82,19 @@
       </button>`;
   }
 
+  function categoryAccent(category) {
+    return ({
+      "Files, pipes, and devices": "green",
+      "Hooks and desktop APIs": "orange",
+      "Memory and address spaces": "teal",
+      "Modules and loading": "violet",
+      "Processes, threads, and handles": "blue",
+      "Security and trust": "rose",
+      "Services and Registry": "amber",
+      "System information and errors": "cyan",
+    })[category] || "violet";
+  }
+
   function renderEntries(entries, openCategories = false) {
     const groups = new Map();
     for (const entry of entries) {
@@ -90,7 +103,7 @@
     }
     if (!entries.length) return '<div class="search-empty">No matching API. Try its name, DLL, native type, parameter, result, failure, or cleanup rule.</div>';
     return [...groups.entries()].map(([category, categoryEntries]) => `
-      <details class="api-module windows-api-module" style="--reference-color: var(--violet)" ${openCategories ? "open" : ""}>
+      <details class="api-module windows-api-module" style="--reference-color: var(--${categoryAccent(category)})" ${openCategories ? "open" : ""}>
         <summary>
           <span class="api-module-title"><code>${escapeHtml(category)}</code><span>Native Windows contracts and Python translations</span></span>
           <span class="api-summary-meta"><span class="entry-count">${categoryEntries.length} ${categoryEntries.length === 1 ? "entry" : "entries"}</span><span class="details-chevron">⌄</span></span>
