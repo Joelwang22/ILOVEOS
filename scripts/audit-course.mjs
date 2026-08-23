@@ -24,6 +24,7 @@ const dataFiles = [
   "api-signatures-stage4.js",
   "api-signatures-stage6.js",
   "windows-api-data.js",
+  "assessment-data.js",
 ];
 
 globalThis.window = {};
@@ -38,6 +39,7 @@ const depth = window.ILOVEOS_LESSON_DEPTH;
 const reference = window.ILOVEOS_REFERENCE;
 const signatures = window.ILOVEOS_API_SIGNATURES;
 const windowsApiGuide = window.ILOVEOS_WINDOWS_API_GUIDE;
+const assessments = window.ILOVEOS_ASSESSMENTS;
 const errors = [];
 const warnings = [];
 
@@ -53,6 +55,9 @@ function duplicateValues(values) {
 
 requireCondition(modules.length === 10, `expected 10 modules, found ${modules.length}`);
 requireCondition(lessons.length === 62, `expected 62 lessons, found ${lessons.length}`);
+requireCondition(assessments.moduleReviews.length === 10, `expected 10 module reviews, found ${assessments.moduleReviews.length}`);
+requireCondition(assessments.moduleReviews.reduce((count, review) => count + review.activities.length, 0) === 50, "expected 50 module-review activities");
+requireCondition(assessments.finalAssessment.questions.length === 20, `expected 20 final-assessment questions, found ${assessments.finalAssessment.questions.length}`);
 for (const id of duplicateValues(modules.map((module) => module.id))) errors.push(`duplicate module id: ${id}`);
 for (const id of duplicateValues(lessons.map((lesson) => lesson.id))) errors.push(`duplicate lesson id: ${id}`);
 
@@ -183,6 +188,8 @@ console.log(`downloads checked: ${downloadPaths.length}`);
 console.log(`reference features: ${referenceNames.size}`);
 console.log(`API signature entries: ${Object.keys(signatures).length}`);
 console.log(`Windows API guide entries: ${windowsApiEntries.size}`);
+console.log(`module review activities: ${assessments.moduleReviews.reduce((count, review) => count + review.activities.length, 0)}`);
+console.log(`final assessment questions: ${assessments.finalAssessment.questions.length}`);
 console.log(`unique lesson/tool sources: ${new Set(sourceUrls.map((item) => item.url)).size}`);
 console.log(`errors: ${errors.length}`);
 for (const error of errors) console.log(`ERROR ${error}`);
