@@ -96,8 +96,8 @@
           <span class="api-summary-meta"><span class="entry-count">${categoryEntries.length} ${categoryEntries.length === 1 ? "entry" : "entries"}</span><span class="details-chevron">⌄</span></span>
         </summary>
         <div class="api-module-body windows-api-module-body">
-          <div class="feature-table" role="table" aria-label="${escapeHtml(category)} Windows APIs">
-            <div class="feature-row feature-head" role="row"><span>API</span><span>DLL</span><span>What it does</span><span></span></div>
+          <div class="feature-table">
+            <div class="feature-row feature-head"><span>API</span><span>DLL</span><span>What it does</span><span></span></div>
             ${categoryEntries.map(renderEntryRow).join("")}
           </div>
         </div>

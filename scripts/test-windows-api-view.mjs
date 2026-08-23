@@ -20,6 +20,7 @@ const styles = fs.readFileSync(path.join(root, "styles.css"), "utf8");
 const dataVersion = indexHtml.match(/windows-api-data\.js\?v=([^"']+)/)?.[1];
 const viewVersion = indexHtml.match(/windows-api-view\.js\?v=([^"']+)/)?.[1];
 const appVersion = indexHtml.match(/app\.js\?v=([^"']+)/)?.[1];
+const styleVersion = indexHtml.match(/styles\.css\?v=([^"']+)/)?.[1];
 
 globalThis.window = {};
 for (const filename of [
@@ -42,8 +43,8 @@ function requireCondition(condition, message) {
   if (!condition) errors.push(message);
 }
 
-requireCondition(Boolean(dataVersion && viewVersion && appVersion), "Windows API guide scripts are missing cache versions");
-requireCondition(dataVersion === viewVersion && viewVersion === appVersion, "Windows API guide data, view, and app cache versions do not match");
+requireCondition(Boolean(dataVersion && viewVersion && appVersion && styleVersion), "Windows API guide assets are missing cache versions");
+requireCondition(dataVersion === viewVersion && viewVersion === appVersion && appVersion === styleVersion, "Windows API guide data, view, app, and stylesheet cache versions do not match");
 requireCondition(dataVersion !== "windows-api-guide", "Windows API guide still uses the stale first-release cache key");
 requireCondition(dataVersion !== "windows-api-guide-2", "Windows API redesign still uses the pre-redesign cache key");
 for (const expected of [
@@ -79,6 +80,7 @@ for (const expected of [
 requireCondition(!html.includes('class="windows-api-entry"'), "API items still render as inline accordions");
 requireCondition(!html.includes("VirtualAllocEx.argtypes"), "filtered page renders API details inline instead of in a dialog");
 requireCondition(!html.includes("WriteProcessMemory"), "filtered rendering includes an unrelated API entry");
+requireCondition(!html.includes('role="table"') && !html.includes('role="row"'), "clickable API rows expose an incomplete ARIA table structure");
 
 requireCondition(typeof view.renderDialog === "function", "Windows API view does not expose a dialog renderer");
 const dialogHtml = typeof view.renderDialog === "function" ? view.renderDialog(allocationMatches[0]) : "";
