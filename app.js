@@ -10,6 +10,8 @@
   const windowsApiGuide = window.ILOVEOS_WINDOWS_API_GUIDE;
   const windowsApiView = window.ILOVEOS_WINDOWS_API_VIEW;
   const referenceOverviewView = window.ILOVEOS_REFERENCE_OVERVIEW_VIEW;
+  const assessments = window.ILOVEOS_ASSESSMENTS || { moduleReviews: [], finalAssessment: null };
+  const assessmentView = window.ILOVEOS_ASSESSMENT_VIEW;
   const main = document.querySelector("#main-content");
   const sidebar = document.querySelector("#sidebar");
   const scrim = document.querySelector("#sidebar-scrim");
@@ -54,6 +56,7 @@
           <div class="hero-actions">
             <a class="button primary" href="#/lesson/${firstLessonId("foundations")}">Start the first lesson ${icons.arrow}</a>
             <a class="button" href="#/lessons">View all lessons</a>
+            <a class="button" href="#/assessment/final">Open final assessment</a>
           </div>
         </section>
 
@@ -185,6 +188,11 @@ handle = <span class="code-function">win32process.GetCurrentProcess</span>()
               <strong>${lesson.title}</strong>
               <small>${lesson.type}</small>
             </a>`).join("")}
+          <a class="outline-item outline-review" href="#/review/${module.id}">
+            <span class="outline-number">R</span>
+            <strong>${escapeHtml(module.title)} review</strong>
+            <small>5 cumulative activities</small>
+          </a>
         </section>
       </div>`;
   }
@@ -502,7 +510,7 @@ handle = <span class="code-function">win32process.GetCurrentProcess</span>()
     const moduleIndex = moduleLessonList.indexOf(lesson);
     const allIndex = lessons.indexOf(lesson);
     const previous = lessons[allIndex - 1];
-    const next = lessons[allIndex + 1];
+    const next = moduleLessonList[moduleIndex + 1];
     const optionLetters = ["A", "B", "C", "D", "E"];
     const phases = phaseDetails(lesson);
     const sections = [["learn", phases.learn.title], ["windows", phases.windows.title], ["investigation", phases.investigation.title], ["review", phases.review.title]];
@@ -557,7 +565,7 @@ handle = <span class="code-function">win32process.GetCurrentProcess</span>()
 
             <nav class="lesson-footer-nav" aria-label="Lesson navigation">
               ${previous ? `<a class="lesson-nav-card" href="#/lesson/${previous.id}">Previous lesson<strong>${escapeHtml(previous.title)}</strong></a>` : `<a class="lesson-nav-card" href="#/module/${module.id}">Module overview<strong>${escapeHtml(module.title)}</strong></a>`}
-              ${next ? `<a class="lesson-nav-card" href="#/lesson/${next.id}">Next lesson<strong>${escapeHtml(next.title)}</strong></a>` : `<a class="lesson-nav-card" href="#/lessons">Course index<strong>All lessons</strong></a>`}
+              ${next ? `<a class="lesson-nav-card" href="#/lesson/${next.id}">Next lesson<strong>${escapeHtml(next.title)}</strong></a>` : `<a class="lesson-nav-card" href="#/review/${module.id}">Module review<strong>${escapeHtml(module.title)}</strong></a>`}
             </nav>
           </article>
 
@@ -707,15 +715,40 @@ user = <span class="code-function">win32api.GetUserName</span>()
       const feedback = card.querySelector(".quiz-feedback");
       card.querySelectorAll(".quiz-option").forEach((option) => {
         option.addEventListener("click", () => {
-          card.querySelectorAll(".quiz-option").forEach((item) => {
-            item.disabled = true;
-            if (item.dataset.option === answer) item.classList.add("correct");
-          });
-          if (option.dataset.option !== answer) option.classList.add("incorrect");
+          if (option.dataset.option !== answer) {
+            option.disabled = true;
+            option.classList.add("incorrect");
+            feedback.classList.add("visible");
+            return;
+          }
+          card.querySelectorAll(".quiz-option").forEach((item) => { item.disabled = true; });
+          option.classList.add("correct");
           feedback.classList.add("visible");
         });
       });
     });
+  }
+
+  function renderModuleReview(id) {
+    const review = assessments.moduleReviews.find((item) => item.module === id);
+    if (!review) {
+      main.innerHTML = assessmentView.renderUnavailable(id);
+      return;
+    }
+    const moduleIndex = data.modules.findIndex((item) => item.id === id);
+    const module = data.modules[moduleIndex];
+    const nextModule = data.modules[moduleIndex + 1];
+    assessmentView.mount(main, review, {
+      context: {
+        moduleNumber: module?.number,
+        nextHref: nextModule ? `#/module/${nextModule.id}` : "#/assessment/final",
+        nextLabel: nextModule ? `Continue to Module ${nextModule.number}` : "Open final assessment"
+      }
+    });
+  }
+
+  function renderFinalAssessment() {
+    assessmentView.mount(main, assessments.finalAssessment, { context: {} });
   }
 
   function moduleSearchText(module) {
@@ -906,6 +939,8 @@ user = <span class="code-function">win32api.GetUserName</span>()
     if (root === "module") renderModule(parts[1]);
     else if (root === "lessons") renderLessons();
     else if (root === "lesson") renderLesson(parts[1]);
+    else if (root === "review") renderModuleReview(parts[1]);
+    else if (root === "assessment" && parts[1] === "final") renderFinalAssessment();
     else if (root === "reference" && parts[1] === "pywin32") renderPywin32(params.get("q") || "", params.get("api") || "");
     else if (root === "reference" && parts[1] === "windows-api") renderWindowsApiGuide(params.get("q") || "");
     else if (root === "toolbox") renderToolbox(params.get("q") || "");
@@ -921,7 +956,7 @@ user = <span class="code-function">win32api.GetUserName</span>()
 
   function updateActiveNav(root, referencePage = "") {
     document.querySelectorAll(".nav-item").forEach((item) => item.classList.remove("active"));
-    const key = root === "reference" ? (referencePage === "windows-api" ? "windows-api" : "pywin32") : root === "module" ? "home" : root || "home";
+    const key = root === "reference" ? (referencePage === "windows-api" ? "windows-api" : "pywin32") : ["module", "review", "assessment"].includes(root) ? "home" : root || "home";
     document.querySelector(`[data-route="${key}"]`)?.classList.add("active");
   }
 
@@ -1206,6 +1241,23 @@ except pywintypes.error as error:
   function allSearchItems() {
     return [
       ...data.modules.map((item) => ({ title: item.title, detail: item.description, kind: "Module", href: `#/module/${item.id}` })),
+      ...assessments.moduleReviews.map((review) => {
+        const module = data.modules.find((item) => item.id === review.module);
+        return {
+          title: review.title,
+          detail: `${module?.title || review.module} Â· ${review.summary}`,
+          searchText: JSON.stringify(review.activities),
+          kind: "Module review",
+          href: `#/review/${review.module}`
+        };
+      }),
+      ...(assessments.finalAssessment ? [{
+        title: assessments.finalAssessment.title,
+        detail: assessments.finalAssessment.summary,
+        searchText: JSON.stringify({ questions: assessments.finalAssessment.questions, practical: assessments.finalAssessment.practical }),
+        kind: "Final assessment",
+        href: "#/assessment/final"
+      }] : []),
       ...lessons.map((lesson) => {
         const module = data.modules.find((item) => item.id === lesson.module);
         const index = moduleLessons(lesson.module).indexOf(lesson);
