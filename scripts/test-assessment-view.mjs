@@ -121,11 +121,20 @@ if (view) {
   requireCondition(state.activities["ordering-lifecycle"].order.join(",") === "call,open,close", "ordering activity does not preserve its authored initial order");
   state = view.reduceState(review, state, { type: "move-ordering", id: "ordering-lifecycle", item: "open", direction: "up" });
   requireCondition(state.activities["ordering-lifecycle"].order.join(",") === "open,call,close", "ordering move-up action changes the wrong item");
+  let incorrectOrder = view.reduceState(review, view.createState(review), { type: "check-ordering", id: "ordering-lifecycle" });
+  requireCondition(!incorrectOrder.activities["ordering-lifecycle"].completed, "incorrect ordering attempt completes the activity");
+  incorrectOrder = view.reduceState(review, incorrectOrder, { type: "move-ordering", id: "ordering-lifecycle", item: "open", direction: "up" });
+  incorrectOrder = view.reduceState(review, incorrectOrder, { type: "check-ordering", id: "ordering-lifecycle" });
+  requireCondition(incorrectOrder.activities["ordering-lifecycle"].completed, "ordering activity cannot be corrected after an incorrect attempt");
   state = view.reduceState(review, state, { type: "check-ordering", id: "ordering-lifecycle" });
   requireCondition(state.activities["ordering-lifecycle"].completed, "correct order does not complete the activity");
+  const lockedState = JSON.stringify(state);
+  state = view.reduceState(review, state, { type: "move-ordering", id: "ordering-lifecycle", item: "call", direction: "down" });
+  requireCondition(JSON.stringify(state) === lockedState, "completed activity accepts a later action");
   requireCondition(view.progress(review, state).completed === 3, "completed review reports the wrong progress");
   rendered = view.renderReview(review, state);
   requireCondition(rendered.includes('data-direction="up" disabled') && rendered.includes('data-direction="down" disabled'), "completed ordering controls do not lock");
+  requireCondition(rendered.includes('aria-label="Move Open with minimum access up"'), "ordering controls do not name the item they move");
 
   const finalPage = { id: "final", title: "Final assessment", summary: "Course sample", questions: review.activities, practical };
   let finalState = view.createState(finalPage);
@@ -143,6 +152,36 @@ if (view) {
   const invalidPage = { module: "bad", title: "Broken review", summary: "Fixture", activities: [{ id: "bad-kind", kind: "unknown", prompt: "Broken" }] };
   const invalidHtml = view.renderReview(invalidPage, view.createState(invalidPage));
   requireCondition(invalidHtml.includes("This activity is unavailable"), "invalid activity content breaks the whole review page");
+  const malformedActivities = [
+    { id: "bad-multiple", kind: "multiple", prompt: "Missing answers", options: ["One", "Two"] },
+    { id: "bad-ordering", kind: "ordering", prompt: "Missing answer", items: [{ id: "one", label: "One" }, { id: "two", label: "Two" }] }
+  ];
+  const malformedPage = { module: "malformed", title: "Malformed review", summary: "Fixture", activities: malformedActivities };
+  let malformedState;
+  let malformedHtml = "";
+  try {
+    malformedState = view.createState(malformedPage);
+    malformedHtml = view.renderReview(malformedPage, malformedState);
+    malformedState = view.reduceState(malformedPage, malformedState, { type: "check-multiple", id: "bad-multiple" });
+    malformedState = view.reduceState(malformedPage, malformedState, { type: "check-ordering", id: "bad-ordering" });
+  } catch (error) {
+    errors.push(`malformed known activity throws instead of degrading safely: ${error.message}`);
+  }
+  requireCondition((malformedHtml.match(/This activity is unavailable/g) || []).length === 2, "malformed known activities are rendered as interactive controls");
+  requireCondition(!malformedState?.activities?.["bad-multiple"] && !malformedState?.activities?.["bad-ordering"], "malformed activities receive mutable state");
+
+  for (const nonArrayPage of [
+    { title: "Object activities", summary: "Fixture", activities: { id: "not-a-list" } },
+    { title: "String questions", summary: "Fixture", questions: "not-a-list" }
+  ]) {
+    try {
+      const nonArrayState = view.createState(nonArrayPage);
+      const nonArrayHtml = view.renderReview(nonArrayPage, nonArrayState);
+      requireCondition(view.progress(nonArrayPage, nonArrayState).total === 0 && nonArrayHtml.includes("0 of 0 complete"), "non-array activity collection is not treated as empty");
+    } catch (error) {
+      errors.push(`non-array activity collection throws: ${error.message}`);
+    }
+  }
   requireCondition(view.renderUnavailable("missing-review").includes("Review unavailable"), "unknown review does not render a safe unavailable state");
 
   const escapedPage = { module: "escape", title: "<img src=x>", summary: "A & B", activities: [] };

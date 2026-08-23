@@ -12,7 +12,38 @@
   }
 
   function activitiesFor(page) {
-    return page?.activities || page?.questions || [];
+    if (Array.isArray(page?.activities)) return page.activities;
+    if (Array.isArray(page?.questions)) return page.questions;
+    return [];
+  }
+
+  function validActivity(activity) {
+    if (!activity || typeof activity !== "object" || typeof activity.id !== "string" || !activity.id || typeof activity.prompt !== "string") return false;
+    if (activity.kind === "single") {
+      return Array.isArray(activity.options)
+        && activity.options.length >= 2
+        && Number.isInteger(activity.answer)
+        && activity.answer >= 0
+        && activity.answer < activity.options.length;
+    }
+    if (activity.kind === "multiple") {
+      return Array.isArray(activity.options)
+        && activity.options.length >= 2
+        && Array.isArray(activity.answers)
+        && activity.answers.length > 0
+        && new Set(activity.answers).size === activity.answers.length
+        && activity.answers.every((answer) => Number.isInteger(answer) && answer >= 0 && answer < activity.options.length);
+    }
+    if (activity.kind === "ordering") {
+      if (!Array.isArray(activity.items) || activity.items.length < 2 || !Array.isArray(activity.answer)) return false;
+      const itemIds = activity.items.map((item) => item?.id);
+      return activity.items.every((item) => item && typeof item.id === "string" && item.id && typeof item.label === "string")
+        && new Set(itemIds).size === itemIds.length
+        && activity.answer.length === itemIds.length
+        && new Set(activity.answer).size === activity.answer.length
+        && activity.answer.every((itemId) => itemIds.includes(itemId));
+    }
+    return false;
   }
 
   function initialActivityState(activity) {
@@ -25,7 +56,7 @@
 
   function createState(page) {
     return {
-      activities: Object.fromEntries(activitiesFor(page).filter((activity) => activity?.id).map((activity) => [activity.id, initialActivityState(activity)])),
+      activities: Object.fromEntries(activitiesFor(page).filter(validActivity).map((activity) => [activity.id, initialActivityState(activity)])),
       practicalReviewed: false,
       notes: {}
     };
@@ -63,9 +94,9 @@
       return state;
     }
 
-    const activity = activitiesFor(page).find((item) => item.id === action?.id);
+    const activity = activitiesFor(page).find((item) => item?.id === action?.id);
     const activityState = state.activities[action?.id];
-    if (!activity || !activityState || activityState.completed) return state;
+    if (!validActivity(activity) || !activityState || activityState.completed) return state;
 
     if (action.type === "select-single" && activity.kind === "single") {
       const option = Number(action.option);
@@ -142,7 +173,7 @@
 
   function renderFeedback(activity, state) {
     const explanation = state.attempted ? `<p class="assessment-explanation">${escapeHtml(activity.explanation)}</p>` : "";
-    return `<div class="assessment-feedback ${escapeHtml(state.status)}" aria-live="polite">${state.feedback ? `<strong>${escapeHtml(state.feedback)}</strong>` : ""}${explanation}</div>`;
+    return `<div class="assessment-feedback ${escapeHtml(state.status)}" data-assessment-feedback="${escapeHtml(activity.id)}" tabindex="-1">${state.feedback ? `<strong>${escapeHtml(state.feedback)}</strong>` : ""}${explanation}</div>`;
   }
 
   function renderSingle(activity, state, number) {
@@ -187,7 +218,7 @@
             if (!item) return "";
             const upDisabled = state.completed || index === 0;
             const downDisabled = state.completed || index === state.order.length - 1;
-            return `<li><span class="assessment-order-number">${index + 1}</span><strong>${escapeHtml(item.label)}</strong><span class="assessment-order-actions"><button type="button" data-assessment-action="move" data-activity="${escapeHtml(activity.id)}" data-item="${escapeHtml(itemId)}" data-direction="up"${upDisabled ? " disabled" : ""}>Move up</button><button type="button" data-assessment-action="move" data-activity="${escapeHtml(activity.id)}" data-item="${escapeHtml(itemId)}" data-direction="down"${downDisabled ? " disabled" : ""}>Move down</button></span></li>`;
+            return `<li><span class="assessment-order-number">${index + 1}</span><strong>${escapeHtml(item.label)}</strong><span class="assessment-order-actions"><button type="button" aria-label="Move ${escapeHtml(item.label)} up" data-assessment-action="move" data-activity="${escapeHtml(activity.id)}" data-item="${escapeHtml(itemId)}" data-direction="up"${upDisabled ? " disabled" : ""}>Move up</button><button type="button" aria-label="Move ${escapeHtml(item.label)} down" data-assessment-action="move" data-activity="${escapeHtml(activity.id)}" data-item="${escapeHtml(itemId)}" data-direction="down"${downDisabled ? " disabled" : ""}>Move down</button></span></li>`;
           }).join("")}
         </ol>
         <button class="assessment-check" type="button" data-assessment-action="check-ordering" data-activity="${escapeHtml(activity.id)}"${state.completed ? " disabled" : ""}>Check order</button>
@@ -196,10 +227,10 @@
   }
 
   function renderActivity(activity, state, number) {
-    if (!activity || !state) return '<section class="assessment-activity unavailable"><p>This activity is unavailable.</p></section>';
-    if (activity.kind === "single" && Array.isArray(activity.options)) return renderSingle(activity, state, number);
-    if (activity.kind === "multiple" && Array.isArray(activity.options)) return renderMultiple(activity, state, number);
-    if (activity.kind === "ordering" && Array.isArray(activity.items)) return renderOrdering(activity, state, number);
+    if (!validActivity(activity) || !state) return '<section class="assessment-activity unavailable"><p>This activity is unavailable.</p></section>';
+    if (activity.kind === "single") return renderSingle(activity, state, number);
+    if (activity.kind === "multiple") return renderMultiple(activity, state, number);
+    if (activity.kind === "ordering") return renderOrdering(activity, state, number);
     return '<section class="assessment-activity unavailable"><p>This activity is unavailable.</p></section>';
   }
 
@@ -215,7 +246,7 @@
         </div>
         <aside class="assessment-evidence"><h3>Evidence your reasoning should account for</h3><ul>${practical.evidenceExpectations.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul></aside>
         <button class="assessment-check" type="button" data-assessment-action="reveal-practical"${state.practicalReviewed ? " disabled" : ""}>${state.practicalReviewed ? "Model reasoning revealed" : "Reveal model reasoning"}</button>
-        ${state.practicalReviewed ? `<section class="assessment-model"><span>One defensible reasoning path</span>${practical.modelReasoning.map((item) => `<article><h3>${escapeHtml(item.title)}</h3><p>${escapeHtml(item.body)}</p></article>`).join("")}</section>` : ""}
+        ${state.practicalReviewed ? `<section class="assessment-model" data-assessment-model tabindex="-1"><span>One defensible reasoning path</span>${practical.modelReasoning.map((item) => `<article><h3>${escapeHtml(item.title)}</h3><p>${escapeHtml(item.body)}</p></article>`).join("")}</section>` : ""}
       </section>`;
   }
 
@@ -234,7 +265,7 @@
           <button class="assessment-reset" type="button" data-assessment-action="reset">Reset this review</button>
         </header>
         <section class="assessment-stack" aria-label="${escapeHtml(page.title)} activities">
-          ${activities.map((activity, index) => renderActivity(activity, state.activities[activity.id], index + 1)).join("")}
+          ${activities.map((activity, index) => renderActivity(activity, state.activities[activity?.id], index + 1)).join("")}
         </section>
         ${renderPractical(page.practical, state)}
         ${context.nextHref ? `<nav class="assessment-next" aria-label="Continue course"><a class="button primary" href="${escapeHtml(context.nextHref)}">${escapeHtml(context.nextLabel || "Continue")}</a></nav>` : ""}
@@ -255,8 +286,54 @@
 
   function mount(container, page, options = {}) {
     let state = createState(page);
-    const draw = () => {
-      container.innerHTML = page.questions ? renderFinalAssessment(page, state, options.context) : renderReview(page, state, options.context);
+    container.innerHTML = '<div data-assessment-render></div><div class="assessment-announcer sr-only" data-assessment-announcer aria-live="polite" aria-atomic="true"></div>';
+    const renderRoot = container.querySelector("[data-assessment-render]");
+    const announcer = container.querySelector("[data-assessment-announcer]");
+
+    const activityControl = (id, predicate) => [...renderRoot.querySelectorAll("[data-activity]")]
+      .find((control) => control.dataset.activity === id && predicate(control));
+
+    const focusAfter = (action) => {
+      let target = null;
+      const activityState = state.activities[action?.id];
+      if (action?.type === "reset-page") {
+        target = renderRoot.querySelector('[data-assessment-action="reset"]');
+      } else if (action?.type === "select-single") {
+        target = activityState?.completed
+          ? [...renderRoot.querySelectorAll("[data-assessment-feedback]")].find((control) => control.dataset.assessmentFeedback === action.id)
+          : activityControl(action.id, (control) => control.dataset.assessmentAction === "single" && !control.disabled);
+      } else if (action?.type === "toggle-multiple") {
+        target = activityControl(action.id, (control) => control.dataset.assessmentAction === "multiple" && Number(control.dataset.option) === action.option);
+      } else if (action?.type === "check-multiple" || action?.type === "check-ordering") {
+        target = [...renderRoot.querySelectorAll("[data-assessment-feedback]")].find((control) => control.dataset.assessmentFeedback === action.id);
+      } else if (action?.type === "move-ordering") {
+        const itemControls = [...renderRoot.querySelectorAll('[data-assessment-action="move"]')]
+          .filter((control) => control.dataset.activity === action.id && control.dataset.item === action.item && !control.disabled);
+        target = itemControls.find((control) => control.dataset.direction === action.direction) || itemControls[0];
+      } else if (action?.type === "reveal-practical") {
+        target = renderRoot.querySelector("[data-assessment-model]");
+      }
+      target?.focus();
+    };
+
+    const announcementFor = (action) => {
+      if (action?.type === "reset-page") return "Review reset.";
+      if (action?.type === "reveal-practical") return "Model reasoning revealed.";
+      if (action?.type === "toggle-multiple") return "Selection updated.";
+      if (action?.type === "move-ordering") {
+        const activity = activitiesFor(page).find((item) => item?.id === action.id);
+        const item = activity?.items?.find((candidate) => candidate.id === action.item);
+        return item ? `${item.label} moved ${action.direction}.` : "Order updated.";
+      }
+      return state.activities[action?.id]?.feedback || "";
+    };
+
+    const draw = (action) => {
+      renderRoot.innerHTML = Array.isArray(page?.questions) ? renderFinalAssessment(page, state, options.context) : renderReview(page, state, options.context);
+      if (action) {
+        announcer.textContent = announcementFor(action);
+        focusAfter(action);
+      }
     };
     draw();
 
@@ -267,27 +344,40 @@
       if (action === "reset") {
         const confirmReset = options.confirmReset || (() => window.confirm("Reset this review and clear the current page's answers and notes?"));
         if (!confirmReset()) return;
-        state = reduceState(page, state, { type: "reset-page" });
+        const stateAction = { type: "reset-page" };
+        state = reduceState(page, state, stateAction);
+        draw(stateAction);
       } else if (action === "single") {
-        state = reduceState(page, state, { type: "select-single", id: control.dataset.activity, option: Number(control.dataset.option) });
+        const stateAction = { type: "select-single", id: control.dataset.activity, option: Number(control.dataset.option) };
+        state = reduceState(page, state, stateAction);
+        draw(stateAction);
       } else if (action === "check-multiple") {
-        state = reduceState(page, state, { type: "check-multiple", id: control.dataset.activity });
+        const stateAction = { type: "check-multiple", id: control.dataset.activity };
+        state = reduceState(page, state, stateAction);
+        draw(stateAction);
       } else if (action === "move") {
-        state = reduceState(page, state, { type: "move-ordering", id: control.dataset.activity, item: control.dataset.item, direction: control.dataset.direction });
+        const stateAction = { type: "move-ordering", id: control.dataset.activity, item: control.dataset.item, direction: control.dataset.direction };
+        state = reduceState(page, state, stateAction);
+        draw(stateAction);
       } else if (action === "check-ordering") {
-        state = reduceState(page, state, { type: "check-ordering", id: control.dataset.activity });
+        const stateAction = { type: "check-ordering", id: control.dataset.activity };
+        state = reduceState(page, state, stateAction);
+        draw(stateAction);
       } else if (action === "reveal-practical") {
-        state = reduceState(page, state, { type: "reveal-practical" });
+        const stateAction = { type: "reveal-practical" };
+        state = reduceState(page, state, stateAction);
+        draw(stateAction);
       } else {
         return;
       }
-      draw();
     };
 
     container.onchange = (event) => {
       const control = event.target.closest('[data-assessment-action="multiple"]');
       if (!control) return;
-      state = reduceState(page, state, { type: "toggle-multiple", id: control.dataset.activity, option: Number(control.dataset.option) });
+      const stateAction = { type: "toggle-multiple", id: control.dataset.activity, option: Number(control.dataset.option) };
+      state = reduceState(page, state, stateAction);
+      draw(stateAction);
     };
 
     container.oninput = (event) => {
@@ -296,7 +386,7 @@
       state = reduceState(page, state, { type: "update-note", prompt: control.dataset.prompt, value: control.value });
     };
 
-    return { getState: () => cloneState(state), reset: () => { state = createState(page); draw(); } };
+    return { getState: () => cloneState(state), reset: () => { state = createState(page); draw({ type: "reset-page" }); } };
   }
 
   window.ILOVEOS_ASSESSMENT_VIEW = {
