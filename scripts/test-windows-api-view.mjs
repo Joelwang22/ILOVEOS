@@ -7,11 +7,16 @@ import { fileURLToPath } from "node:url";
 const scriptsDirectory = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(scriptsDirectory, "..");
 const viewPath = path.join(root, "windows-api-view.js");
+const indexPath = path.join(root, "index.html");
 
 if (!fs.existsSync(viewPath)) {
   console.error("FAIL missing windows-api-view.js");
   process.exit(1);
 }
+
+const indexHtml = fs.readFileSync(indexPath, "utf8");
+const dataVersion = indexHtml.match(/windows-api-data\.js\?v=([^"']+)/)?.[1];
+const viewVersion = indexHtml.match(/windows-api-view\.js\?v=([^"']+)/)?.[1];
 
 globalThis.window = {};
 for (const filename of [
@@ -33,6 +38,10 @@ const errors = [];
 function requireCondition(condition, message) {
   if (!condition) errors.push(message);
 }
+
+requireCondition(Boolean(dataVersion && viewVersion), "Windows API guide scripts are missing cache versions");
+requireCondition(dataVersion === viewVersion, "Windows API guide data and view cache versions do not match");
+requireCondition(dataVersion !== "windows-api-guide", "Windows API guide still uses the stale first-release cache key");
 
 const allocationMatches = view.filterEntries(guide.entries, "SIZE_T VirtualAllocEx");
 requireCondition(allocationMatches.length === 1, `expected one VirtualAllocEx match, found ${allocationMatches.length}`);
