@@ -182,14 +182,264 @@
     CreateEventA: { parameters: [{ name: "lpEventAttributes", type: "ctypes.POINTER(SECURITY_ATTRIBUTES) | None", description: "Optional SECURITY_ATTRIBUTES pointer." }, { name: "bManualReset", type: "wintypes.BOOL", description: "True for manual reset; false for auto reset." }, { name: "bInitialState", type: "wintypes.BOOL", description: "Initial signaled state." }, { name: "lpName", type: "wintypes.LPCSTR | None", description: "Optional code-page event name as bytes." }], returns: "wintypes.HANDLE | None", source: "https://learn.microsoft.com/windows/win32/api/synchapi/nf-synchapi-createeventa" },
     CreateEventExW: { parameters: [{ name: "lpEventAttributes", type: "ctypes.POINTER(SECURITY_ATTRIBUTES) | None", description: "Optional SECURITY_ATTRIBUTES pointer." }, { name: "lpName", type: "wintypes.LPCWSTR | None", description: "Optional UTF-16 object name." }, { name: "dwFlags", type: "wintypes.DWORD", description: "CREATE_EVENT_* flags selecting event behavior." }, { name: "dwDesiredAccess", type: "wintypes.DWORD", description: "Explicit access rights requested for the event handle." }], returns: "wintypes.HANDLE | None", source: "https://learn.microsoft.com/windows/win32/api/synchapi/nf-synchapi-createeventexw" },
     CreateEventExA: { parameters: [{ name: "lpEventAttributes", type: "ctypes.POINTER(SECURITY_ATTRIBUTES) | None", description: "Optional SECURITY_ATTRIBUTES pointer." }, { name: "lpName", type: "wintypes.LPCSTR | None", description: "Optional code-page event name as bytes." }, { name: "dwFlags", type: "wintypes.DWORD", description: "CREATE_EVENT_* flags selecting event behavior." }, { name: "dwDesiredAccess", type: "wintypes.DWORD", description: "Explicit access rights requested for the event handle." }], returns: "wintypes.HANDLE | None", source: "https://learn.microsoft.com/windows/win32/api/synchapi/nf-synchapi-createeventexa" },
-    CreateMutexW: { parameters: [{ name: "lpMutexAttributes", type: "ctypes.c_void_p | None", description: "Optional SECURITY_ATTRIBUTES pointer." }, { name: "bInitialOwner", type: "wintypes.BOOL", description: "Whether the creating thread requests initial ownership." }, { name: "lpName", type: "wintypes.LPCWSTR | None", description: "Optional UTF-16 object name." }], returns: "wintypes.HANDLE | None", source: "https://learn.microsoft.com/windows/win32/api/synchapi/nf-synchapi-createmutexw" },
+    CreateMutexW: { parameters: [{ name: "lpMutexAttributes", type: "ctypes.POINTER(SECURITY_ATTRIBUTES) | None", description: "Optional security and inheritance attributes." }, { name: "bInitialOwner", type: "wintypes.BOOL", description: "Whether the creating thread requests initial ownership." }, { name: "lpName", type: "wintypes.LPCWSTR | None", description: "Optional UTF-16 object name." }], returns: "wintypes.HANDLE | None", source: "https://learn.microsoft.com/windows/win32/api/synchapi/nf-synchapi-createmutexw" },
     WaitForMultipleObjects: { parameters: [{ name: "nCount", type: "wintypes.DWORD", description: "Number of handles in lpHandles." }, { name: "lpHandles", type: "ctypes.POINTER(wintypes.HANDLE)", description: "Input array of waitable handles." }, { name: "bWaitAll", type: "wintypes.BOOL", description: "Wait for all handles or any one handle." }, { name: "dwMilliseconds", type: "wintypes.DWORD", description: "Timeout in milliseconds or INFINITE." }], returns: "wintypes.DWORD", source: "https://learn.microsoft.com/windows/win32/api/synchapi/nf-synchapi-waitformultipleobjects" },
     ReadFile: { parameters: [{ name: "hFile", type: "wintypes.HANDLE", description: "Readable file, pipe, or device handle." }, { name: "lpBuffer", type: "wintypes.LPVOID", description: "Writable output buffer." }, { name: "nNumberOfBytesToRead", type: "wintypes.DWORD", description: "Requested byte count." }, { name: "lpNumberOfBytesRead", type: "ctypes.POINTER(wintypes.DWORD) | None", description: "Output byte count for synchronous I/O." }, { name: "lpOverlapped", type: "ctypes.c_void_p | None", description: "Optional OVERLAPPED pointer for asynchronous I/O." }], returns: "wintypes.BOOL", source: "https://learn.microsoft.com/windows/win32/api/fileapi/nf-fileapi-readfile" },
     WriteFile: { parameters: [{ name: "hFile", type: "wintypes.HANDLE", description: "Writable file, pipe, or device handle." }, { name: "lpBuffer", type: "wintypes.LPCVOID", description: "Caller-owned source bytes." }, { name: "nNumberOfBytesToWrite", type: "wintypes.DWORD", description: "Requested byte count." }, { name: "lpNumberOfBytesWritten", type: "ctypes.POINTER(wintypes.DWORD) | None", description: "Output byte count for synchronous I/O." }, { name: "lpOverlapped", type: "ctypes.c_void_p | None", description: "Optional OVERLAPPED pointer for asynchronous I/O." }], returns: "wintypes.BOOL", source: "https://learn.microsoft.com/windows/win32/api/fileapi/nf-fileapi-writefile" },
-    CreateNamedPipeW: { parameters: [{ name: "lpName", type: "wintypes.LPCWSTR", description: "Canonical UTF-16 pipe name." }, { name: "dwOpenMode", type: "wintypes.DWORD", description: "Direction, overlap, and first-instance flags." }, { name: "dwPipeMode", type: "wintypes.DWORD", description: "Byte/message type, read mode, and wait mode." }, { name: "nMaxInstances", type: "wintypes.DWORD", description: "Maximum simultaneous instances." }, { name: "nOutBufferSize", type: "wintypes.DWORD", description: "Advisory output buffer size." }, { name: "nInBufferSize", type: "wintypes.DWORD", description: "Advisory input buffer size." }, { name: "nDefaultTimeOut", type: "wintypes.DWORD", description: "Default client wait timeout." }, { name: "lpSecurityAttributes", type: "ctypes.c_void_p | None", description: "Optional SECURITY_ATTRIBUTES pointer." }], returns: "wintypes.HANDLE", source: "https://learn.microsoft.com/windows/win32/api/winbase/nf-winbase-createnamedpipew" },
+    CreateNamedPipeW: { parameters: [{ name: "lpName", type: "wintypes.LPCWSTR", description: "Canonical UTF-16 pipe name." }, { name: "dwOpenMode", type: "wintypes.DWORD", description: "Direction, overlap, and first-instance flags." }, { name: "dwPipeMode", type: "wintypes.DWORD", description: "Byte/message type, read mode, and wait mode." }, { name: "nMaxInstances", type: "wintypes.DWORD", description: "Maximum simultaneous instances." }, { name: "nOutBufferSize", type: "wintypes.DWORD", description: "Advisory output buffer size." }, { name: "nInBufferSize", type: "wintypes.DWORD", description: "Advisory input buffer size." }, { name: "nDefaultTimeOut", type: "wintypes.DWORD", description: "Default client wait timeout." }, { name: "lpSecurityAttributes", type: "ctypes.POINTER(SECURITY_ATTRIBUTES) | None", description: "Optional security and inheritance attributes." }], returns: "wintypes.HANDLE", source: "https://learn.microsoft.com/windows/win32/api/winbase/nf-winbase-createnamedpipew" },
     OpenThread: { parameters: [{ name: "dwDesiredAccess", type: "wintypes.DWORD", description: "Minimum THREAD_* access mask." }, { name: "bInheritHandle", type: "wintypes.BOOL", description: "Whether a child may inherit the handle." }, { name: "dwThreadId", type: "wintypes.DWORD", description: "Target thread identifier." }], returns: "wintypes.HANDLE | None", source: "https://learn.microsoft.com/windows/win32/api/processthreadsapi/nf-processthreadsapi-openthread" },
     VirtualProtectEx: { parameters: [{ name: "hProcess", type: "wintypes.HANDLE", description: "Target process with PROCESS_VM_OPERATION." }, { name: "lpAddress", type: "wintypes.LPVOID", description: "Start of the committed target range." }, { name: "dwSize", type: "ctypes.c_size_t", description: "Byte count to protect." }, { name: "flNewProtect", type: "wintypes.DWORD", description: "New PAGE_* protection." }, { name: "lpflOldProtect", type: "ctypes.POINTER(wintypes.DWORD)", description: "Output receiving the prior protection." }], returns: "wintypes.BOOL", source: "https://learn.microsoft.com/windows/win32/api/memoryapi/nf-memoryapi-virtualprotectex" },
     MessageBoxA: { parameters: [{ name: "hWnd", type: "wintypes.HWND | None", description: "Optional owner window." }, { name: "lpText", type: "wintypes.LPCSTR", description: "ANSI message bytes." }, { name: "lpCaption", type: "wintypes.LPCSTR", description: "ANSI caption bytes." }, { name: "uType", type: "wintypes.UINT", description: "Buttons, icon, modality, and default-button flags." }], returns: "ctypes.c_int", source: "https://learn.microsoft.com/windows/win32/api/winuser/nf-winuser-messageboxa" },
+    CreateNamedPipeA: {
+      parameters: [
+        { name: "lpName", type: "wintypes.LPCSTR", description: "Canonical pipe name encoded as ANSI bytes." },
+        { name: "dwOpenMode", type: "wintypes.DWORD", description: "Direction, overlap, and first-instance flags." },
+        { name: "dwPipeMode", type: "wintypes.DWORD", description: "Byte/message type, read mode, and wait mode." },
+        { name: "nMaxInstances", type: "wintypes.DWORD", description: "Maximum simultaneous instances." },
+        { name: "nOutBufferSize", type: "wintypes.DWORD", description: "Advisory output buffer size." },
+        { name: "nInBufferSize", type: "wintypes.DWORD", description: "Advisory input buffer size." },
+        { name: "nDefaultTimeOut", type: "wintypes.DWORD", description: "Default client wait timeout in milliseconds." },
+        { name: "lpSecurityAttributes", type: "ctypes.POINTER(SECURITY_ATTRIBUTES) | None", description: "Optional security and inheritance attributes." },
+      ],
+      returns: "wintypes.HANDLE",
+      source: "https://learn.microsoft.com/en-us/windows/win32/api/namedpipeapi/nf-namedpipeapi-createnamedpipea",
+    },
+    MessageBoxW: {
+      parameters: [
+        { name: "hWnd", type: "wintypes.HWND | None", description: "Optional owner window." },
+        { name: "lpText", type: "wintypes.LPCWSTR", description: "UTF-16 message text." },
+        { name: "lpCaption", type: "wintypes.LPCWSTR", description: "UTF-16 caption text." },
+        { name: "uType", type: "wintypes.UINT", description: "Buttons, icon, modality, and default-button flags." },
+      ],
+      returns: "ctypes.c_int",
+      source: "https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-messageboxw",
+    },
+    SetWindowsHookExA: {
+      parameters: [
+        { name: "idHook", type: "ctypes.c_int", description: "WH_* hook type defining callback meaning and delivery rules." },
+        { name: "lpfn", type: "HOOKPROC", description: "ABI-correct callback retained for the full hook lifetime." },
+        { name: "hmod", type: "wintypes.HINSTANCE | None", description: "Module containing the callback when required for cross-process scope." },
+        { name: "dwThreadId", type: "wintypes.DWORD", description: "Target thread ID, or zero for a supported desktop-wide scope." },
+      ],
+      returns: "HHOOK | None",
+      source: "https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-setwindowshookexa",
+    },
+    CreateFileMappingA: {
+      parameters: [
+        { name: "hFile", type: "wintypes.HANDLE", description: "File handle, or INVALID_HANDLE_VALUE for page-file-backed storage." },
+        { name: "lpFileMappingAttributes", type: "ctypes.POINTER(SECURITY_ATTRIBUTES) | None", description: "Optional security and inheritance attributes." },
+        { name: "flProtect", type: "wintypes.DWORD", description: "Page protection and optional section attributes." },
+        { name: "dwMaximumSizeHigh", type: "wintypes.DWORD", description: "High 32 bits of the maximum mapping size." },
+        { name: "dwMaximumSizeLow", type: "wintypes.DWORD", description: "Low 32 bits of the maximum mapping size." },
+        { name: "lpName", type: "wintypes.LPCSTR | None", description: "Optional mapping name encoded as ANSI bytes." },
+      ],
+      returns: "wintypes.HANDLE | None",
+      source: "https://learn.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-createfilemappinga",
+    },
+    MapViewOfFileEx: {
+      parameters: [
+        { name: "hFileMappingObject", type: "wintypes.HANDLE", description: "Open file-mapping handle." },
+        { name: "dwDesiredAccess", type: "wintypes.DWORD", description: "FILE_MAP_* access for this view." },
+        { name: "dwFileOffsetHigh", type: "wintypes.DWORD", description: "High 32 bits of the allocation-granularity-aligned offset." },
+        { name: "dwFileOffsetLow", type: "wintypes.DWORD", description: "Low 32 bits of the mapping offset." },
+        { name: "dwNumberOfBytesToMap", type: "ctypes.c_size_t", description: "View size, or zero for the remaining mapping." },
+        { name: "lpBaseAddress", type: "wintypes.LPVOID | None", description: "Suggested base address; null lets Windows choose." },
+      ],
+      returns: "wintypes.LPVOID | None",
+      source: "https://learn.microsoft.com/en-us/windows/win32/api/memoryapi/nf-memoryapi-mapviewoffileex",
+    },
+    OpenFileMappingA: {
+      parameters: [
+        { name: "dwDesiredAccess", type: "wintypes.DWORD", description: "FILE_MAP_* access required for the intended view." },
+        { name: "bInheritHandle", type: "wintypes.BOOL", description: "Whether child processes may inherit the returned handle." },
+        { name: "lpName", type: "wintypes.LPCSTR", description: "Existing mapping name encoded as ANSI bytes." },
+      ],
+      returns: "wintypes.HANDLE | None",
+      source: "https://learn.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-openfilemappinga",
+    },
+    EnumProcessModulesEx: {
+      parameters: [
+        { name: "hProcess", type: "wintypes.HANDLE", description: "Process whose loaded modules will be enumerated." },
+        { name: "lphModule", type: "ctypes.POINTER(wintypes.HMODULE)", description: "Output array receiving borrowed module handles." },
+        { name: "cb", type: "wintypes.DWORD", description: "Size of the output array in bytes." },
+        { name: "lpcbNeeded", type: "ctypes.POINTER(wintypes.DWORD)", description: "Output receiving bytes required for the complete list." },
+        { name: "dwFilterFlag", type: "wintypes.DWORD", description: "LIST_MODULES_* architecture filter." },
+      ],
+      returns: "wintypes.BOOL",
+      source: "https://learn.microsoft.com/en-us/windows/win32/api/psapi/nf-psapi-enumprocessmodulesex",
+    },
+    GetModuleFileNameExA: {
+      parameters: [
+        { name: "hProcess", type: "wintypes.HANDLE", description: "Process containing the module." },
+        { name: "hModule", type: "wintypes.HMODULE | None", description: "Module handle, or null for the main executable where supported." },
+        { name: "lpFilename", type: "wintypes.LPSTR", description: "Writable ANSI path buffer." },
+        { name: "nSize", type: "wintypes.DWORD", description: "Buffer capacity in bytes." },
+      ],
+      returns: "wintypes.DWORD",
+      source: "https://learn.microsoft.com/en-us/windows/win32/api/psapi/nf-psapi-getmodulefilenameexa",
+    },
+    GetModuleFileNameA: {
+      parameters: [
+        { name: "hModule", type: "wintypes.HMODULE | None", description: "Loaded module handle, or null for the current executable." },
+        { name: "lpFilename", type: "wintypes.LPSTR", description: "Caller-owned ANSI output buffer." },
+        { name: "nSize", type: "wintypes.DWORD", description: "Output-buffer capacity measured in bytes." },
+      ],
+      returns: "wintypes.DWORD",
+      source: "https://learn.microsoft.com/en-us/windows/win32/api/libloaderapi/nf-libloaderapi-getmodulefilenamea",
+    },
+    GetModuleHandleA: {
+      parameters: [{ name: "lpModuleName", type: "wintypes.LPCSTR | None", description: "Loaded module basename as ANSI bytes, or null for the executable." }],
+      returns: "wintypes.HMODULE | None",
+      source: "https://learn.microsoft.com/en-us/windows/win32/api/libloaderapi/nf-libloaderapi-getmodulehandlea",
+    },
+    LoadLibraryExA: {
+      parameters: [
+        { name: "lpLibFileName", type: "wintypes.LPCSTR", description: "ANSI DLL path or name interpreted according to flags and search policy." },
+        { name: "hFile", type: "wintypes.HANDLE | None", description: "Reserved; pass null." },
+        { name: "dwFlags", type: "wintypes.DWORD", description: "Load behavior and LOAD_LIBRARY_SEARCH_* flags." },
+      ],
+      returns: "wintypes.HMODULE | None",
+      source: "https://learn.microsoft.com/en-us/windows/win32/api/libloaderapi/nf-libloaderapi-loadlibraryexa",
+    },
+    CreateMutexA: {
+      parameters: [
+        { name: "lpMutexAttributes", type: "ctypes.POINTER(SECURITY_ATTRIBUTES) | None", description: "Optional security and inheritance attributes." },
+        { name: "bInitialOwner", type: "wintypes.BOOL", description: "Whether the creating thread requests initial ownership." },
+        { name: "lpName", type: "wintypes.LPCSTR | None", description: "Optional mutex name encoded as ANSI bytes." },
+      ],
+      returns: "wintypes.HANDLE | None",
+      source: "https://learn.microsoft.com/en-us/windows/win32/api/synchapi/nf-synchapi-createmutexa",
+    },
+    CreateMutexExW: {
+      parameters: [
+        { name: "lpMutexAttributes", type: "ctypes.POINTER(SECURITY_ATTRIBUTES) | None", description: "Optional security and inheritance attributes." },
+        { name: "lpName", type: "wintypes.LPCWSTR | None", description: "Optional UTF-16 mutex name." },
+        { name: "dwFlags", type: "wintypes.DWORD", description: "CREATE_MUTEX_* creation flags." },
+        { name: "dwDesiredAccess", type: "wintypes.DWORD", description: "Explicit access requested for the returned mutex handle." },
+      ],
+      returns: "wintypes.HANDLE | None",
+      source: "https://learn.microsoft.com/en-us/windows/win32/api/synchapi/nf-synchapi-createmutexexw",
+    },
+    CreateMutexExA: {
+      parameters: [
+        { name: "lpMutexAttributes", type: "ctypes.POINTER(SECURITY_ATTRIBUTES) | None", description: "Optional security and inheritance attributes." },
+        { name: "lpName", type: "wintypes.LPCSTR | None", description: "Optional mutex name encoded as ANSI bytes." },
+        { name: "dwFlags", type: "wintypes.DWORD", description: "CREATE_MUTEX_* creation flags." },
+        { name: "dwDesiredAccess", type: "wintypes.DWORD", description: "Explicit access requested for the returned mutex handle." },
+      ],
+      returns: "wintypes.HANDLE | None",
+      source: "https://learn.microsoft.com/en-us/windows/win32/api/synchapi/nf-synchapi-createmutexexa",
+    },
+    CreateProcessA: {
+      parameters: [
+        { name: "lpApplicationName", type: "wintypes.LPCSTR | None", description: "Optional executable module name as ANSI bytes." },
+        { name: "lpCommandLine", type: "wintypes.LPSTR | None", description: "Writable ANSI command-line buffer." },
+        { name: "lpProcessAttributes", type: "ctypes.POINTER(SECURITY_ATTRIBUTES) | None", description: "Optional process-handle security and inheritance attributes." },
+        { name: "lpThreadAttributes", type: "ctypes.POINTER(SECURITY_ATTRIBUTES) | None", description: "Optional thread-handle security and inheritance attributes." },
+        { name: "bInheritHandles", type: "wintypes.BOOL", description: "Whether eligible caller handles are inherited." },
+        { name: "dwCreationFlags", type: "wintypes.DWORD", description: "CREATE_* flags controlling process and primary-thread creation." },
+        { name: "lpEnvironment", type: "ctypes.c_void_p | None", description: "Optional environment block with encoding matching the flags." },
+        { name: "lpCurrentDirectory", type: "wintypes.LPCSTR | None", description: "Optional ANSI current-directory path." },
+        { name: "lpStartupInfo", type: "ctypes.POINTER(STARTUPINFOA)", description: "Initialized ANSI startup settings." },
+        { name: "lpProcessInformation", type: "ctypes.POINTER(PROCESS_INFORMATION)", description: "Output receiving owned process and thread handles plus identifiers." },
+      ],
+      returns: "wintypes.BOOL",
+      source: "https://learn.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-createprocessa",
+    },
+    CreateRemoteThreadEx: {
+      parameters: [
+        { name: "hProcess", type: "wintypes.HANDLE", description: "Authorized target process handle with the documented combined rights." },
+        { name: "lpThreadAttributes", type: "ctypes.POINTER(SECURITY_ATTRIBUTES) | None", description: "Optional thread security and inheritance attributes." },
+        { name: "dwStackSize", type: "ctypes.c_size_t", description: "Initial stack size, with zero selecting the executable default." },
+        { name: "lpStartAddress", type: "LPTHREAD_START_ROUTINE", description: "Valid target-process function following the target ABI." },
+        { name: "lpParameter", type: "wintypes.LPVOID | None", description: "Target-process parameter address or null." },
+        { name: "dwCreationFlags", type: "wintypes.DWORD", description: "Thread creation flags such as CREATE_SUSPENDED." },
+        { name: "lpAttributeList", type: "ctypes.c_void_p | None", description: "Optional initialized PROC_THREAD_ATTRIBUTE_LIST." },
+        { name: "lpThreadId", type: "ctypes.POINTER(wintypes.DWORD) | None", description: "Optional output receiving the thread identifier." },
+      ],
+      returns: "wintypes.HANDLE | None",
+      source: "https://learn.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-createremotethreadex",
+    },
+    DuplicateTokenEx: {
+      parameters: [
+        { name: "hExistingToken", type: "wintypes.HANDLE", description: "Existing token handle with TOKEN_DUPLICATE access." },
+        { name: "dwDesiredAccess", type: "wintypes.DWORD", description: "Access requested for the duplicate, or zero for the source token's access." },
+        { name: "lpTokenAttributes", type: "ctypes.POINTER(SECURITY_ATTRIBUTES) | None", description: "Optional security and inheritance attributes." },
+        { name: "ImpersonationLevel", type: "ctypes.c_int", description: "SECURITY_IMPERSONATION_LEVEL for an impersonation token." },
+        { name: "TokenType", type: "ctypes.c_int", description: "TOKEN_TYPE selecting a primary or impersonation token." },
+        { name: "phNewToken", type: "ctypes.POINTER(wintypes.HANDLE)", description: "Output receiving an owned duplicate-token handle." },
+      ],
+      returns: "wintypes.BOOL",
+      source: "https://learn.microsoft.com/en-us/windows/win32/api/securitybaseapi/nf-securitybaseapi-duplicatetokenex",
+    },
+    GetNamedSecurityInfoA: {
+      parameters: [
+        { name: "pObjectName", type: "wintypes.LPCSTR", description: "Named securable object encoded as ANSI bytes." },
+        { name: "ObjectType", type: "ctypes.c_int", description: "SE_OBJECT_TYPE identifying the object family." },
+        { name: "SecurityInfo", type: "wintypes.DWORD", description: "SECURITY_INFORMATION flags selecting descriptor parts." },
+        { name: "ppsidOwner", type: "ctypes.POINTER(ctypes.c_void_p) | None", description: "Optional output for the owner SID pointer." },
+        { name: "ppsidGroup", type: "ctypes.POINTER(ctypes.c_void_p) | None", description: "Optional output for the primary-group SID pointer." },
+        { name: "ppDacl", type: "ctypes.POINTER(ctypes.c_void_p) | None", description: "Optional output for the DACL pointer." },
+        { name: "ppSacl", type: "ctypes.POINTER(ctypes.c_void_p) | None", description: "Optional output for the SACL pointer." },
+        { name: "ppSecurityDescriptor", type: "ctypes.POINTER(ctypes.c_void_p)", description: "Output receiving the LocalAlloc-backed descriptor." },
+      ],
+      returns: "wintypes.DWORD",
+      source: "https://learn.microsoft.com/en-us/windows/win32/api/aclapi/nf-aclapi-getnamedsecurityinfoa",
+    },
+    OpenSCManagerA: {
+      parameters: [
+        { name: "lpMachineName", type: "wintypes.LPCSTR | None", description: "Remote machine as ANSI bytes, or null for local." },
+        { name: "lpDatabaseName", type: "wintypes.LPCSTR | None", description: "Service database as ANSI bytes, or null for active services." },
+        { name: "dwDesiredAccess", type: "wintypes.DWORD", description: "SC_MANAGER_* access requested for the SCM handle." },
+      ],
+      returns: "wintypes.HANDLE | None",
+      source: "https://learn.microsoft.com/en-us/windows/win32/api/winsvc/nf-winsvc-openscmanagera",
+    },
+    OpenServiceA: {
+      parameters: [
+        { name: "hSCManager", type: "wintypes.HANDLE", description: "SCM handle with SC_MANAGER_CONNECT access." },
+        { name: "lpServiceName", type: "wintypes.LPCSTR", description: "Internal service name encoded as ANSI bytes." },
+        { name: "dwDesiredAccess", type: "wintypes.DWORD", description: "Action-specific SERVICE_* access requested." },
+      ],
+      returns: "wintypes.HANDLE | None",
+      source: "https://learn.microsoft.com/en-us/windows/win32/api/winsvc/nf-winsvc-openservicea",
+    },
+    QueryServiceStatus: {
+      parameters: [
+        { name: "hService", type: "wintypes.HANDLE", description: "Service handle with SERVICE_QUERY_STATUS access." },
+        { name: "lpServiceStatus", type: "ctypes.POINTER(SERVICE_STATUS)", description: "Output receiving the most recently reported basic status." },
+      ],
+      returns: "wintypes.BOOL",
+      source: "https://learn.microsoft.com/en-us/windows/win32/api/winsvc/nf-winsvc-queryservicestatus",
+    },
+    RegOpenKeyExA: {
+      parameters: [
+        { name: "hKey", type: "wintypes.HKEY", description: "Predefined root or open parent key." },
+        { name: "lpSubKey", type: "wintypes.LPCSTR | None", description: "Relative subkey encoded as ANSI bytes, or null or empty for the same key." },
+        { name: "ulOptions", type: "wintypes.DWORD", description: "Open options, normally zero." },
+        { name: "samDesired", type: "wintypes.DWORD", description: "KEY_* access mask and optional WOW64 view flag." },
+        { name: "phkResult", type: "ctypes.POINTER(wintypes.HKEY)", description: "Output receiving an owned HKEY on ERROR_SUCCESS." },
+      ],
+      returns: "wintypes.LONG",
+      source: "https://learn.microsoft.com/en-us/windows/win32/api/winreg/nf-winreg-regopenkeyexa",
+    },
+    StartServiceA: {
+      parameters: [
+        { name: "hService", type: "wintypes.HANDLE", description: "Service handle with SERVICE_START access." },
+        { name: "dwNumServiceArgs", type: "wintypes.DWORD", description: "Count of service-specific arguments." },
+        { name: "lpServiceArgVectors", type: "ctypes.POINTER(wintypes.LPCSTR) | None", description: "ANSI argument array, or null when the count is zero." },
+      ],
+      returns: "wintypes.BOOL",
+      source: "https://learn.microsoft.com/en-us/windows/win32/api/winsvc/nf-winsvc-startservicea",
+    },
+    GetWindowsDirectoryA: {
+      parameters: [
+        { name: "lpBuffer", type: "wintypes.LPSTR", description: "Writable ANSI output buffer for the Windows directory." },
+        { name: "uSize", type: "wintypes.UINT", description: "Capacity of the buffer in bytes." },
+      ],
+      returns: "wintypes.UINT",
+      source: "https://learn.microsoft.com/en-us/windows/win32/api/sysinfoapi/nf-sysinfoapi-getwindowsdirectorya",
+    },
   };
 
   const featureIndex = new Map();
@@ -202,20 +452,20 @@
   }
 
   const moduleGroups = {
-    "Memory and address spaces": new Set(["GetSystemInfo", "GetNativeSystemInfo", "GlobalMemoryStatusEx", "QueryWorkingSetEx", "VirtualAlloc", "VirtualAllocEx", "VirtualFree", "VirtualFreeEx", "VirtualProtect", "VirtualProtectEx", "VirtualQueryEx", "CreateFileMappingW", "OpenFileMappingW", "MapViewOfFile", "UnmapViewOfFile", "GetProcessHeap", "HeapAlloc", "HeapSize", "HeapFree", "WriteProcessMemory"]),
-    "Processes, threads, and handles": new Set(["CreateProcessW", "GetCurrentProcess", "GetExitCodeProcess", "OpenProcess", "OpenThread", "CreateRemoteThread", "WaitForSingleObject", "WaitForMultipleObjects", "CloseHandle", "FlushInstructionCache", "IsWow64Process2", "CreateEventW", "CreateMutexW"]),
-    "Files, pipes, and devices": new Set(["ReadFile", "WriteFile", "CreateNamedPipeW"]),
-    "Modules and loading": new Set(["EnumProcessModules", "GetModuleHandleW", "GetModuleFileNameW", "GetModuleFileNameExW", "GetProcAddress", "LoadLibraryA", "LoadLibraryW", "LoadLibraryExW", "FreeLibrary", "SetDefaultDllDirectories", "AddDllDirectory", "RtlAddFunctionTable"]),
-    "Services and Registry": new Set(["OpenSCManagerW", "OpenServiceW", "StartServiceW", "ControlService", "QueryServiceStatusEx", "CloseServiceHandle", "RegOpenKeyExW"]),
-    "Security and trust": new Set(["AccessCheck", "OpenProcessToken", "DuplicateToken", "GetNamedSecurityInfoW", "MapGenericMask", "LocalFree", "WinVerifyTrust"]),
-    "Hooks and desktop APIs": new Set(["SetWindowsHookExW", "CallNextHookEx", "UnhookWindowsHookEx", "InterlockedExchangePointer", "MessageBoxA"]),
-    "System information and errors": new Set(["GetLastError", "GetWindowsDirectoryW"]),
+    "Memory and address spaces": new Set(["GetSystemInfo", "GetNativeSystemInfo", "GlobalMemoryStatusEx", "QueryWorkingSetEx", "VirtualAlloc", "VirtualAllocEx", "VirtualFree", "VirtualFreeEx", "VirtualProtect", "VirtualProtectEx", "VirtualQueryEx", "CreateFileMappingW", "CreateFileMappingA", "OpenFileMappingW", "OpenFileMappingA", "MapViewOfFile", "MapViewOfFileEx", "UnmapViewOfFile", "GetProcessHeap", "HeapAlloc", "HeapSize", "HeapFree", "WriteProcessMemory"]),
+    "Processes, threads, and handles": new Set(["CreateProcessW", "CreateProcessA", "GetCurrentProcess", "GetExitCodeProcess", "OpenProcess", "OpenThread", "CreateRemoteThread", "CreateRemoteThreadEx", "WaitForSingleObject", "WaitForMultipleObjects", "CloseHandle", "FlushInstructionCache", "IsWow64Process2", "CreateEventW", "CreateEventA", "CreateEventExW", "CreateEventExA", "CreateMutexW", "CreateMutexA", "CreateMutexExW", "CreateMutexExA"]),
+    "Files, pipes, and devices": new Set(["ReadFile", "WriteFile", "CreateNamedPipeW", "CreateNamedPipeA"]),
+    "Modules and loading": new Set(["EnumProcessModules", "EnumProcessModulesEx", "GetModuleHandleW", "GetModuleHandleA", "GetModuleFileNameW", "GetModuleFileNameA", "GetModuleFileNameExW", "GetModuleFileNameExA", "GetProcAddress", "LoadLibraryA", "LoadLibraryW", "LoadLibraryExW", "LoadLibraryExA", "FreeLibrary", "SetDefaultDllDirectories", "AddDllDirectory", "RtlAddFunctionTable"]),
+    "Services and Registry": new Set(["OpenSCManagerW", "OpenSCManagerA", "OpenServiceW", "OpenServiceA", "StartServiceW", "StartServiceA", "ControlService", "QueryServiceStatusEx", "QueryServiceStatus", "CloseServiceHandle", "RegOpenKeyExW", "RegOpenKeyExA"]),
+    "Security and trust": new Set(["AccessCheck", "OpenProcessToken", "DuplicateToken", "DuplicateTokenEx", "GetNamedSecurityInfoW", "GetNamedSecurityInfoA", "MapGenericMask", "LocalFree", "WinVerifyTrust"]),
+    "Hooks and desktop APIs": new Set(["SetWindowsHookExW", "SetWindowsHookExA", "CallNextHookEx", "UnhookWindowsHookEx", "InterlockedExchangePointer", "MessageBoxW", "MessageBoxA"]),
+    "System information and errors": new Set(["GetLastError", "GetWindowsDirectoryW", "GetWindowsDirectoryA"]),
   };
 
   const dllGroups = {
-    "Advapi32.dll": new Set(["AccessCheck", "OpenProcessToken", "DuplicateToken", "GetNamedSecurityInfoW", "MapGenericMask", "OpenSCManagerW", "OpenServiceW", "StartServiceW", "ControlService", "QueryServiceStatusEx", "CloseServiceHandle", "RegOpenKeyExW"]),
-    "User32.dll": new Set(["SetWindowsHookExW", "CallNextHookEx", "UnhookWindowsHookEx", "MessageBoxA"]),
-    "Psapi.dll": new Set(["QueryWorkingSetEx", "EnumProcessModules", "GetModuleFileNameExW"]),
+    "Advapi32.dll": new Set(["AccessCheck", "OpenProcessToken", "DuplicateToken", "DuplicateTokenEx", "GetNamedSecurityInfoW", "GetNamedSecurityInfoA", "MapGenericMask", "OpenSCManagerW", "OpenSCManagerA", "OpenServiceW", "OpenServiceA", "StartServiceW", "StartServiceA", "ControlService", "QueryServiceStatusEx", "QueryServiceStatus", "CloseServiceHandle", "RegOpenKeyExW", "RegOpenKeyExA"]),
+    "User32.dll": new Set(["SetWindowsHookExW", "SetWindowsHookExA", "CallNextHookEx", "UnhookWindowsHookEx", "MessageBoxW", "MessageBoxA"]),
+    "Psapi.dll": new Set(["QueryWorkingSetEx", "EnumProcessModules", "EnumProcessModulesEx", "GetModuleFileNameExW", "GetModuleFileNameExA"]),
     "Wintrust.dll": new Set(["WinVerifyTrust"]),
   };
 
@@ -224,14 +474,21 @@
     GetCurrentProcess: "win32api.GetCurrentProcess",
     GetExitCodeProcess: "win32process.GetExitCodeProcess",
     GetModuleHandleW: "win32api.GetModuleHandle",
+    GetModuleHandleA: "win32api.GetModuleHandle",
     GetProcAddress: "win32api.GetProcAddress",
     LoadLibraryW: "win32api.LoadLibrary",
     LoadLibraryA: "win32api.LoadLibrary",
     LoadLibraryExW: "win32api.LoadLibraryEx",
+    LoadLibraryExA: "win32api.LoadLibraryEx",
     FreeLibrary: "win32api.FreeLibrary",
     EnumProcessModules: "win32process.EnumProcessModules",
+    EnumProcessModulesEx: "win32process.EnumProcessModulesEx",
     GetModuleFileNameExW: "win32process.GetModuleFileNameEx",
+    GetModuleFileNameExA: "win32process.GetModuleFileNameEx",
+    GetModuleFileNameW: "win32api.GetModuleFileName",
+    GetModuleFileNameA: "win32api.GetModuleFileName",
     CreateProcessW: "win32process.CreateProcess",
+    CreateProcessA: "win32process.CreateProcess",
     CreateRemoteThread: "win32process.CreateRemoteThread",
     WaitForSingleObject: "win32event.WaitForSingleObject",
     CloseHandle: "win32api.CloseHandle or PyHANDLE.Close",
@@ -241,16 +498,28 @@
     GetLastError: "win32api.GetLastError",
     GetNativeSystemInfo: "win32api.GetNativeSystemInfo",
     GetWindowsDirectoryW: "win32api.GetWindowsDirectory",
+    GetWindowsDirectoryA: "win32api.GetWindowsDirectory",
     OpenProcessToken: "win32security.OpenProcessToken",
     DuplicateToken: "win32security.DuplicateToken",
+    DuplicateTokenEx: "win32security.DuplicateTokenEx",
     GetNamedSecurityInfoW: "win32security.GetNamedSecurityInfo",
+    GetNamedSecurityInfoA: "win32security.GetNamedSecurityInfo",
     RegOpenKeyExW: "winreg.OpenKey",
+    RegOpenKeyExA: "winreg.OpenKey",
     OpenSCManagerW: "win32service.OpenSCManager",
+    OpenSCManagerA: "win32service.OpenSCManager",
     OpenServiceW: "win32service.OpenService",
+    OpenServiceA: "win32service.OpenService",
     StartServiceW: "win32service.StartService",
+    StartServiceA: "win32service.StartService",
     ControlService: "win32service.ControlService",
     QueryServiceStatusEx: "win32service.QueryServiceStatusEx",
+    QueryServiceStatus: "win32service.QueryServiceStatus",
     CloseServiceHandle: "PySC_HANDLE.Close",
+    CreateNamedPipeW: "win32pipe.CreateNamedPipe",
+    CreateNamedPipeA: "win32pipe.CreateNamedPipe",
+    MessageBoxW: "win32api.MessageBox",
+    MessageBoxA: "win32api.MessageBox",
   };
 
   const cleanupByName = {
@@ -263,40 +532,59 @@
     CreateEventExW: "Close the returned event handle with CloseHandle.",
     CreateEventExA: "Close the returned event handle with CloseHandle.",
     CreateMutexW: "Release ownership with ReleaseMutex when held, then close the handle with CloseHandle.",
+    CreateMutexA: "Release ownership with ReleaseMutex when held, then close the handle with CloseHandle.",
+    CreateMutexExW: "Release ownership with ReleaseMutex when held, then close the handle with CloseHandle.",
+    CreateMutexExA: "Release ownership with ReleaseMutex when held, then close the handle with CloseHandle.",
     CreateNamedPipeW: "Disconnect a connected instance where appropriate, then close the pipe handle with CloseHandle.",
+    CreateNamedPipeA: "Disconnect a connected instance where appropriate, then close the pipe handle with CloseHandle.",
     OpenThread: "Close the returned thread handle with CloseHandle.",
     VirtualAlloc: "Release the allocation with VirtualFree using the original allocation base and the documented size/free-type combination.",
     VirtualAllocEx: "Release target-process memory with VirtualFreeEx using the same process handle and original allocation base after the target no longer uses it.",
     VirtualFree: "This is a cleanup operation; do not access a released range.",
     VirtualFreeEx: "This is the remote cleanup operation; do not release a region still used by another thread.",
     CreateFileMappingW: "Close the mapping handle with CloseHandle after every mapped view has been unmapped.",
+    CreateFileMappingA: "Close the mapping handle with CloseHandle after every mapped view has been unmapped.",
     OpenFileMappingW: "Close the returned mapping handle with CloseHandle.",
+    OpenFileMappingA: "Close the returned mapping handle with CloseHandle.",
     MapViewOfFile: "Unmap the returned view with UnmapViewOfFile.",
+    MapViewOfFileEx: "Unmap the returned view with UnmapViewOfFile.",
     UnmapViewOfFile: "This releases one mapped view, not the mapping-object handle.",
     HeapAlloc: "Release the block with HeapFree on the same heap.",
     HeapFree: "This is the matching cleanup for HeapAlloc; do not free the same block twice.",
     LoadLibraryW: "A successful call increments a module reference count. Balance an owned reference with FreeLibrary.",
     LoadLibraryA: "A successful call increments a module reference count. Balance an owned reference with FreeLibrary.",
     LoadLibraryExW: "Balance an owned module reference with FreeLibrary.",
+    LoadLibraryExA: "Balance an owned module reference with FreeLibrary.",
     FreeLibrary: "This decrements one owned module reference. Do not use addresses that became invalid after the final unload.",
     GetCurrentProcess: "The returned pseudo-handle is borrowed and must not be closed.",
     GetProcessHeap: "The returned process-heap handle is borrowed and must not be closed.",
     OpenProcessToken: "Close the returned token handle with CloseHandle.",
     DuplicateToken: "Close the returned duplicate-token handle with CloseHandle.",
+    DuplicateTokenEx: "Close the returned duplicate-token handle with CloseHandle.",
     GetNamedSecurityInfoW: "Release the returned security descriptor once with LocalFree. Component pointers returned alongside it point into that same allocation.",
+    GetNamedSecurityInfoA: "Release the returned security descriptor once with LocalFree. Component pointers returned alongside it point into that same allocation.",
     LocalFree: "This releases one LocalAlloc-family allocation. A null return means the free succeeded.",
     AddDllDirectory: "Remove an owned cookie with RemoveDllDirectory when the added search path is no longer needed.",
     OpenSCManagerW: "Release the returned SCM handle with CloseServiceHandle.",
+    OpenSCManagerA: "Release the returned SCM handle with CloseServiceHandle.",
     OpenServiceW: "Release the returned service handle with CloseServiceHandle.",
+    OpenServiceA: "Release the returned service handle with CloseServiceHandle.",
     CloseServiceHandle: "This is the matching cleanup for SCM and service handles.",
     RegOpenKeyExW: "Close the returned Registry key with RegCloseKey or the owning winreg handle's Close method.",
+    RegOpenKeyExA: "Close the returned Registry key with RegCloseKey or the owning winreg handle's Close method.",
     SetWindowsHookExW: "Remove the hook with UnhookWindowsHookEx and retain any callback object until unhooking and in-flight delivery finish.",
+    SetWindowsHookExA: "Remove the hook with UnhookWindowsHookEx and retain any callback object until unhooking and in-flight delivery finish.",
     UnhookWindowsHookEx: "This removes the hook; release callback storage only after no native call can reach it.",
+    GetModuleHandleW: "The returned module handle is borrowed. Do not balance it with FreeLibrary.",
+    GetModuleHandleA: "The returned module handle is borrowed. Do not balance it with FreeLibrary.",
+    CreateProcessA: "Close both hThread and hProcess from PROCESS_INFORMATION with CloseHandle.",
+    CreateRemoteThreadEx: "Close the returned thread handle with CloseHandle after waiting or otherwise finishing with it.",
   };
 
   const resultByName = {
     GetLastError: "Returns the calling thread's last-error code. Read it only when the failed API explicitly documents that it sets last error.",
     RegOpenKeyExW: "Returns ERROR_SUCCESS on success or a Win32 error code directly. Do not call get_last_error for this result.",
+    RegOpenKeyExA: "Returns ERROR_SUCCESS on success or a Win32 error code directly. Do not call get_last_error for this result.",
     WinVerifyTrust: "Returns zero for trust success and a signed status code otherwise. Interpret the returned code directly rather than using get_last_error.",
     WaitForSingleObject: "Branch explicitly on WAIT_OBJECT_0, WAIT_TIMEOUT, WAIT_ABANDONED, and WAIT_FAILED. Only WAIT_FAILED uses last error.",
     WaitForMultipleObjects: "Decode WAIT_OBJECT_0 plus an index, WAIT_ABANDONED plus an index, WAIT_TIMEOUT, or WAIT_FAILED. Only WAIT_FAILED uses last error.",
@@ -307,17 +595,37 @@
     RtlAddFunctionTable: "Returns nonzero on success and zero on failure; follow the function-table lifetime rules.",
     GetCurrentProcess: "Returns a constant pseudo-handle for the current process. It does not fail and must not be closed.",
     GetNamedSecurityInfoW: "Returns ERROR_SUCCESS on success or a Win32 error code directly. Raise ctypes.WinError(result) for an unexpected nonzero result.",
+    GetNamedSecurityInfoA: "Returns ERROR_SUCCESS on success or a Win32 error code directly. Raise ctypes.WinError(result) for an unexpected nonzero result.",
     CreateNamedPipeW: "Returns a pipe handle on success. INVALID_HANDLE_VALUE (not null) indicates failure; then read the last-error code.",
+    CreateNamedPipeA: "Returns a pipe handle on success. INVALID_HANDLE_VALUE (not null) indicates failure; then read the last-error code.",
     ReadFile: "For the synchronous pattern shown, nonzero means success and zero means failure; then read last error. Overlapped I/O has an additional pending-completion contract and needs a separate OVERLAPPED lifetime.",
     WriteFile: "For the synchronous pattern shown, nonzero means success and zero means failure; then read last error. Overlapped I/O has an additional pending-completion contract and needs a separate OVERLAPPED lifetime.",
     HeapSize: "Returns the usable block size. SIZE_T(-1) indicates failure; do not treat an ordinary zero as the universal failure rule.",
     LocalFree: "Returns null on success. A non-null return is the still-owned input handle and indicates failure.",
     GetWindowsDirectoryW: "Zero indicates failure. A result greater than the supplied capacity reports the required size, including the terminator.",
+    GetWindowsDirectoryA: "Zero indicates failure. A result greater than the supplied capacity reports the required size, including the terminator.",
     GetModuleFileNameExW: "Zero indicates failure. A nonzero result is the number of UTF-16 characters copied, excluding the terminator.",
+    GetModuleFileNameExA: "Zero indicates failure. A nonzero result is the number of ANSI bytes copied, excluding the terminator.",
+    GetModuleFileNameW: "Zero indicates failure. A nonzero result is the number of UTF-16 characters copied; equality with capacity requires truncation handling.",
+    GetModuleFileNameA: "Zero indicates failure. A nonzero result is the number of ANSI bytes copied; equality with capacity requires truncation handling.",
     CreateEventW: "Returns an event handle on success. Null indicates failure; then read the last-error code. ERROR_ALREADY_EXISTS means the named event already existed.",
     CreateEventA: "Returns an event handle on success. Null indicates failure; then read the last-error code. ERROR_ALREADY_EXISTS means the named event already existed.",
     CreateEventExW: "Returns an event handle on success. Null indicates failure; then read the last-error code. ERROR_ALREADY_EXISTS means the named event already existed.",
     CreateEventExA: "Returns an event handle on success. Null indicates failure; then read the last-error code. ERROR_ALREADY_EXISTS means the named event already existed.",
+    MessageBoxW: "Returns the ID of the selected button. Zero indicates failure; then read the last-error code.",
+    MessageBoxA: "Returns the ID of the selected button. Zero indicates failure; then read the last-error code.",
+    SetWindowsHookExW: "Returns an HHOOK on success. Null indicates failure; then read the last-error code.",
+    SetWindowsHookExA: "Returns an HHOOK on success. Null indicates failure; then read the last-error code.",
+    MapViewOfFileEx: "Returns the mapped base address. Null indicates failure; then read the last-error code.",
+    EnumProcessModulesEx: "Nonzero indicates success. Use lpcbNeeded to detect and resize a short module buffer; zero exposes last error.",
+    GetModuleHandleW: "Returns a borrowed HMODULE. Null indicates failure; then read the last-error code.",
+    GetModuleHandleA: "Returns a borrowed HMODULE. Null indicates failure; then read the last-error code.",
+    CreateMutexW: "Returns a mutex handle on success. Null indicates failure; ERROR_ALREADY_EXISTS means the named mutex already existed.",
+    CreateMutexA: "Returns a mutex handle on success. Null indicates failure; ERROR_ALREADY_EXISTS means the named mutex already existed.",
+    CreateMutexExW: "Returns a mutex handle on success. Null indicates failure; ERROR_ALREADY_EXISTS means the named mutex already existed.",
+    CreateMutexExA: "Returns a mutex handle on success. Null indicates failure; ERROR_ALREADY_EXISTS means the named mutex already existed.",
+    DuplicateTokenEx: "Nonzero indicates success and phNewToken receives an owned handle. Zero indicates failure; then read last error.",
+    QueryServiceStatus: "Nonzero indicates success and fills SERVICE_STATUS. Zero indicates failure; then read the last-error code.",
   };
 
   const variantMetadata = {
@@ -341,6 +649,169 @@
       availability: "Windows Vista and later",
       keyBehaviors: ["ANSI names use the system code page; CREATE_EVENT_* flags and desired access remain explicit."],
     },
+    CreateNamedPipeW: {
+      useWhen: "Use the Unicode form to create one server instance of a named pipe.",
+      availability: "Windows 2000 and later (desktop apps)",
+      keyBehaviors: ["Every additional server instance must repeat compatible type, instance-count, and timeout values."],
+    },
+    CreateNamedPipeA: {
+      useWhen: "Use only for a legacy caller that supplies the pipe name as ANSI bytes.",
+      availability: "Windows 2000 and later (desktop apps)",
+      keyBehaviors: ["ANSI pipe names use the system code page; prefer CreateNamedPipeW for normal Python strings."],
+    },
+    MessageBoxW: {
+      useWhen: "Use the Unicode form for a simple modal message whose selected button must be handled.",
+      availability: "Windows 2000 and later (desktop apps)",
+      keyBehaviors: ["Decode the returned ID according to the button group selected in uType."],
+    },
+    MessageBoxA: {
+      useWhen: "Use only when a legacy caller already owns ANSI message and caption bytes.",
+      availability: "Windows 2000 and later (desktop apps)",
+      keyBehaviors: ["ANSI text uses the system code page; prefer MessageBoxW for normal Unicode text."],
+    },
+    SetWindowsHookExW: {
+      useWhen: "Use the Unicode form for an authorized hook with an ABI-correct, short-lived callback.",
+      availability: "Windows 2000 and later (desktop apps)",
+      keyBehaviors: ["A global hook may require the callback in an architecture-matched DLL."],
+    },
+    SetWindowsHookExA: {
+      useWhen: "Use only when the selected hook contract requires legacy ANSI character handling.",
+      availability: "Windows 2000 and later (desktop apps)",
+      keyBehaviors: ["Callback ABI, scope, module placement, chain forwarding, and lifetime rules are unchanged."],
+    },
+    CreateFileMappingA: {
+      useWhen: "Use only when an existing caller must name the mapping with ANSI bytes.",
+      availability: "Windows XP and later (desktop apps)",
+      keyBehaviors: ["INVALID_HANDLE_VALUE selects paging-file backing; null selects an unnamed mapping."],
+    },
+    MapViewOfFileEx: {
+      useWhen: "Use only when a compatible suggested base address is materially required.",
+      availability: "Windows XP and later (desktop apps)",
+      keyBehaviors: ["Microsoft recommends letting Windows choose the base unless the fixed-address constraint is necessary."],
+    },
+    OpenFileMappingA: {
+      useWhen: "Use only when an existing caller must look up the mapping with ANSI bytes.",
+      availability: "Windows XP and later (desktop apps)",
+      keyBehaviors: ["The returned handle owns a mapping-object reference, not a mapped view."],
+    },
+    EnumProcessModulesEx: {
+      useWhen: "Use when a 64-bit inspection tool needs an explicit module architecture filter.",
+      availability: "Windows Vista and later (desktop apps)",
+      keyBehaviors: ["A 32-bit caller under WOW64 does not gain cross-bitness enumeration from the filter."],
+    },
+    GetModuleFileNameExA: {
+      useWhen: "Use only for another-process module paths that must be returned as ANSI bytes.",
+      availability: "Windows XP and later (desktop apps)",
+      keyBehaviors: ["The module handle is borrowed; the caller owns and sizes only the output buffer."],
+    },
+    GetModuleFileNameA: {
+      useWhen: "Use only for current-process module paths that must be returned as ANSI bytes.",
+      availability: "Windows XP and later (desktop apps)",
+      keyBehaviors: ["A null module selects the current executable; handle a full buffer as truncation."],
+    },
+    GetModuleHandleA: {
+      useWhen: "Use only when an existing caller identifies a loaded module with ANSI bytes.",
+      availability: "Windows XP and later (desktop apps)",
+      keyBehaviors: ["The result does not add a module reference and can become invalid after another unload."],
+    },
+    LoadLibraryExA: {
+      useWhen: "Use only when extended load flags accompany an ANSI module path.",
+      availability: "Windows XP and later (desktop apps)",
+      keyBehaviors: ["Some data-file modes return handles that are not suitable for GetProcAddress."],
+    },
+    CreateMutexW: {
+      useWhen: "Use the Unicode base form when initial ownership and an optional name are sufficient.",
+      availability: "Windows XP and later",
+      keyBehaviors: ["Initial ownership applies only when this call creates the mutex."],
+    },
+    CreateMutexA: {
+      useWhen: "Use only when the base mutex form needs an ANSI object name.",
+      availability: "Windows XP and later",
+      keyBehaviors: ["ANSI names use the system code page; prefer CreateMutexW for Unicode names."],
+    },
+    CreateMutexExW: {
+      useWhen: "Use when mutex creation flags or explicit desired access must be selected.",
+      availability: "Windows Vista and later",
+      keyBehaviors: ["Initial ownership applies only when the named mutex did not already exist."],
+    },
+    CreateMutexExA: {
+      useWhen: "Use only when extended mutex options need an ANSI object name.",
+      availability: "Windows Vista and later",
+      keyBehaviors: ["ANSI names use the system code page; flags and desired access remain explicit."],
+    },
+    CreateProcessA: {
+      useWhen: "Use only for a legacy launch path that deliberately uses ANSI buffers and environment data.",
+      availability: "Windows XP and later (desktop apps)",
+      keyBehaviors: ["The command-line buffer is writable and encoding must match the selected environment contract."],
+    },
+    CreateRemoteThreadEx: {
+      useWhen: "Use when an authorized remote-thread design requires a processor-group or other supported attribute.",
+      availability: "Windows 7 and later (desktop apps)",
+      keyBehaviors: ["With a null attribute list, its behavior matches CreateRemoteThread."],
+    },
+    DuplicateTokenEx: {
+      useWhen: "Use when duplicate access, security attributes, or primary-versus-impersonation token type must be selected.",
+      availability: "Windows XP and later (desktop apps)",
+      keyBehaviors: ["The source handle needs TOKEN_DUPLICATE; the returned token is independently owned."],
+    },
+    GetNamedSecurityInfoA: {
+      useWhen: "Use only when a named securable object must be identified with ANSI bytes.",
+      availability: "Windows 2000 and later (desktop apps)",
+      keyBehaviors: ["All returned component pointers reside inside the one descriptor allocation."],
+    },
+    OpenSCManagerA: {
+      useWhen: "Use only when optional machine or database names must be supplied as ANSI bytes.",
+      availability: "Windows 2000 and later (desktop apps)",
+      keyBehaviors: ["Request only the SC_MANAGER_* rights required by the following operation."],
+    },
+    OpenServiceA: {
+      useWhen: "Use only when the service's internal name must be supplied as ANSI bytes.",
+      availability: "Windows 2000 and later (desktop apps)",
+      keyBehaviors: ["The service handle and its parent SCM handle have independent ownership."],
+    },
+    QueryServiceStatus: {
+      useWhen: "Use only when basic SERVICE_STATUS fields are sufficient; prefer Ex when PID is needed.",
+      availability: "Windows XP and later (desktop apps)",
+      keyBehaviors: ["The value is the most recent status reported to the Service Control Manager."],
+    },
+    RegOpenKeyExA: {
+      useWhen: "Use only when a Registry subkey path must be supplied as ANSI bytes.",
+      availability: "Windows 2000 and later (desktop apps)",
+      keyBehaviors: ["This call never creates a missing key and returns its error code directly."],
+    },
+    StartServiceA: {
+      useWhen: "Use only when optional service arguments must be supplied as ANSI byte strings.",
+      availability: "Windows 2000 and later (desktop apps)",
+      keyBehaviors: ["Success accepts the start request; poll status through pending states before claiming RUNNING."],
+    },
+    GetWindowsDirectoryA: {
+      useWhen: "Use only when the Windows directory must be returned in an ANSI byte buffer.",
+      availability: "Windows 2000 and later (desktop apps)",
+      keyBehaviors: ["A result larger than capacity is the required size, including the terminator."],
+    },
+  };
+
+  const auditedAvailability = {
+    CreateFileMappingW: "Windows XP and later (desktop apps)",
+    MapViewOfFile: "Windows XP and later (desktop apps)",
+    OpenFileMappingW: "Windows XP and later (desktop apps)",
+    EnumProcessModules: "Windows XP and later (desktop apps)",
+    GetModuleFileNameExW: "Windows XP and later (desktop apps)",
+    GetModuleFileNameW: "Windows XP and later (desktop apps)",
+    GetModuleHandleW: "Windows XP and later (desktop apps)",
+    LoadLibraryW: "Windows XP and later (desktop apps)",
+    LoadLibraryA: "Windows XP and later (desktop apps)",
+    LoadLibraryExW: "Windows XP and later (desktop apps)",
+    CreateProcessW: "Windows XP and later (desktop apps)",
+    CreateRemoteThread: "Windows XP and later (desktop apps)",
+    DuplicateToken: "Windows XP and later (desktop apps)",
+    GetNamedSecurityInfoW: "Windows 2000 and later (desktop apps)",
+    OpenSCManagerW: "Windows 2000 and later (desktop apps)",
+    OpenServiceW: "Windows 2000 and later (desktop apps)",
+    QueryServiceStatusEx: "Windows XP and later (desktop apps)",
+    RegOpenKeyExW: "Windows 2000 and later (desktop apps)",
+    StartServiceW: "Windows 2000 and later (desktop apps)",
+    GetWindowsDirectoryW: "Windows 2000 and later (desktop apps)",
   };
 
   const examplesByName = {
@@ -423,6 +894,9 @@ error = ctypes.WinError(code)`,
     CreateNamedPipeW: `pipe = CreateNamedPipeW(pipe_name, open_mode, pipe_mode, max_instances, out_size, in_size, timeout_ms, None)
 if pipe == ctypes.c_void_p(-1).value:  # INVALID_HANDLE_VALUE
     raise ctypes.WinError(ctypes.get_last_error())`,
+    CreateNamedPipeA: `pipe = CreateNamedPipeA(pipe_name_bytes, open_mode, pipe_mode, max_instances, out_size, in_size, timeout_ms, None)
+if pipe == ctypes.c_void_p(-1).value:  # INVALID_HANDLE_VALUE
+    raise ctypes.WinError(ctypes.get_last_error())`,
     LocalFree: `remaining = LocalFree(memory)
 if remaining:
     raise ctypes.WinError(ctypes.get_last_error())
@@ -431,8 +905,16 @@ memory = None`,
 status = GetNamedSecurityInfoW(path, object_type, security_info, None, None, None, None, ctypes.byref(descriptor))
 if status != 0:  # ERROR_SUCCESS
     raise ctypes.WinError(status)`,
+    GetNamedSecurityInfoA: `descriptor = ctypes.c_void_p()
+status = GetNamedSecurityInfoA(path_bytes, object_type, security_info, None, None, None, None, ctypes.byref(descriptor))
+if status != 0:  # ERROR_SUCCESS
+    raise ctypes.WinError(status)`,
     RegOpenKeyExW: `key = wintypes.HKEY()
 status = RegOpenKeyExW(root_key, subkey, 0, desired_access, ctypes.byref(key))
+if status != 0:  # ERROR_SUCCESS
+    raise ctypes.WinError(status)`,
+    RegOpenKeyExA: `key = wintypes.HKEY()
+status = RegOpenKeyExA(root_key, subkey_bytes, 0, desired_access, ctypes.byref(key))
 if status != 0:  # ERROR_SUCCESS
     raise ctypes.WinError(status)`,
     WinVerifyTrust: `status = WinVerifyTrust(window, ctypes.byref(action_id), ctypes.byref(trust_data))
@@ -456,11 +938,51 @@ if bytes_written.value != len(data):
 # Expose a purpose-built helper function to Python only if this operation is
 # genuinely required; do not attempt kernel32.InterlockedExchangePointer.
 previous = compiled_atomic_helper.exchange_pointer(target_slot, replacement)`,
+    MessageBoxW: `button = MessageBoxW(owner, text, caption, options)
+if button == 0:
+    raise ctypes.WinError(ctypes.get_last_error())`,
+    MessageBoxA: `button = MessageBoxA(owner, text_bytes, caption_bytes, options)
+if button == 0:
+    raise ctypes.WinError(ctypes.get_last_error())`,
+    GetModuleFileNameW: `buffer = ctypes.create_unicode_buffer(capacity)
+copied = GetModuleFileNameW(module, buffer, capacity)
+if copied == 0:
+    raise ctypes.WinError(ctypes.get_last_error())
+if copied >= capacity:
+    raise BufferError("module path was truncated")`,
+    GetModuleFileNameA: `buffer = ctypes.create_string_buffer(capacity)
+copied = GetModuleFileNameA(module, buffer, capacity)
+if copied == 0:
+    raise ctypes.WinError(ctypes.get_last_error())
+if copied >= capacity:
+    raise BufferError("module path was truncated")`,
+    GetModuleFileNameExW: `buffer = ctypes.create_unicode_buffer(capacity)
+copied = GetModuleFileNameExW(process, module, buffer, capacity)
+if copied == 0:
+    raise ctypes.WinError(ctypes.get_last_error())`,
+    GetModuleFileNameExA: `buffer = ctypes.create_string_buffer(capacity)
+copied = GetModuleFileNameExA(process, module, buffer, capacity)
+if copied == 0:
+    raise ctypes.WinError(ctypes.get_last_error())`,
+    GetWindowsDirectoryW: `buffer = ctypes.create_unicode_buffer(capacity)
+copied = GetWindowsDirectoryW(buffer, capacity)
+if copied == 0:
+    raise ctypes.WinError(ctypes.get_last_error())
+if copied >= capacity:
+    raise BufferError(f"resize the buffer to {copied} UTF-16 characters")`,
+    GetWindowsDirectoryA: `buffer = ctypes.create_string_buffer(capacity)
+copied = GetWindowsDirectoryA(buffer, capacity)
+if copied == 0:
+    raise ctypes.WinError(ctypes.get_last_error())
+if copied >= capacity:
+    raise BufferError(f"resize the buffer to {copied} bytes")`,
   };
 
   const directionOverrides = {
     "CreateProcessW.lpProcessInformation": "out",
+    "CreateProcessA.lpProcessInformation": "out",
     "CreateRemoteThread.lpThreadId": "out, optional",
+    "CreateRemoteThreadEx.lpThreadId": "out, optional",
     "GetModuleFileNameW.lpFilename": "out",
     "GetSystemInfo.lpSystemInfo": "out",
     "GlobalMemoryStatusEx.lpBuffer": "in, out",
@@ -478,32 +1000,48 @@ previous = compiled_atomic_helper.exchange_pointer(target_slot, replacement)`,
     "QueryServiceStatusEx.pcbBytesNeeded": "out",
     "ControlService.lpServiceStatus": "out",
     "RegOpenKeyExW.phkResult": "out",
+    "RegOpenKeyExA.phkResult": "out",
     "IsWow64Process2.pProcessMachine": "out",
     "IsWow64Process2.pNativeMachine": "out",
     "GetExitCodeProcess.lpExitCode": "out",
     "GetNativeSystemInfo.lpSystemInfo": "out",
     "GetWindowsDirectoryW.lpBuffer": "out",
+    "GetWindowsDirectoryA.lpBuffer": "out",
     "OpenProcessToken.TokenHandle": "out",
     "DuplicateToken.DuplicateTokenHandle": "out",
+    "DuplicateTokenEx.phNewToken": "out",
     "GetNamedSecurityInfoW.ppsidOwner": "out, optional",
     "GetNamedSecurityInfoW.ppsidGroup": "out, optional",
     "GetNamedSecurityInfoW.ppDacl": "out, optional",
     "GetNamedSecurityInfoW.ppSacl": "out, optional",
     "GetNamedSecurityInfoW.ppSecurityDescriptor": "out",
+    "GetNamedSecurityInfoA.ppsidOwner": "out, optional",
+    "GetNamedSecurityInfoA.ppsidGroup": "out, optional",
+    "GetNamedSecurityInfoA.ppDacl": "out, optional",
+    "GetNamedSecurityInfoA.ppSacl": "out, optional",
+    "GetNamedSecurityInfoA.ppSecurityDescriptor": "out",
     "MapGenericMask.AccessMask": "in, out",
     "MapGenericMask.GenericMapping": "in",
     "EnumProcessModules.lphModule": "out",
     "EnumProcessModules.lpcbNeeded": "out",
+    "EnumProcessModulesEx.lphModule": "out",
+    "EnumProcessModulesEx.lpcbNeeded": "out",
     "GetModuleFileNameExW.lpFilename": "out",
+    "GetModuleFileNameExA.lpFilename": "out",
+    "GetModuleFileNameA.lpFilename": "out",
     "GetModuleFileNameW.nSize": "in",
     "GetModuleFileNameExW.nSize": "in",
+    "GetModuleFileNameExA.nSize": "in",
+    "GetModuleFileNameA.nSize": "in",
     "QueryServiceStatusEx.cbBufSize": "in",
     "GetWindowsDirectoryW.uSize": "in",
+    "GetWindowsDirectoryA.uSize": "in",
     "ReadFile.lpBuffer": "out",
     "ReadFile.lpNumberOfBytesRead": "out",
     "WriteFile.lpBuffer": "in",
     "WriteFile.lpNumberOfBytesWritten": "out",
     "VirtualProtectEx.lpflOldProtect": "out",
+    "QueryServiceStatus.lpServiceStatus": "out",
   };
 
   function dllFor(name) {
@@ -703,11 +1241,13 @@ class WINTRUST_DATA(ctypes.Structure):
     for (const [structure, declaration] of Object.entries(structureDefinitions)) {
       if (new RegExp(`\\b${structure}\\b`).test(signatureTypes)) prelude.push(declaration);
     }
-    if (name === "CreateProcessW") {
-      prelude.push(`class STARTUPINFOW(ctypes.Structure):
+    if (name === "CreateProcessW" || name === "CreateProcessA") {
+      const suffix = name.endsWith("W") ? "W" : "A";
+      const stringType = suffix === "W" ? "wintypes.LPWSTR" : "wintypes.LPSTR";
+      prelude.push(`class STARTUPINFO${suffix}(ctypes.Structure):
     _fields_ = [
-        ("cb", wintypes.DWORD), ("lpReserved", wintypes.LPWSTR),
-        ("lpDesktop", wintypes.LPWSTR), ("lpTitle", wintypes.LPWSTR),
+        ("cb", wintypes.DWORD), ("lpReserved", ${stringType}),
+        ("lpDesktop", ${stringType}), ("lpTitle", ${stringType}),
         ("dwX", wintypes.DWORD), ("dwY", wintypes.DWORD),
         ("dwXSize", wintypes.DWORD), ("dwYSize", wintypes.DWORD),
         ("dwXCountChars", wintypes.DWORD), ("dwYCountChars", wintypes.DWORD),
@@ -783,6 +1323,24 @@ class PROCESS_INFORMATION(ctypes.Structure):
   }
 
   const familyData = window.ILOVEOS_WINDOWS_API_FAMILY_DATA;
+  const familyDefinitionFor = (name) => familyData.familyDefinitions.find((definition) => definition.variantNames.includes(name));
+  const familyPurpose = (name) => familyDefinitionFor(name)?.summary || `Perform the documented ${name} operation.`;
+  function defaultUseWhen(name) {
+    const definition = familyDefinitionFor(name);
+    const purpose = familyPurpose(name).replace(/[.]$/, "").replace(/^./, (character) => character.toLowerCase());
+    const names = definition?.variantNames || [name];
+    if (name.endsWith("A") && names.includes(`${name.slice(0, -1)}W`)) {
+      return `Use only for an existing ANSI byte-oriented caller that must ${purpose}.`;
+    }
+    if (name.endsWith("W") && names.includes(`${name.slice(0, -1)}A`)) {
+      return `Use the Unicode form when you need to ${purpose}.`;
+    }
+    const baseName = name.replace(/Ex$/, "");
+    if (name.endsWith("Ex") && names.includes(baseName)) {
+      return `Use the extended form when its additional parameters are required to ${purpose}.`;
+    }
+    return `Use this contract when you need to ${purpose}.`;
+  }
   const entries = [...nativeRecords.entries()].map(([name, record]) => {
     const dll = dllFor(name);
     const feature = featureIndex.get(name)?.[0];
@@ -790,7 +1348,7 @@ class PROCESS_INFORMATION(ctypes.Structure):
     return {
       name,
       category: categoryFor(name),
-      summary: feature ? `${feature.task}. ${feature.detail}` : `Use the Windows ${name} operation through its documented native contract.`,
+      summary: feature ? `${feature.task}. ${feature.detail}` : familyPurpose(name),
       dll,
       nativeSignature: nativeDeclaration(name, record.signature),
       python: pythonDeclaration(name, record.signature, dll),
@@ -807,8 +1365,8 @@ class PROCESS_INFORMATION(ctypes.Structure):
       cleanup: defaultCleanup(name),
       pywin32: pywin32Names[name] || "No direct pywin32 wrapper is used by this course; use the ctypes declaration when this operation is required.",
       sources: record.sources,
-      useWhen: metadata.useWhen || `Use ${name} when its documented native contract matches the operation.`,
-      availability: metadata.availability || "See the Microsoft Learn requirements for supported Windows versions.",
+      useWhen: metadata.useWhen || defaultUseWhen(name),
+      availability: metadata.availability || auditedAvailability[name] || "See the linked Microsoft Learn Requirements section.",
       keyBehaviors: metadata.keyBehaviors || [],
     };
   }).sort((left, right) => left.category.localeCompare(right.category) || left.name.localeCompare(right.name));
@@ -817,7 +1375,6 @@ class PROCESS_INFORMATION(ctypes.Structure):
 
   window.ILOVEOS_WINDOWS_API_GUIDE = {
     typeMappings,
-    entries,
     families,
     legacyApiNames: familyData.legacyApiNames,
   };

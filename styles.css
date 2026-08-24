@@ -2297,7 +2297,7 @@ html[data-content-size="large"] .practice-command [data-copy-status] { font-size
 .api-dialog-head > div > span { color: var(--violet); font: 600 10px/1.4 "Cascadia Code", Consolas, monospace; }
 .api-dialog-head h2 { margin: 3px 0 1px; font-size: 23px; overflow-wrap: anywhere; }
 .api-dialog-head p { color: var(--muted); font-size: 11px; }
-.api-dialog-close { display: grid; width: 31px; height: 31px; flex: 0 0 31px; place-items: center; border: 1px solid var(--line); border-radius: 8px; color: var(--muted); background: var(--panel); font-size: 20px; line-height: 1; cursor: pointer; }
+.api-dialog-close { display: grid; width: 40px; height: 40px; flex: 0 0 40px; place-items: center; border: 1px solid var(--line); border-radius: 8px; color: var(--muted); background: var(--panel); font-size: 20px; line-height: 1; cursor: pointer; }
 .api-dialog-close:hover { border-color: var(--line-bright); color: var(--text); }
 .api-dialog-body { padding: 22px; }
 .api-dialog-summary { margin-bottom: 22px; }
@@ -2362,7 +2362,7 @@ html[data-content-size="large"] .practice-command [data-copy-status] { font-size
 .api-variant-aliases strong, .api-variant-availability strong { color: var(--text); font-size: 9px; letter-spacing: .07em; text-transform: uppercase; }
 .api-variant-aliases code { overflow-wrap: anywhere; }
 .api-key-behaviors ul { display: grid; gap: 7px; margin: 0; padding-left: 18px; color: var(--muted); font-size: 11px; line-height: 1.55; }
-.api-parameter-choices { display: grid; gap: 7px; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--line); }
+.api-parameter-choices { display: grid; width: 100%; max-width: 100%; min-width: 0; gap: 7px; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--line); }
 .api-parameter-choices > strong { color: var(--muted-2); font-size: 9px; letter-spacing: .07em; text-transform: uppercase; }
 .api-parameter-choices > a { color: var(--reference-color, var(--violet)); font-size: 10px; }
 .api-choice-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(110px, .85fr) minmax(40px, auto); gap: 7px; align-items: start; padding: 8px; border: 1px solid var(--line); border-radius: 7px; background: rgba(9,13,19,.58); }
@@ -2373,6 +2373,14 @@ html[data-content-size="large"] .practice-command [data-copy-status] { font-size
 .api-choice-copy:focus-visible { outline: 2px solid var(--text); outline-offset: 2px; }
 .api-choice-status { grid-column: 1 / -1; min-height: 1.4em; color: var(--reference-color, var(--violet)) !important; }
 .api-choice-example { border-color: color-mix(in srgb, var(--reference-color, var(--violet)) 45%, var(--line)); }
+
+@media (max-width: 520px) {
+  .api-choice-row { grid-template-columns: minmax(0, 1fr) auto; }
+  .api-choice-row > code { grid-column: 1; grid-row: 1; align-self: center; }
+  .api-choice-row > span:not(.api-choice-status) { grid-column: 1 / -1; grid-row: 2; }
+  .api-choice-copy { grid-column: 2; grid-row: 1; }
+  .api-choice-status { grid-column: 1 / -1; grid-row: 3; }
+}
 
 /* Module reviews and final assessment */
 .assessment-page {

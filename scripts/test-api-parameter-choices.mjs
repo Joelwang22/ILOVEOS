@@ -21,6 +21,57 @@ const view = window.ILOVEOS_WINDOWS_API_VIEW;
 const byVariant = (name) => guide.families.find((family) => family.variants.some((variant) => variant.name === name));
 const renderNative = (name) => view.renderDialog(byVariant(name), name);
 
+for (const [surface, bindings] of [
+  ["native", window.ILOVEOS_WINDOWS_API_FAMILY_DATA.nativeBindings],
+  ["pywin32", window.ILOVEOS_WINDOWS_API_FAMILY_DATA.pywin32Bindings],
+]) {
+  for (const key of Object.keys(bindings)) {
+    const resolved = window.ILOVEOS_WINDOWS_API_FAMILY_DATA.resolveParameterChoices(key, surface);
+    assert.ok(resolved?.values.length, `${surface} ${key} must resolve at least one contextual value`);
+    const markup = view.renderParameterChoices(resolved, `${surface}-${key}`);
+    for (const value of resolved.values) {
+      assert.ok(value.code.trim(), `${surface} ${key} has an empty copy expression`);
+      assert.ok(markup.includes(value.code.replaceAll("&", "&amp;").replaceAll('"', "&quot;").replaceAll("<", "&lt;").replaceAll(">", "&gt;")), `${surface} ${key} omits an escaped expression`);
+    }
+  }
+}
+
+const representedPywin32Parameters = new Map();
+for (const module of window.ILOVEOS_REFERENCE.pywin32Modules) {
+  for (const feature of module.features) {
+    const detail = window.ILOVEOS_API_SIGNATURES[`${module.name}::${feature.name}`];
+    for (const [signatureIndex, signature] of (detail?.signatures || []).entries()) {
+      for (const parameter of signature.parameters || []) {
+        const key = `${module.name}::${signature.name}#${signatureIndex}.${parameter.name}`;
+        const owners = representedPywin32Parameters.get(key) || [];
+        owners.push({ module: module.name, feature: feature.name });
+        representedPywin32Parameters.set(key, owners);
+      }
+    }
+  }
+}
+assert.deepEqual(
+  Object.keys(window.ILOVEOS_WINDOWS_API_FAMILY_DATA.pywin32Bindings).filter((key) => !representedPywin32Parameters.has(key)),
+  [],
+  "every Python/reference binding must own an existing represented parameter",
+);
+const searchCasesByOwner = new Map();
+for (const key of Object.keys(window.ILOVEOS_WINDOWS_API_FAMILY_DATA.pywin32Bindings)) {
+  const representedOwners = representedPywin32Parameters.get(key);
+  const values = window.ILOVEOS_WINDOWS_API_FAMILY_DATA.resolveParameterChoices(key, "pywin32")?.values || [];
+  for (const owner of representedOwners) {
+    const ownerKey = `${owner.module}\u0000${owner.feature}`;
+    const searchCase = searchCasesByOwner.get(ownerKey) || { owner, codes: new Set() };
+    for (const value of values) searchCase.codes.add(value.code);
+    searchCasesByOwner.set(ownerKey, searchCase);
+  }
+}
+const pywin32SearchCases = [...searchCasesByOwner.values()].map(({ owner, codes }) => ({
+  owner,
+  codes: [...codes],
+  query: [...codes].join(" "),
+}));
+
 const expectOnly = (html, present, absent, label) => {
   assert.ok(html.includes('class="api-parameter-choices"'), `${label} must render contextual choices`);
   for (const value of present) assert.ok(html.includes(value), `${label} omits ${value}`);
@@ -91,6 +142,24 @@ const probe = `<script>
         && hasOnly(choiceSection(duplicateRows.find((row) => row.firstElementChild?.textContent.trim() === "TokenType")), ["win32security.TokenPrimary", "win32security.TokenImpersonation"], ["win32security.SecurityAnonymous", "win32security.TOKEN_QUERY"])
         && hasOnly(choiceSection(duplicateRows.find((row) => row.firstElementChild?.textContent.trim() === "DesiredAccess")), ["win32security.TOKEN_QUERY", "win32security.TOKEN_DUPLICATE"], ["win32security.SecurityAnonymous", "win32security.TokenPrimary"]);
 
+      await changeRoute("#/reference/pywin32?q=win32con.GENERIC_READ");
+      checks.pywin32ChoiceConstantIsSearchable = [...document.querySelectorAll("[data-api-feature]")]
+        .some((button) => button.dataset.apiFeature === "CreateFile");
+
+      const exhaustiveSearchCases = ${JSON.stringify(pywin32SearchCases)};
+      const exhaustiveSearchFailures = [];
+      const documentUrl = location.href.split("#")[0];
+      for (const [searchIndex, item] of exhaustiveSearchCases.entries()) {
+        history.replaceState(null, "", documentUrl + "#/reference/pywin32?q=" + encodeURIComponent(item.query));
+        window.dispatchEvent(new HashChangeEvent("hashchange"));
+        await new Promise((resolve) => setTimeout(resolve, 40));
+        const rendered = [...document.querySelectorAll("[data-api-feature]")];
+        if (!rendered.some((button) => button.dataset.apiModule === item.owner.module && button.dataset.apiFeature === item.owner.feature)) {
+          exhaustiveSearchFailures.push(searchIndex + ":" + item.owner.module + "::" + item.owner.feature + " <- " + item.codes.join(", "));
+        }
+      }
+      checks.everyPywin32ChoiceConstantIsSearchable = exhaustiveSearchFailures.length ? exhaustiveSearchFailures.length + " failures: " + exhaustiveSearchFailures.slice(0, 20).join("; ") : true;
+
       const openFamily = window.ILOVEOS_WINDOWS_API_GUIDE.families.find((family) => family.variants.some((variant) => variant.name === "OpenProcessToken"));
       const closeFamily = window.ILOVEOS_WINDOWS_API_GUIDE.families.find((family) => family.variants.some((variant) => variant.name === "CloseHandle"));
       const syntheticFamily = { id: "parameter-switch", name: "Parameter switch", summary: "Test family.", recommendedVariant: "OpenProcessToken", aliases: [], variants: [openFamily.variants.find((variant) => variant.name === "OpenProcessToken"), closeFamily.variants.find((variant) => variant.name === "CloseHandle")] };
@@ -115,7 +184,7 @@ try {
     .replace("</body>", `${probe}</body>`);
   fs.writeFileSync(pagePath, source);
   const run = spawnSync(browser, [
-    "--headless=new", "--disable-gpu", "--no-first-run", "--virtual-time-budget=12000",
+    "--headless=new", "--disable-gpu", "--no-first-run", "--virtual-time-budget=25000",
     `--user-data-dir=${profilePath}`, "--dump-dom", `${pathToFileURL(pagePath).href}#/reference/windows-api?q=OpenProcessToken`,
   ], { encoding: "utf8", timeout: 45000 });
   if (run.error) throw run.error;

@@ -36,7 +36,7 @@ requireCondition(aliasMatches[0]?.selectedVariant === "CreateEventExW", "CreateE
 
 // This catches search text that omits variant-only descriptive fields.
 const unicodeMatches = view.filterFamilies?.(guide.families, "Unicode event") || [];
-requireCondition(unicodeMatches.length === 1 && unicodeMatches[0]?.family?.id === "create-event", "Unicode event search did not return CreateEvent exactly once");
+requireCondition(unicodeMatches.filter((match) => match.family.id === "create-event").length === 1, "Unicode event search did not return CreateEvent exactly once");
 
 // This catches source URLs being omitted from variant search text.
 const sourceMatches = view.filterFamilies?.(guide.families, "nf-synchapi-createeventexa") || [];
@@ -72,6 +72,44 @@ const singleton = guide.families.find((family) => family.variants.length === 1);
 const singletonHtml = view.filterFamilies ? view.renderDialog?.(singleton, singleton?.recommendedVariant) || "" : "";
 requireCondition(!singletonHtml.includes('role="tablist"'), "singleton family renders unnecessary variant controls");
 
+// Exhaustive release search: exact callable and alias terms collapse to one
+// owning family, select the intended contract, and include contextual values.
+for (const family of guide.families) {
+  for (const variant of family.variants) {
+    const matches = view.filterFamilies?.(guide.families, variant.name) || [];
+    requireCondition(matches.length === 1, `${variant.name} search returned ${matches.length} families`);
+    requireCondition(matches[0]?.family.id === family.id, `${variant.name} search returned the wrong family`);
+    requireCondition(matches[0]?.selectedVariant === variant.name, `${variant.name} search did not select the exact variant`);
+    for (const parameter of variant.parameters) {
+      const resolved = window.ILOVEOS_WINDOWS_API_FAMILY_DATA.resolveParameterChoices(parameter.choiceBinding, "native");
+      if (parameter.choiceBinding) requireCondition(Boolean(resolved), `${variant.name}.${parameter.name} renders an unbound choice set`);
+      for (const value of resolved?.values || []) {
+        const valueMatches = view.filterFamilies?.(guide.families, value.code) || [];
+        requireCondition(valueMatches.some((match) => match.family.id === family.id), `${variant.name}.${parameter.name} choice ${value.code} is not searchable`);
+      }
+    }
+    for (const behavior of variant.keyBehaviors) {
+      requireCondition(variant.sources.some((source) => source.startsWith("https://learn.microsoft.com/")), `${variant.name} behavior lacks an authoritative source`);
+      requireCondition(behavior !== variant.result && behavior !== variant.cleanup, `${variant.name} duplicates behavior prose in an outcome`);
+    }
+  }
+  for (const alias of family.aliases) {
+    const matches = view.filterFamilies?.(guide.families, alias.name) || [];
+    requireCondition(matches.length === 1 && matches[0].family.id === family.id, `${alias.name} alias search did not return exactly one family`);
+    requireCondition(matches[0]?.selectedVariant === alias.target, `${alias.name} alias did not select ${alias.target}`);
+  }
+}
+
+const escapedChoices = view.renderParameterChoices?.({
+  id: "unsafe-choice",
+  kind: "enum",
+  source: "https://learn.microsoft.com/example?x=<unsafe>",
+  values: [{ name: "unsafe", code: '<VALUE & "quote">', useWhen: "Escape this value." }],
+  example: { code: "A < B & C", useWhen: "Escape this example." },
+}, "unsafe") || "";
+requireCondition(!escapedChoices.includes('<VALUE & "quote">') && escapedChoices.includes("&lt;VALUE &amp; &quot;quote&quot;&gt;"), "choice copy expression is not HTML escaped");
+requireCondition(escapedChoices.includes('data-api-value-code="&lt;VALUE &amp; &quot;quote&quot;&gt;"'), "escaped copy expression is missing from its control");
+
 const html = view.render?.(guide, "CreateEventExA") || "";
 requireCondition(html.includes('id="windows-api-count">1 Family'), "family guide count does not use family terminology");
 requireCondition(!html.includes("CreateEventExA.argtypes"), "filtered family guide renders contract details inline");
@@ -86,7 +124,7 @@ for (const selector of [".api-family-variants", ".api-variant-tab", ".api-varian
 }
 
 const versions = [...indexHtml.matchAll(/(?:href|src)="[^"]+\?v=([^"]+)"/g)];
-requireCondition(versions.length > 0 && versions.every((match) => match[1] === "windows-api-families-3"), "every tied asset must use the windows-api-families-3 release key");
+requireCondition(versions.length > 0 && versions.every((match) => match[1] === "windows-api-families-4"), "every tied asset must use the windows-api-families-4 release key");
 
 console.log(`family matches: ${exaMatches.length}`);
 console.log(`errors: ${errors.length}`);

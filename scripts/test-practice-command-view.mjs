@@ -102,8 +102,8 @@ const probe = `<script>
 
 const indexSource = fs.readFileSync(path.join(root, "index.html"), "utf8");
 const tiedAssets = [...indexSource.matchAll(/(?:href|src)="[^"]+\?v=([^"]+)"/g)];
-if (!tiedAssets.length || tiedAssets.some((match) => match[1] !== "windows-api-families-3")) {
-  console.error("ERROR every tied asset must use the windows-api-families-3 release key");
+if (!tiedAssets.length || tiedAssets.some((match) => match[1] !== "windows-api-families-4")) {
+  console.error("ERROR every tied asset must use the windows-api-families-4 release key");
   process.exit(1);
 }
 const source = indexSource

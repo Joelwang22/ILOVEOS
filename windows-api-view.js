@@ -13,12 +13,24 @@
   }
 
   function variantSearchText(variant) {
+    const choiceText = (variant.parameters || []).flatMap((parameter) => {
+      const resolved = familyData.resolveParameterChoices(parameter.choiceBinding, "native");
+      if (!resolved) return [];
+      return [
+        resolved.id,
+        resolved.source,
+        ...(resolved.values || []).flatMap((value) => [value.name, value.code, value.useWhen]),
+        resolved.example?.code || "",
+        resolved.example?.useWhen || "",
+      ];
+    });
     return [
       variant.name, variant.category, variant.dll, variant.summary, variant.nativeSignature, variant.python,
       variant.example, variant.result, variant.cleanup, variant.pywin32, variant.useWhen, variant.availability,
       ...(variant.sources || []),
       ...(variant.keyBehaviors || []),
       ...(variant.parameters || []).flatMap((parameter) => [parameter.name, parameter.direction, parameter.native, parameter.python, parameter.explanation]),
+      ...choiceText,
     ].join(" ");
   }
 
@@ -35,6 +47,14 @@
   }
 
   function filterFamilies(families, query = "") {
+    const normalized = String(query || "").trim().toLocaleLowerCase();
+    if (normalized) {
+      const exact = families
+        .filter((family) => family.variants.some((variant) => variant.name.toLocaleLowerCase() === normalized)
+          || family.aliases.some((alias) => alias.name.toLocaleLowerCase() === normalized))
+        .map((family) => ({ family, selectedVariant: selectForQuery(family, query) }));
+      if (exact.length) return exact;
+    }
     const required = tokens(query);
     return families
       .map((family) => ({ family, selectedVariant: selectForQuery(family, query) }))

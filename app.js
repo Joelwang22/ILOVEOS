@@ -896,6 +896,22 @@ user = <span class="code-function">win32api.GetUserName</span>()
     return [module.name, module.category, module.label, module.description, module.useWhen, module.course, ...(module.constants || [])].join(" ").toLowerCase();
   }
 
+  function featureChoiceSearchText(module, feature) {
+    const detail = apiSignatures[`${module.name}::${feature.name}`];
+    return (detail?.signatures || []).flatMap((signature, signatureIndex) => signature.parameters.flatMap((parameter) => {
+      const bindingKey = `${module.name}::${signature.name}#${signatureIndex}.${parameter.name}`;
+      const resolved = window.ILOVEOS_WINDOWS_API_FAMILY_DATA.resolveParameterChoices(bindingKey, "pywin32");
+      if (!resolved) return [];
+      return [
+        resolved.id,
+        resolved.source,
+        ...resolved.values.flatMap((value) => [value.name, value.code, value.useWhen]),
+        resolved.example?.code || "",
+        resolved.example?.useWhen || "",
+      ];
+    })).join(" ");
+  }
+
   function searchTokens(query) {
     return query.trim().toLowerCase().replace(/[^a-z0-9_]+/g, " ").split(/\s+/).filter(Boolean);
   }
@@ -907,7 +923,7 @@ user = <span class="code-function">win32api.GetUserName</span>()
 
   function matchingFeatures(module, query) {
     if (!query || containsEveryToken(moduleSearchText(module), query)) return module.features;
-    return module.features.filter((feature) => containsEveryToken(`${moduleSearchText(module)} ${feature.name} ${feature.task} ${feature.detail}`, query));
+    return module.features.filter((feature) => containsEveryToken(`${moduleSearchText(module)} ${feature.name} ${feature.task} ${feature.detail} ${featureChoiceSearchText(module, feature)}`, query));
   }
 
   function pywin32Accent(category) {

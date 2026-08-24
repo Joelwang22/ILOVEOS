@@ -142,8 +142,10 @@ for (const tool of reference.sysinternalsTools) {
 }
 
 requireCondition((windowsApiGuide?.typeMappings || []).length >= 12, "Windows API guide has an incomplete type-translation table");
-requireCondition((windowsApiGuide?.entries || []).length >= 69, `expected at least 69 Windows API guide entries, found ${windowsApiGuide?.entries?.length || 0}`);
-const windowsApiEntries = new Map((windowsApiGuide?.entries || []).map((entry) => [entry.name, entry]));
+const windowsApiVariants = (windowsApiGuide?.families || []).flatMap((family) => family.variants || []);
+requireCondition(windowsApiVariants.length >= 69, `expected at least 69 Windows API guide variants, found ${windowsApiVariants.length}`);
+requireCondition(!Object.hasOwn(windowsApiGuide || {}, "entries"), "Windows API guide still exposes compatibility entries");
+const windowsApiEntries = new Map(windowsApiVariants.map((entry) => [entry.name, entry]));
 for (const [key, value] of Object.entries(signatures)) {
   if (!key.startsWith("ctypes / ctypes.wintypes::")) continue;
   if (!(value.sources || []).some((source) => source.includes("learn.microsoft.com"))) continue;
@@ -153,7 +155,7 @@ for (const [key, value] of Object.entries(signatures)) {
     requireCondition(Boolean(entry?.nativeSignature && entry?.python && entry?.example), `Windows API guide has an incomplete translation for ${signature.name}`);
   }
 }
-for (const entry of windowsApiGuide?.entries || []) {
+for (const entry of windowsApiVariants) {
   for (const source of entry.sources || []) sourceUrls.push({ owner: `windows-api/${entry.name}`, url: source });
 }
 

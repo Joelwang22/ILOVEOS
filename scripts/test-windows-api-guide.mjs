@@ -28,6 +28,7 @@ for (const filename of [
 
 const guide = window.ILOVEOS_WINDOWS_API_GUIDE;
 const signatures = window.ILOVEOS_API_SIGNATURES;
+const familyData = window.ILOVEOS_WINDOWS_API_FAMILY_DATA;
 const errors = [];
 
 function requireCondition(condition, message) {
@@ -36,12 +37,18 @@ function requireCondition(condition, message) {
 
 requireCondition(Boolean(guide), "missing ILOVEOS_WINDOWS_API_GUIDE global");
 requireCondition((guide?.typeMappings || []).length >= 12, "guide needs at least 12 native-to-ctypes type mappings");
-requireCondition((guide?.entries || []).length >= 1, "guide has no API entries");
 requireCondition((guide?.families || []).length >= 1, "guide has no API families");
+requireCondition(!Object.hasOwn(guide || {}, "entries"), "guide must not publicly expose the compatibility entries array");
 
-const entries = new Map((guide?.entries || []).map((entry) => [entry.name, entry]));
 const variants = new Map(
   (guide?.families || []).flatMap((family) => family.variants.map((variant) => [variant.name, variant])),
+);
+const coveredLegacyNames = new Set((guide?.legacyApiNames || []).filter((name) => variants.has(name)));
+const namedPipeSecurityAttributes = variants.get("CreateNamedPipeW")?.parameters
+  .find((parameter) => parameter.name === "lpSecurityAttributes");
+requireCondition(
+  namedPipeSecurityAttributes?.python === "ctypes.POINTER(SECURITY_ATTRIBUTES)",
+  "CreateNamedPipeW.lpSecurityAttributes must retain its typed SECURITY_ATTRIBUTES pointer",
 );
 const nativeNames = Object.entries(signatures)
   .filter(([key, value]) => key.startsWith("ctypes / ctypes.wintypes::")
@@ -212,9 +219,10 @@ for (const [name, expected] of createEventSignatures) {
   requireCondition(variant?.python.includes(expected.python), `${name}: Python argtypes do not preserve the exact typed signature`);
 }
 
-console.log(`Windows API guide entries: ${entries.size}`);
-console.log(`Windows API guide variants: ${variants.size}`);
-console.log(`legacy contracts covered: ${(guide?.legacyApiNames || []).length}`);
+console.log(`Windows API families: ${guide.families.length}`);
+console.log(`callable variants: ${variants.size}`);
+console.log(`legacy contracts covered: ${coveredLegacyNames.size}`);
+console.log(`family review records: ${Object.keys(familyData.familyReview).length}`);
 console.log(`native signature functions covered: ${new Set(nativeNames).size}`);
 console.log(`direct ctypes APIs covered: ${directCtypesApis.size}`);
 console.log(`errors: ${errors.length}`);

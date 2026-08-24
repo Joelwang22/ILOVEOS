@@ -50,9 +50,11 @@ const html = `<!doctype html>
     const scrollOwner = ["auto", "scroll"].includes(popupOverflow) ? popup : body;
     scrollOwner.scrollTop = scrollOwner.scrollHeight;
     const popupRect = popup.getBoundingClientRect();
+    const headerRect = popup.querySelector(".api-dialog-head").getBoundingClientRect();
     const lastRect = document.querySelector("#last-popup-content").getBoundingClientRect();
     const result = {
       visible: lastRect.top >= popupRect.top - 1 && lastRect.bottom <= popupRect.bottom + 1,
+      stickyHeaderVisible: headerRect.top >= popupRect.top - 1 && headerRect.bottom <= popupRect.bottom + 1,
       scrollOwner: scrollOwner === popup ? "dialog" : "body",
       popupOverflow,
       bodyOverflow: getComputedStyle(body).overflowY,
@@ -81,7 +83,7 @@ try {
   if (!match) throw new Error(`browser did not return popup metrics (exit ${run.status}): ${run.stderr.trim()}`);
   const result = JSON.parse(match[1].replaceAll("&quot;", '"'));
   console.log(JSON.stringify(result));
-  if (!result.visible || result.scrollOwner !== "dialog") {
+  if (!result.visible || !result.stickyHeaderVisible || result.scrollOwner !== "dialog") {
     console.error("ERROR the popup's final content is not reachable through the dialog scroll container");
     process.exitCode = 1;
   }
@@ -97,6 +99,11 @@ try {
         const linkRect = link?.getBoundingClientRect();
         return Boolean(linkRect && linkRect.top >= dialogRect.top - 1 && linkRect.bottom <= dialogRect.bottom + 1);
       };
+      const headerIsPinned = () => {
+        const headerRect = popup.querySelector(".api-dialog-head")?.getBoundingClientRect();
+        const dialogRect = popup.getBoundingClientRect();
+        return Boolean(headerRect && headerRect.top >= dialogRect.top - 1 && headerRect.bottom <= dialogRect.bottom + 1);
+      };
       await wait();
       const filter = document.querySelector("#windows-api-filter");
       filter.value = "CreateEvent";
@@ -107,6 +114,7 @@ try {
       await wait();
       popup.scrollTop = popup.scrollHeight;
       const firstVariantLinkReachable = linkIsReachable();
+      const firstVariantHeaderPinned = headerIsPinned();
       const firstVariantScrollTop = popup.scrollTop;
       popup.querySelector('[data-api-variant="CreateEventExW"]')?.click();
       await wait();
@@ -114,13 +122,14 @@ try {
       const switchedVariantScrollPreserved = switchedVariantScrollBeforeForcedScroll >= firstVariantScrollTop - 1;
       popup.scrollTop = popup.scrollHeight;
       const switchedVariantLinkReachable = linkIsReachable();
+      const switchedVariantHeaderPinned = headerIsPinned();
       const switchedVariantScrollTop = popup.scrollTop;
       popup.querySelector(".api-dialog-close")?.click();
       filter.value = "VirtualAllocEx";
       filter.dispatchEvent(new Event("input", { bubbles: true }));
       document.querySelector('[data-windows-api-family="virtual-alloc-ex"]')?.click();
       await wait();
-      const result = { firstVariantScrollTop, firstVariantLinkReachable, switchedVariantScrollBeforeForcedScroll, switchedVariantScrollPreserved, switchedVariantScrollTop, switchedVariantLinkReachable, reopenedScrollTop: popup.scrollTop };
+      const result = { firstVariantScrollTop, firstVariantLinkReachable, firstVariantHeaderPinned, switchedVariantScrollBeforeForcedScroll, switchedVariantScrollPreserved, switchedVariantScrollTop, switchedVariantLinkReachable, switchedVariantHeaderPinned, reopenedScrollTop: popup.scrollTop };
       const output = document.createElement("pre");
       output.id = "reopen-result";
       output.textContent = JSON.stringify(result);
@@ -147,7 +156,7 @@ try {
   if (!reopenMatch) throw new Error(`browser did not return popup reopening metrics (exit ${reopenRun.status}): ${reopenRun.stderr.trim()}`);
   const reopenResult = JSON.parse(reopenMatch[1].replaceAll("&quot;", '"'));
   console.log(JSON.stringify(reopenResult));
-  if (reopenResult.firstVariantScrollTop <= 0 || !reopenResult.firstVariantLinkReachable || !reopenResult.switchedVariantScrollPreserved || reopenResult.switchedVariantScrollTop <= 0 || !reopenResult.switchedVariantLinkReachable || reopenResult.reopenedScrollTop !== 0) {
+  if (reopenResult.firstVariantScrollTop <= 0 || !reopenResult.firstVariantLinkReachable || !reopenResult.firstVariantHeaderPinned || !reopenResult.switchedVariantScrollPreserved || reopenResult.switchedVariantScrollTop <= 0 || !reopenResult.switchedVariantLinkReachable || !reopenResult.switchedVariantHeaderPinned || reopenResult.reopenedScrollTop !== 0) {
     console.error("ERROR family popup scroll is not preserved through a variant switch, sources are unreachable, or a newly opened popup does not start at the top");
     process.exitCode = 1;
   }
