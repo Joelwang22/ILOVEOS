@@ -74,6 +74,7 @@ for (const module of modules) {
 const downloadPaths = [];
 const sourceUrls = [];
 let investigationCount = 0;
+let caseStudyCount = 0;
 let commandCount = 0;
 let checkpointCount = 0;
 let choiceCheckpointCount = 0;
@@ -102,6 +103,7 @@ for (const lesson of lessons) {
     });
     errors.push(...practiceResult.errors);
     warnings.push(...practiceResult.warnings);
+    caseStudyCount += practiceResult.caseStudyCount;
     commandCount += practiceResult.commandCount;
     checkpointCount += practiceResult.checkpointCount;
     choiceCheckpointCount += practiceResult.choiceCheckpointCount;
@@ -203,6 +205,7 @@ console.log(`modules: ${modules.length}`);
 console.log(`lessons: ${lessons.length}`);
 console.log(`deep lessons: ${lessons.filter((lesson) => depth[lesson.id]).length}`);
 console.log(`guided investigations: ${investigationCount}`);
+console.log(`practice case studies: ${caseStudyCount}`);
 console.log(`practice command blocks: ${commandCount}`);
 console.log(`practice checkpoints: ${checkpointCount}`);
 console.log(`choice checkpoints: ${choiceCheckpointCount}`);

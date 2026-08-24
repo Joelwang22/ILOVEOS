@@ -91,6 +91,13 @@ const expectedChecks = [
   "checkpointControlReachable",
   "checkpointFeedbackReadable",
 ];
+const expectedCaseStudyChecks = [
+  "caseStudyVisible",
+  "caseStudyContained",
+  "factRowsContained",
+  "sectionReferencesContained",
+  "codeRegionsContained",
+];
 
 const tempRoot = path.resolve(os.tmpdir());
 const tempDirectory = fs.mkdtempSync(path.join(tempRoot, "iloveos-practice-command-layout-"));
@@ -196,6 +203,64 @@ try {
         returnByValue: true,
       });
       for (const check of expectedChecks) {
+        results[`${layout.name}/${contentSize}/${check}`] = evaluation.result.value?.[check] === true;
+      }
+    }
+
+    const caseStudyUrl = `${pathToFileURL(path.join(root, "index.html")).href}#/lesson/reading-winapi-docs`;
+    await client.send("Page.navigate", { url: caseStudyUrl });
+    let caseStudyReady = false;
+    for (let attempt = 0; attempt < 100; attempt += 1) {
+      const probe = await client.send("Runtime.evaluate", {
+        expression: 'Boolean(document.querySelector("[data-practice-case-study]") && document.querySelector("[data-case-study-facts]") && document.querySelector("[data-case-study-reference]"))',
+        returnByValue: true,
+      });
+      if (probe.result.value) {
+        caseStudyReady = true;
+        break;
+      }
+      await delay(50);
+    }
+    if (!caseStudyReady) throw new Error(`${layout.name}: case-study route did not render under device emulation`);
+
+    for (const contentSize of contentSizes) {
+      await client.send("Runtime.evaluate", {
+        expression: `document.documentElement.dataset.contentSize = ${JSON.stringify(contentSize)}`,
+      });
+      await delay(50);
+      const evaluation = await client.send("Runtime.evaluate", {
+        expression: `(() => {
+          const visible = (element) => Boolean(element && element.getClientRects().length && getComputedStyle(element).visibility !== "hidden");
+          const practice = document.querySelector(".practice-workspace");
+          const caseStudy = document.querySelector("[data-practice-case-study]");
+          const factRows = [...document.querySelectorAll("[data-case-study-facts] > div")];
+          const references = [...document.querySelectorAll("[data-case-study-reference]")];
+          const codeRegions = [...document.querySelectorAll("[data-practice-case-study] pre")];
+          const practiceRect = practice?.getBoundingClientRect();
+          const caseStudyRect = caseStudy?.getBoundingClientRect();
+          const within = (inner, outer) => Boolean(inner && outer && inner.left >= outer.left - 1 && inner.right <= outer.right + 1);
+          const containedBy = (elements, outerRect) => elements.every((element) => within(element.getBoundingClientRect(), outerRect));
+          return {
+            caseStudyVisible: visible(caseStudy),
+            caseStudyContained: document.documentElement.scrollWidth <= document.documentElement.clientWidth
+              && practice.scrollWidth <= practice.clientWidth
+              && caseStudy.scrollWidth <= caseStudy.clientWidth
+              && within(caseStudyRect, practiceRect),
+            factRowsContained: factRows.length > 0 && containedBy(factRows, caseStudyRect),
+            sectionReferencesContained: references.length === 5
+              && references.every((reference) => visible(reference))
+              && containedBy(references, practiceRect),
+            codeRegionsContained: codeRegions.every((pre) => {
+              const preRect = pre.getBoundingClientRect();
+              return within(preRect, caseStudyRect)
+                && pre.scrollWidth >= pre.clientWidth
+                && ["auto", "scroll"].includes(getComputedStyle(pre).overflowX);
+            }),
+          };
+        })()`,
+        returnByValue: true,
+      });
+      for (const check of expectedCaseStudyChecks) {
         results[`${layout.name}/${contentSize}/${check}`] = evaluation.result.value?.[check] === true;
       }
     }

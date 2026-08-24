@@ -410,6 +410,36 @@ handle = <span class="code-function">win32process.GetCurrentProcess</span>()
     }).join("");
   }
 
+  function renderPracticeCaseStudy(practice) {
+    if (!practice.caseStudy) return "";
+    const caseStudy = practice.caseStudy;
+    return `
+      <section class="practice-case-study" data-practice-case-study>
+        <header class="practice-case-study-head">
+          <span class="practice-case-study-label">${escapeHtml(caseStudy.label)}</span>
+          <h4 class="practice-case-study-title">${escapeHtml(caseStudy.title)}</h4>
+          <p class="practice-case-study-summary">${escapeHtml(caseStudy.summary)}</p>
+        </header>
+        ${(caseStudy.sections || []).map((section) => `
+          <section class="practice-case-study-section" data-case-study-section>
+            <h5>${escapeHtml(section.title)}</h5>
+            ${section.body ? `<p>${escapeHtml(section.body)}</p>` : ""}
+            ${section.facts ? `
+              <dl class="practice-case-study-facts" data-case-study-facts>
+                ${section.facts.map(([term, description]) => `<div><dt>${escapeHtml(term)}</dt><dd>${escapeHtml(description)}</dd></div>`).join("")}
+              </dl>` : ""}
+            ${section.code ? `<pre><code>${escapeHtml(section.code)}</code></pre>` : ""}
+          </section>`).join("")}
+      </section>`;
+  }
+
+  function renderPracticeCaseStudyReferences(step) {
+    if (!step.caseStudySections?.length) return "";
+    return `<div class="practice-case-study-references">${step.caseStudySections
+      .map((sectionTitle) => `<span data-case-study-reference>Use case study: ${escapeHtml(sectionTitle)}</span>`)
+      .join("")}</div>`;
+  }
+
   function renderPracticeCheckpoints(practice, afterStep) {
     return (practice.checkpoints || []).map((checkpoint, checkpointIndex) => ({ checkpoint, checkpointIndex }))
       .filter(({ checkpoint }) => checkpoint.afterStep === afterStep)
@@ -453,12 +483,13 @@ handle = <span class="code-function">win32process.GetCurrentProcess</span>()
         </div>
         <div class="practice-intro"><p>${escapeHtml(practice.intro)}</p></div>
         ${practice.safety ? `<aside class="rich-callout caution"><strong>Safety boundary</strong><p>${escapeHtml(practice.safety)}</p></aside>` : ""}
+        ${renderPracticeCaseStudy(practice)}
         <details class="practice-expectation"><summary><span>What should happen?</span><span class="details-chevron" aria-hidden="true">+</span></summary><p>${escapeHtml(practice.expectedOutcome)}</p></details>
         <ol class="practice-steps">
           ${practice.steps.map((step, index) => `
             <li>
               <span class="practice-number">${String(index + 1).padStart(2, "0")}</span>
-              <div class="practice-step-copy"><h4>${escapeHtml(step.action)}</h4>${renderPracticeCommands(step, index)}${step.why ? `<p><strong>Why this step matters:</strong> ${escapeHtml(step.why)}</p>` : ""}${step.observe ? `<p class="practice-observe"><strong>Look for:</strong> ${escapeHtml(step.observe)}</p>` : ""}${step.hint ? `<details><summary>Hint for this step</summary><p>${escapeHtml(step.hint)}</p></details>` : ""}${renderPracticeCheckpoints(practice, index + 1)}</div>
+              <div class="practice-step-copy"><h4>${escapeHtml(step.action)}</h4>${renderPracticeCaseStudyReferences(step)}${renderPracticeCommands(step, index)}${step.why ? `<p><strong>Why this step matters:</strong> ${escapeHtml(step.why)}</p>` : ""}${step.observe ? `<p class="practice-observe"><strong>Look for:</strong> ${escapeHtml(step.observe)}</p>` : ""}${step.hint ? `<details><summary>Hint for this step</summary><p>${escapeHtml(step.hint)}</p></details>` : ""}${renderPracticeCheckpoints(practice, index + 1)}</div>
             </li>`).join("")}
         </ol>
         <details class="practice-hints"><summary>Need a nudge?</summary>${practice.hints.map((hint) => `<div><strong>${escapeHtml(hint.title)}</strong><p>${escapeHtml(hint.body)}</p></div>`).join("")}</details>

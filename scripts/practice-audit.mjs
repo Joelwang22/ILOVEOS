@@ -3,6 +3,13 @@ const unresolvedPatterns = [
   /\bthe (?:code|example|script|starter|reader|inspector|survey|copy)\b/i,
   /\bthe same (?:command|script|workload)\b/i,
 ];
+const crossLessonReferencePatterns = [
+  /\b(?:the\s+)?displayed(?:\s+[\w:-]+){0,12}\s+(?:example|walkthrough|stage|card|section)\b/i,
+  /\b(?:the\s+)?(?:earlier|previous)(?:\s+[\w:-]+){0,5}\s+(?:example|walkthrough|stage|card|section)\b/i,
+  /\b(?:the\s+)?same(?:\s+displayed)?(?:\s+[\w:-]+){0,8}\s+(?:example|walkthrough)\b/i,
+  /\b(?:example|walkthrough|stage|card|section)\s+(?:above|elsewhere)\b/i,
+  /\b(?:example|walkthrough|stage|card|section)\b[^.!?\n]{0,60}\b(?:in|from)\s+(?:this\s+lesson|the\s+(?:earlier|previous)\s+(?:card|section|lesson))\b/i,
+];
 
 const terminalPattern = /\b(?:powershell|terminal|command prompt|cmd(?:\.exe)?|bash|shell)\b/i;
 const terminalInstructionPattern = /\b(?:run|paste|type|enter|execute|launch|start|invoke)\b/i;
@@ -18,6 +25,9 @@ const dynamicCheckpointPattern = /\b(?:live|printed|recorded|current|actual|your
 
 const shortCheckpointFields = new Set(["afterStep", "type", "prompt", "answer", "acceptedAnswers", "feedback"]);
 const choiceCheckpointFields = new Set(["afterStep", "type", "prompt", "options", "answerIndex", "feedback"]);
+const caseStudyFields = new Set(["label", "title", "summary", "sections"]);
+const caseStudySectionFields = new Set(["title", "body", "facts", "code"]);
+const caseStudyStepFields = new Set(["action", "commands", "why", "observe", "hint", "caseStudySections"]);
 
 function taskIsNegated(prefix) {
   const contrastIndex = Math.max(...[...prefix.matchAll(/\b(?:but|however|then|instead)\b/gi)].map((match) => match.index));
@@ -42,6 +52,10 @@ function taskFinding(value) {
     }
   }
   return null;
+}
+
+function crossLessonReferenceFinding(value) {
+  return typeof value === "string" && crossLessonReferencePatterns.some((pattern) => pattern.test(value));
 }
 
 function runtimePromptFindings(source) {
@@ -73,10 +87,13 @@ export function validatePractice(practice = {}, context = "practice", options = 
   const choiceCheckpointCount = Array.isArray(checkpoints)
     ? checkpoints.filter((checkpoint) => checkpoint?.type === "choice").length
     : 0;
+  const caseStudyCount = practice.caseStudy === undefined ? 0 : 1;
   const clarityFinding = (message) => {
     (options.enforceClarity ? errors : warnings).push(`${context}: ${message}`);
   };
   const steps = practice.steps || [];
+  const caseStudySectionTitles = new Set();
+  const consumingCaseStudySteps = new Set();
 
   if (practice.extension !== undefined) clarityFinding("extension fields are not allowed");
 
@@ -98,11 +115,65 @@ export function validatePractice(practice = {}, context = "practice", options = 
   for (const [field, value] of taskFields) {
     const finding = taskFinding(value);
     if (finding) clarityFinding(`${field}: ${finding}`);
+    if (crossLessonReferenceFinding(value)) clarityFinding(`${field}: cross-lesson reference`);
+  }
+
+  if (practice.caseStudy !== undefined) {
+    const caseStudy = practice.caseStudy;
+    if (!caseStudy || typeof caseStudy !== "object" || Array.isArray(caseStudy)) {
+      errors.push(`${context}: case study must be an object`);
+    } else {
+      const unsupported = Object.keys(caseStudy).filter((key) => !caseStudyFields.has(key));
+      if (unsupported.length) errors.push(`${context}: unsupported case-study field ${unsupported.join(", ")}`);
+      for (const field of ["label", "title", "summary"]) {
+        if (typeof caseStudy[field] !== "string" || !caseStudy[field].trim()) {
+          errors.push(`${context}: case study ${field} is required`);
+        }
+      }
+      if (!Array.isArray(caseStudy.sections) || !caseStudy.sections.length) {
+        errors.push(`${context}: case study sections must be a non-empty array`);
+      } else {
+        for (const [sectionIndex, section] of caseStudy.sections.entries()) {
+          const prefix = `${context}: case study section ${sectionIndex + 1}`;
+          if (!section || typeof section !== "object" || Array.isArray(section)) {
+            errors.push(`${prefix}: must be an object`);
+            continue;
+          }
+          const unsupportedSectionFields = Object.keys(section).filter((key) => !caseStudySectionFields.has(key));
+          if (unsupportedSectionFields.length) {
+            errors.push(`${prefix}: unsupported case-study section field ${unsupportedSectionFields.join(", ")}`);
+          }
+          if (typeof section.title !== "string" || !section.title.trim()) {
+            errors.push(`${prefix}: title is required`);
+          } else if (caseStudySectionTitles.has(section.title)) {
+            errors.push(`${context}: case study section titles must be unique`);
+          } else {
+            caseStudySectionTitles.add(section.title);
+          }
+
+          const hasBody = section.body !== undefined;
+          const hasFacts = section.facts !== undefined;
+          const hasCode = section.code !== undefined;
+          if (!hasBody && !hasFacts && !hasCode) errors.push(`${prefix}: must include body, facts, or code`);
+          if (hasBody && (typeof section.body !== "string" || !section.body.trim())) errors.push(`${prefix}: body must be a non-empty string`);
+          if (hasCode && (typeof section.code !== "string" || !section.code.trim())) errors.push(`${prefix}: code must be a non-empty string`);
+          if (hasFacts) {
+            if (!Array.isArray(section.facts) || !section.facts.length) {
+              errors.push(`${prefix}: facts must be a non-empty array`);
+            } else if (section.facts.some((row) => !Array.isArray(row)
+              || row.length !== 2
+              || row.some((value) => typeof value !== "string" || !value.trim()))) {
+              errors.push(`${prefix}: fact rows must contain exactly two non-empty strings`);
+            }
+          }
+        }
+      }
+    }
   }
 
   if (!Array.isArray(steps)) {
     errors.push(`${context}: steps must be an array`);
-    return { errors, warnings, downloadPaths: downloads.map((item) => item.path), commandCount, checkpointCount, choiceCheckpointCount };
+    return { errors, warnings, downloadPaths: downloads.map((item) => item.path), commandCount, checkpointCount, choiceCheckpointCount, caseStudyCount };
   }
 
   for (const [index, step] of steps.entries()) {
@@ -112,16 +183,34 @@ export function validatePractice(practice = {}, context = "practice", options = 
       errors.push(`${prefix}: must be an object`);
       continue;
     }
+    const unsupportedStepFields = Object.keys(step).filter((key) => !caseStudyStepFields.has(key));
+    if (unsupportedStepFields.length) errors.push(`${prefix}: unsupported step field ${unsupportedStepFields.join(", ")}`);
     if (typeof step.action !== "string" || !step.action.trim()) errors.push(`${prefix}: action is required`);
     if (typeof step.observe !== "string" || !step.observe.trim()) errors.push(`${prefix}: observe is required`);
 
-    for (const [field, value] of [["action", step.action], ["observe", step.observe], ["hint", step.hint]]) {
+    for (const [field, value] of [["action", step.action], ["why", step.why], ["observe", step.observe], ["hint", step.hint]]) {
       const finding = taskFinding(value);
       if (finding) clarityFinding(`${stepName}: ${field}: ${finding}`);
+      if (crossLessonReferenceFinding(value)) clarityFinding(`${stepName}: ${field}: cross-lesson reference`);
     }
 
     const stepText = [step.action, step.why, step.observe, step.hint].filter((item) => typeof item === "string").join(" ");
     if (unresolvedPatterns.some((pattern) => pattern.test(stepText))) clarityFinding(`${stepName}: unresolved reference`);
+
+    if (step.caseStudySections !== undefined) {
+      if (!Array.isArray(step.caseStudySections) || !step.caseStudySections.length) {
+        errors.push(`${prefix}: caseStudySections must be a non-empty array`);
+      } else if (step.caseStudySections.some((title) => typeof title !== "string" || !title.trim())) {
+        errors.push(`${prefix}: caseStudySections must contain non-empty strings`);
+      } else if (practice.caseStudy === undefined) {
+        errors.push(`${prefix}: caseStudySections requires a case study`);
+      } else {
+        consumingCaseStudySteps.add(index);
+        for (const title of step.caseStudySections) {
+          if (!caseStudySectionTitles.has(title)) errors.push(`${prefix}: unknown case-study section ${title}`);
+        }
+      }
+    }
 
     if (step.commands !== undefined && !Array.isArray(step.commands)) {
       errors.push(`${prefix}: commands must be an array`);
@@ -153,6 +242,10 @@ export function validatePractice(practice = {}, context = "practice", options = 
         }
       }
     }
+  }
+
+  if (practice.caseStudy !== undefined && consumingCaseStudySteps.size < 2) {
+    errors.push(`${context}: at least two distinct steps must consume the case study`);
   }
 
   if (!Array.isArray(checkpoints)) {
@@ -231,5 +324,5 @@ export function validatePractice(practice = {}, context = "practice", options = 
     }
   }
 
-  return { errors, warnings, downloadPaths: downloads.map((item) => item.path), commandCount, checkpointCount, choiceCheckpointCount };
+  return { errors, warnings, downloadPaths: downloads.map((item) => item.path), commandCount, checkpointCount, choiceCheckpointCount, caseStudyCount };
 }

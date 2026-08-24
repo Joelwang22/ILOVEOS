@@ -571,7 +571,7 @@ window.ILOVEOS_LESSON_DEPTH = {
       intro: "Trace one harmless file open and distinguish the documented Win32 promise from the internal route observed on this Windows build.",
       expectedOutcome: "The CreateFileW page should define stable application-facing behavior, while a Process Monitor stack may show the Python runtime, C runtime or public Windows libraries, native transition code, kernel components, and file-system drivers. The exact frames can vary with Python version, Windows build, symbols, filters, and implementation. The actor creates the file with a write open before acquiring a separate held read handle, and one captured path does not prove that every Win32 API maps to exactly one system call.",
       steps: [
-        { action: "In the displayed CreateFileW running example above, locate GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, OPEN_EXISTING, INVALID_HANDLE_VALUE, GetLastError, and CloseHandle.", why: "These supplied facts establish the stable public contract before the machine-dependent trace.", observe: "The running example identifies the access, sharing, existing-file rule, failure sentinel, error-detail call, and matching cleanup operation." },
+        { action: "Use this complete CreateFileW contract for the trace: pass a required UTF-16 path as lpFileName, use GENERIC_READ access, FILE_SHARE_READ | FILE_SHARE_WRITE sharing, OPEN_EXISTING creation disposition, FILE_ATTRIBUTE_NORMAL flags, and a null lpSecurityAttributes when inheritance is not required. Failure returns INVALID_HANDLE_VALUE, which requires an immediate GetLastError call; success returns an owned handle that must be released with CloseHandle.", why: "These complete local facts establish the stable public contract before the machine-dependent trace.", observe: "The step identifies the UTF-16 input, access, sharing, existing-file rule, ordinary attributes, optional security pointer, failure sentinel, immediate error-detail call, and matching owned-handle cleanup operation." },
         {
           action: "Download file_open_trace_lab.py. In PowerShell from that download folder, print the owned target path and verify it is absent without starting the actor.",
           commands: [{ label: "PowerShell", code: "$tracePath = Join-Path $env:TEMP 'ILOVEOS_CreateFileW_contract.txt'\nif (Test-Path -LiteralPath $tracePath) { throw \"Remove or rename the existing lab file first: $tracePath\" }\n$tracePath" }],
@@ -684,17 +684,56 @@ window.ILOVEOS_LESSON_DEPTH = {
     practice: {
       title: "Follow the supplied CreateFileW contract",
       time: "15 min",
-      intro: "Use the displayed running example to follow purpose, parameters, result handling, and ownership without creating an external worksheet.",
-      expectedOutcome: "The supplied CreateFileW example fixes read access and sharing, maps the UTF-16 path and optional security pointer, checks INVALID_HANDLE_VALUE, retrieves last error only on failure, and places CloseHandle in finally after successful acquisition.",
+      intro: "Use the complete contract supplied inside this investigation to follow purpose, parameters, result handling, and ownership without creating an external worksheet.",
+      caseStudy: {
+        label: "API contract case study",
+        title: "Opening an existing file with CreateFileW",
+        summary: "Use this fixed behavior, parameter, result, and ownership contract throughout the investigation.",
+        sections: [
+          {
+            title: "Goal",
+            body: "Open an existing file for read access without preventing another reader or writer. The call must not create, overwrite, or truncate the target."
+          },
+          {
+            title: "Call choices",
+            facts: [
+              ["Desired access", "GENERIC_READ"],
+              ["Share mode", "FILE_SHARE_READ | FILE_SHARE_WRITE"],
+              ["Creation disposition", "OPEN_EXISTING"],
+              ["Flags and attributes", "FILE_ATTRIBUTE_NORMAL"]
+            ]
+          },
+          {
+            title: "Parameter directions",
+            facts: [
+              ["lpFileName", "Required input UTF-16 path (LPCWSTR)."],
+              ["lpSecurityAttributes", "Nullable input pointer; use NULL or None when handle inheritance is not required."]
+            ]
+          },
+          {
+            title: "Result and error",
+            facts: [
+              ["Success", "A valid file handle."],
+              ["Failure", "INVALID_HANDLE_VALUE"],
+              ["Error detail", "Call GetLastError immediately after detecting the failure sentinel, before another Windows call can change the thread's error state."]
+            ]
+          },
+          {
+            title: "Ownership",
+            body: "A successful return gives the caller an owned handle-table reference. Place CloseHandle in finally immediately after acquisition so every later exit path releases it."
+          }
+        ]
+      },
+      expectedOutcome: "The supplied CreateFileW case study fixes read access and sharing, maps the UTF-16 path and optional security pointer, checks INVALID_HANDLE_VALUE, retrieves last error only on failure, and places CloseHandle in finally after successful acquisition.",
       steps: [
-        { action: "In the displayed Running example: read CreateFileW before calling it, open the Fix the intended behavior stage.", why: "The intended behavior determines the access, sharing, creation, and attribute flags.", observe: "The stage shows GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, OPEN_EXISTING, and ordinary attributes." },
-        { action: "Open the Map types and nullable pointers stage in the same displayed CreateFileW example.", why: "Direction and nullability determine how a binding represents the path and optional structure.", observe: "The stage treats lpFileName as input UTF-16 text and lpSecurityAttributes as an optional input pointer that may be NULL." },
-        { action: "Open the Handle both output paths stage in the same displayed CreateFileW example.", why: "The exact sentinel controls when Windows error state is meaningful.", observe: "The stage checks INVALID_HANDLE_VALUE and reads last error immediately only when that sentinel is returned." },
-        { action: "Open the Assign ownership stage in the same displayed CreateFileW example.", why: "A successful handle return is incomplete without its lifetime rule.", observe: "The stage places CloseHandle in finally after successful acquisition, so later exceptions do not skip release." }
+        { action: "Inspect the supplied goal and fixed call choices.", caseStudySections: ["Goal", "Call choices"], why: "The intended behavior determines the access, sharing, creation, and attribute flags.", observe: "The Goal and Call choices sections specify an existing-file read using GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, OPEN_EXISTING, and FILE_ATTRIBUTE_NORMAL." },
+        { action: "Inspect the supplied parameter directions.", caseStudySections: ["Parameter directions"], why: "Direction and nullability determine how a binding represents the path and optional structure.", observe: "The Parameter directions section identifies required UTF-16 lpFileName input and nullable lpSecurityAttributes input." },
+        { action: "Inspect the supplied result and error branches.", caseStudySections: ["Result and error"], why: "The exact sentinel controls when Windows error state is meaningful.", observe: "The Result and error section checks INVALID_HANDLE_VALUE and calls GetLastError immediately only after that failure sentinel." },
+        { action: "Inspect the supplied ownership rule.", caseStudySections: ["Ownership"], why: "A successful handle return is incomplete without its lifetime rule.", observe: "The Ownership section places CloseHandle in finally after successful acquisition, so later exceptions do not skip release." }
       ],
-      checkpoints: [{ afterStep: 3, type: "short", prompt: "Complete the fixed CreateFileW failure value: INVALID_[____]_VALUE", answer: "HANDLE", acceptedAnswers: [], feedback: "The supplied example checks INVALID_HANDLE_VALUE before retrieving last error." }],
+      checkpoints: [{ afterStep: 3, type: "short", prompt: "Complete the fixed CreateFileW failure value: INVALID_[____]_VALUE", answer: "HANDLE", acceptedAnswers: [], feedback: "The supplied case study checks INVALID_HANDLE_VALUE before retrieving last error." }],
       hints: [
-        { title: "Why no exception branch appears", body: "The running example models the native C contract. A pywin32 exception is wrapper behavior layered over the native failure sentinel." }
+        { title: "Why no exception branch appears", body: "The supplied case study models the native C contract. A pywin32 exception is wrapper behavior layered over the native failure sentinel." }
       ],
       cleanup: ["This on-page showcase creates no process, handle, file, or external note to clean up."]
     },
@@ -797,13 +836,42 @@ window.ILOVEOS_LESSON_DEPTH = {
     practice: {
       title: "Follow fixed status and failure branches",
       time: "15 min",
-      intro: "Use the supplied wait-result example and ctypes walkthrough to distinguish returned statuses from native-call failures.",
-      expectedOutcome: "WAIT_OBJECT_0 is a valid signaled result even though it is numerically zero, WAIT_TIMEOUT is expected control flow, and pywintypes.error means no ordinary wait status was returned. The ctypes walkthrough declares the signature, detects the documented failure value, captures last error immediately, and then raises WinError.",
+      intro: "Use the complete wait-result and ctypes failure contract supplied inside this investigation to distinguish returned statuses from native-call failures.",
+      caseStudy: {
+        label: "Binding behavior case study",
+        title: "Interpreting wait results and ctypes failures",
+        summary: "Use these fixed status, wrapper-failure, declaration, and error-capture rules throughout the investigation.",
+        sections: [
+          {
+            title: "Wait results",
+            facts: [
+              ["WAIT_OBJECT_0", "The event became signaled. This valid status is numerically zero and must not be interpreted with generic truthiness."],
+              ["WAIT_TIMEOUT", "Five seconds elapsed without the event becoming signaled. This is expected control flow, not successful acquisition and not necessarily an exception."]
+            ]
+          },
+          {
+            title: "Wrapper failure",
+            facts: [
+              ["pywintypes.error", "The wrapper returned no ordinary wait status. Preserve the Windows error code and function context before cleanup."]
+            ]
+          },
+          {
+            title: "ctypes declaration",
+            code: "kernel32 = ctypes.WinDLL(\"kernel32\", use_last_error=True)\nkernel32.CloseHandle.argtypes = [wintypes.HANDLE]\nkernel32.CloseHandle.restype = wintypes.BOOL"
+          },
+          {
+            title: "Immediate error capture",
+            body: "For CloseHandle, zero means failure. Test that documented result and call ctypes.get_last_error() immediately, before logging or cleanup can overwrite the thread's error state. Raise ctypes.WinError(code) with the captured number.",
+            code: "ok = kernel32.CloseHandle(handle)\nif not ok:\n    code = ctypes.get_last_error()\n    raise ctypes.WinError(code)"
+          }
+        ]
+      },
+      expectedOutcome: "WAIT_OBJECT_0 is a valid signaled result even though it is numerically zero, WAIT_TIMEOUT is expected control flow, and pywintypes.error means no ordinary wait status was returned. The supplied ctypes case study declares the signature, detects the documented failure value, captures last error immediately, and then raises WinError.",
       steps: [
-        { action: "In the displayed Handle wait results without treating them as Boolean example, locate the WAIT_OBJECT_0 branch.", why: "Named statuses must be interpreted by their documented meanings instead of generic truthiness.", observe: "The branch says the event became signaled and warns that WAIT_OBJECT_0 is numerically zero." },
-        { action: "In the same displayed wait example, locate WAIT_TIMEOUT and pywintypes.error.", why: "An expected timeout status is different from a wrapper failure that returned no ordinary status.", observe: "WAIT_TIMEOUT is expected control flow after five seconds; pywintypes.error carries Windows failure context instead of a wait result." },
-        { action: "In the displayed Turn GetLastError into a precise ctypes exception walkthrough, open the Load with last-error support and Declare a failure-aware signature stages.", why: "ctypes must preserve last error and define the ABI before the call.", observe: "The stages use WinDLL with use_last_error=True, set CloseHandle argtypes to HANDLE, and set restype to BOOL." },
-        { action: "Open the Test before any other Windows call stage in the same ctypes walkthrough.", why: "Another Windows call could overwrite thread-local error state.", observe: "The stage tests the documented zero failure, immediately calls ctypes.get_last_error(), and raises ctypes.WinError(code)." }
+        { action: "Inspect the supplied signaled and timeout status rules.", caseStudySections: ["Wait results"], why: "Named statuses must be interpreted by their documented meanings instead of generic truthiness.", observe: "The Wait results section says WAIT_OBJECT_0 is a valid signaled result even though it is numerically zero, while WAIT_TIMEOUT is expected control flow after five seconds." },
+        { action: "Compare the supplied timeout status with the wrapper-failure branch.", caseStudySections: ["Wait results", "Wrapper failure"], why: "An expected timeout status is different from a wrapper failure that returned no ordinary status.", observe: "WAIT_TIMEOUT is a returned status; pywintypes.error carries Windows failure context instead of a wait result." },
+        { action: "Inspect the supplied failure-aware ctypes declaration.", caseStudySections: ["ctypes declaration"], why: "ctypes must preserve last error and define the ABI before the call.", observe: "The ctypes declaration uses WinDLL with use_last_error=True, sets CloseHandle.argtypes to HANDLE, and sets CloseHandle.restype to BOOL." },
+        { action: "Inspect the supplied immediate error-capture rule.", caseStudySections: ["Immediate error capture"], why: "Another Windows call could overwrite thread-local error state.", observe: "The Immediate error capture section tests the documented zero failure, immediately calls ctypes.get_last_error(), and raises ctypes.WinError(code)." }
       ],
       checkpoints: [{ afterStep: 1, type: "choice", prompt: "Which fixed wait status means the event was signaled even though the value is numerically zero?", options: ["WAIT_OBJECT_0", "WAIT_TIMEOUT", "WAIT_ABANDONED"], answerIndex: 0, feedback: "WAIT_OBJECT_0 is the valid signaled result and must not be treated as false." }],
       hints: [

@@ -55,6 +55,120 @@ assert.deepEqual(valid.warnings, []);
 assert.equal(valid.checkpointCount, 2);
 assert.equal(valid.choiceCheckpointCount, 1);
 
+const validCaseStudy = {
+  title: "Inspect a supplied contract",
+  intro: "Use the fixed contract supplied inside this investigation.",
+  caseStudy: {
+    label: "API contract case study",
+    title: "Open an existing file",
+    summary: "The same fixed contract supports both steps.",
+    sections: [
+      { title: "Call choices", facts: [["Creation", "OPEN_EXISTING"]] },
+      { title: "Ownership", body: "Release the successful handle with CloseHandle." },
+    ],
+  },
+  steps: [
+    { action: "Inspect the supplied call choice.", caseStudySections: ["Call choices"], observe: "OPEN_EXISTING is visible." },
+    { action: "Inspect the supplied ownership rule.", caseStudySections: ["Ownership"], observe: "CloseHandle is visible." },
+  ],
+};
+const validCaseStudyResult = validatePractice(validCaseStudy, "valid case study", { enforceClarity: true });
+assert.deepEqual(validCaseStudyResult.errors, []);
+assert.equal(validCaseStudyResult.caseStudyCount, 1);
+
+for (const [name, practice, expectedText] of [
+  ["unsupported case-study field", { ...validCaseStudy, caseStudy: { ...validCaseStudy.caseStudy, theme: "terminal" } }, "unsupported case-study field theme"],
+  ["unsupported case-study section field", {
+    ...validCaseStudy,
+    caseStudy: {
+      ...validCaseStudy.caseStudy,
+      sections: [{ title: "Call choices", facts: [["Creation", "OPEN_EXISTING"]], order: 1 }, validCaseStudy.caseStudy.sections[1]],
+    },
+  }, "unsupported case-study section field order"],
+  ["unsupported practice step field", {
+    ...validCaseStudy,
+    steps: [{ ...validCaseStudy.steps[0], caseStudyLabel: "Call choices" }, validCaseStudy.steps[1]],
+  }, "unsupported step field caseStudyLabel"],
+  ["duplicate case-study section titles", {
+    ...validCaseStudy,
+    caseStudy: {
+      ...validCaseStudy.caseStudy,
+      sections: [{ title: "Call choices", facts: [["Creation", "OPEN_EXISTING"]] }, { title: "Call choices", body: "Close the handle." }],
+    },
+    steps: [
+      { action: "Inspect the first supplied choice.", caseStudySections: ["Call choices"], observe: "OPEN_EXISTING is visible." },
+      { action: "Inspect the second supplied choice.", caseStudySections: ["Call choices"], observe: "CloseHandle is visible." },
+    ],
+  }, "section titles must be unique"],
+  ["case-study section without content", {
+    ...validCaseStudy,
+    caseStudy: { ...validCaseStudy.caseStudy, sections: [{ title: "Call choices" }, validCaseStudy.caseStudy.sections[1]] },
+  }, "must include body, facts, or code"],
+  ["malformed case-study fact row", {
+    ...validCaseStudy,
+    caseStudy: { ...validCaseStudy.caseStudy, sections: [{ title: "Call choices", facts: [["Creation"]] }, validCaseStudy.caseStudy.sections[1]] },
+  }, "fact rows must contain exactly two non-empty strings"],
+  ["nonexistent case-study section reference", {
+    ...validCaseStudy,
+    steps: [{ ...validCaseStudy.steps[0], caseStudySections: ["Missing section"] }, validCaseStudy.steps[1]],
+  }, "unknown case-study section Missing section"],
+  ["case-study reference without a case study", {
+    title: "Inspect a supplied contract",
+    steps: [{ action: "Inspect the supplied choice.", caseStudySections: ["Call choices"], observe: "OPEN_EXISTING is visible." }],
+  }, "caseStudySections requires a case study"],
+  ["case study with only one consuming step", {
+    ...validCaseStudy,
+    steps: [{ ...validCaseStudy.steps[0] }, { action: "Inspect the supplied cleanup rule.", observe: "CloseHandle is visible." }],
+  }, "at least two distinct steps must consume the case study"],
+  ["decorative case study without consumers", {
+    ...validCaseStudy,
+    steps: validCaseStudy.steps.map(({ caseStudySections, ...step }) => step),
+  }, "at least two distinct steps must consume the case study"],
+]) {
+  const result = validatePractice(practice, name, { enforceClarity: true });
+  assert.ok(result.errors.some((message) => message.includes(expectedText)), name);
+}
+
+for (const phrase of [
+  "Open the displayed example above.",
+  "Return to the same walkthrough.",
+  "Open the Assign ownership stage in the earlier card.",
+  "Use the example elsewhere in this lesson.",
+]) {
+  const result = validatePractice({
+    title: "Inspect supplied evidence",
+    steps: [{ action: phrase, observe: "The referenced evidence is visible." }],
+  }, `cross-lesson reference: ${phrase}`, { enforceClarity: true });
+  assert.ok(result.errors.some((message) => message.includes("cross-lesson reference")), phrase);
+}
+
+for (const [field, practice] of [
+  ["title", { title: "Return to the same walkthrough.", steps: [{ action: "Inspect the supplied value.", observe: "The value is visible." }] }],
+  ["intro", { intro: "Return to the same walkthrough.", steps: [{ action: "Inspect the supplied value.", observe: "The value is visible." }] }],
+  ["safety", { safety: "Return to the same walkthrough.", steps: [{ action: "Inspect the supplied value.", observe: "The value is visible." }] }],
+  ["step action", { steps: [{ action: "Return to the same walkthrough.", observe: "The value is visible." }] }],
+  ["step why", { steps: [{ action: "Inspect the supplied value.", why: "Return to the same walkthrough.", observe: "The value is visible." }] }],
+  ["step observe", { steps: [{ action: "Inspect the supplied value.", observe: "Return to the same walkthrough." }] }],
+  ["step hint", { steps: [{ action: "Inspect the supplied value.", observe: "The value is visible.", hint: "Return to the same walkthrough." }] }],
+  ["expected outcome", { expectedOutcome: "Return to the same walkthrough.", steps: [{ action: "Inspect the supplied value.", observe: "The value is visible." }] }],
+  ["practice hint title", { hints: [{ title: "Return to the same walkthrough.", body: "Use the supplied value." }], steps: [{ action: "Inspect the supplied value.", observe: "The value is visible." }] }],
+  ["practice hint body", { hints: [{ title: "Supplied value", body: "Return to the same walkthrough." }], steps: [{ action: "Inspect the supplied value.", observe: "The value is visible." }] }],
+  ["cleanup", { cleanup: ["Return to the same walkthrough."], steps: [{ action: "Inspect the supplied value.", observe: "The value is visible." }] }],
+]) {
+  const result = validatePractice(practice, `cross-lesson ${field}`, { enforceClarity: true });
+  assert.ok(result.errors.some((message) => message.includes("cross-lesson reference")), field);
+}
+
+const sameInvestigationOutput = validatePractice({
+  title: "Follow one controlled process",
+  steps: [
+    { action: "Open the supplied process view.", observe: "The program prints a PID in step 1." },
+    { action: "Use the PID printed in step 1.", observe: "Refresh the same PID." },
+  ],
+}, "same-investigation output", { enforceClarity: true });
+assert.deepEqual(sameInvestigationOutput.errors, [], "named earlier-step outputs and same-process state must remain valid");
+assert.equal(sameInvestigationOutput.caseStudyCount, 0);
+
 const negativeSafety = validatePractice({
   title: "Inspect one fixed artifact",
   intro: "Use the supplied artifact and visible output.",
@@ -166,8 +280,110 @@ const predictionPromptCount = lessons.filter((lesson) => firstBatch.has(lesson.m
 const fieldCollectionCount = lessons.filter((lesson) => firstBatch.has(lesson.module) && lesson.practice.fields !== undefined).length;
 const offPageTaskFindings = strictErrors.filter((message) => message.includes("off-page task verb"));
 const dynamicCheckpointFindings = strictErrors.filter((message) => message.includes("checkpoint must not request a dynamic answer"));
+const crossLessonReferenceFindings = strictErrors.filter((message) => message.includes("cross-lesson reference"));
+const caseStudyLessonIds = strictResults
+  .filter(({ result }) => result.caseStudyCount === 1)
+  .map(({ lesson }) => lesson.id)
+  .sort();
+const practiceById = new Map(strictResults.map(({ lesson }) => [lesson.id, lesson.practice]));
+const caseStudyContentFindings = [];
+const requireCaseStudyContent = (condition, message) => {
+  if (!condition) caseStudyContentFindings.push(message);
+};
+const readingCaseStudyPractice = practiceById.get("reading-winapi-docs");
+const callingCaseStudyPractice = practiceById.get("calling-winapi-python");
+const systemCallPracticeFixture = practiceById.get("system-calls-win32");
+requireCaseStudyContent(
+  readingCaseStudyPractice.caseStudy?.title === "Opening an existing file with CreateFileW",
+  "reading-winapi-docs must supply the fixed CreateFileW case study",
+);
+requireCaseStudyContent(
+  JSON.stringify(readingCaseStudyPractice.caseStudy?.sections?.map((section) => section.title) || [])
+    === JSON.stringify(["Goal", "Call choices", "Parameter directions", "Result and error", "Ownership"]),
+  "reading-winapi-docs must use the five exact case-study sections",
+);
+const readingCaseStudyText = JSON.stringify(readingCaseStudyPractice.caseStudy || {});
+for (const requiredText of [
+  "GENERIC_READ",
+  "FILE_SHARE_READ | FILE_SHARE_WRITE",
+  "OPEN_EXISTING",
+  "FILE_ATTRIBUTE_NORMAL",
+  "UTF-16",
+  "lpFileName",
+  "lpSecurityAttributes",
+  "INVALID_HANDLE_VALUE",
+  "GetLastError",
+  "CloseHandle",
+]) {
+  requireCaseStudyContent(readingCaseStudyText.includes(requiredText), `reading-winapi-docs case study must contain ${requiredText}`);
+}
+requireCaseStudyContent(
+  JSON.stringify(readingCaseStudyPractice.steps.map((step) => step.caseStudySections))
+    === JSON.stringify([["Goal", "Call choices"], ["Parameter directions"], ["Result and error"], ["Ownership"]]),
+  "reading-winapi-docs steps must consume the exact local sections",
+);
+requireCaseStudyContent(
+  callingCaseStudyPractice.caseStudy?.title === "Interpreting wait results and ctypes failures",
+  "calling-winapi-python must supply the fixed wait/ctypes case study",
+);
+requireCaseStudyContent(
+  JSON.stringify(callingCaseStudyPractice.caseStudy?.sections?.map((section) => section.title) || [])
+    === JSON.stringify(["Wait results", "Wrapper failure", "ctypes declaration", "Immediate error capture"]),
+  "calling-winapi-python must use the four exact case-study sections",
+);
+const callingCaseStudyText = JSON.stringify(callingCaseStudyPractice.caseStudy || {});
+for (const requiredText of [
+  "WAIT_OBJECT_0",
+  "WAIT_TIMEOUT",
+  "pywintypes.error",
+  "WinDLL",
+  "use_last_error=True",
+  "CloseHandle.argtypes",
+  "CloseHandle.restype",
+  "zero means failure",
+  "ctypes.get_last_error()",
+  "ctypes.WinError(code)",
+]) {
+  requireCaseStudyContent(callingCaseStudyText.includes(requiredText), `calling-winapi-python case study must contain ${requiredText}`);
+}
+requireCaseStudyContent(
+  JSON.stringify(callingCaseStudyPractice.steps.map((step) => step.caseStudySections))
+    === JSON.stringify([["Wait results"], ["Wait results", "Wrapper failure"], ["ctypes declaration"], ["Immediate error capture"]]),
+  "calling-winapi-python steps must consume the exact local sections",
+);
+requireCaseStudyContent(systemCallPracticeFixture.caseStudy === undefined, "system-calls-win32 must not have a case study");
+const systemCallFirstStepText = JSON.stringify(systemCallPracticeFixture.steps[0]);
+for (const requiredText of [
+  "GENERIC_READ",
+  "FILE_SHARE_READ | FILE_SHARE_WRITE",
+  "OPEN_EXISTING",
+  "FILE_ATTRIBUTE_NORMAL",
+  "UTF-16",
+  "INVALID_HANDLE_VALUE",
+  "GetLastError",
+  "CloseHandle",
+]) {
+  requireCaseStudyContent(systemCallFirstStepText.includes(requiredText), `system-calls-win32 first step must contain ${requiredText}`);
+}
+const serviceControllerPractice = practiceById.get("control-services-python");
+const serviceControllerQueryEvidence = `${serviceControllerPractice.expectedOutcome} ${serviceControllerPractice.steps[1].observe}`;
+for (const forbiddenText of ["checkpoint", "wait hint", "accepted controls", "exit code"] ) {
+  requireCaseStudyContent(!serviceControllerQueryEvidence.toLowerCase().includes(forbiddenText), `EventLog query evidence must not promise ${forbiddenText}`);
+}
+for (const requiredText of ["state", "PID"]) {
+  requireCaseStudyContent(serviceControllerQueryEvidence.includes(requiredText), `EventLog query evidence must promise ${requiredText}`);
+}
+requireCaseStudyContent(serviceControllerPractice.cleanup.join(" ").includes("closes the EventLog and SCM handles"), "EventLog query evidence must retain service/SCM handle cleanup");
+const systemCallCrossLessonFindings = strictResults
+  .find(({ lesson }) => lesson.id === "system-calls-win32")
+  .result.errors
+  .filter((message) => message.includes("cross-lesson reference"));
 
 assert.equal(lessons.length, 62, "expected exactly 62 guided investigations");
+assert.deepEqual(caseStudyContentFindings, [], caseStudyContentFindings.join("\n"));
+assert.deepEqual(crossLessonReferenceFindings, [], crossLessonReferenceFindings.join("\n"));
+assert.deepEqual(caseStudyLessonIds, ["calling-winapi-python", "reading-winapi-docs"]);
+assert.deepEqual(systemCallCrossLessonFindings, [], systemCallCrossLessonFindings.join("\n"));
 assert.deepEqual(strictErrors, [], strictErrors.join("\n"));
 assert.deepEqual(strictWarnings, [], strictWarnings.join("\n"));
 assert.equal(extensionCount, 0, `expected zero extensions, found ${extensionCount}`);

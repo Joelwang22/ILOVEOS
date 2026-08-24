@@ -78,6 +78,9 @@ html[data-content-size="small"] .branch-card p,
 html[data-content-size="small"] .state-path article p,
 html[data-content-size="small"] .code-walkthrough-head p,
 html[data-content-size="small"] .practice-intro p,
+html[data-content-size="small"] .practice-case-study-summary,
+html[data-content-size="small"] .practice-case-study-section > p,
+html[data-content-size="small"] .practice-case-study-facts dd,
 html[data-content-size="small"] .practice-expectation > p,
 html[data-content-size="small"] .quiz-feedback,
 html[data-content-size="small"] .api-purpose p,
@@ -100,6 +103,9 @@ html[data-content-size="large"] .branch-card p,
 html[data-content-size="large"] .state-path article p,
 html[data-content-size="large"] .code-walkthrough-head p,
 html[data-content-size="large"] .practice-intro p,
+html[data-content-size="large"] .practice-case-study-summary,
+html[data-content-size="large"] .practice-case-study-section > p,
+html[data-content-size="large"] .practice-case-study-facts dd,
 html[data-content-size="large"] .practice-expectation > p,
 html[data-content-size="large"] .quiz-feedback,
 html[data-content-size="large"] .api-purpose p,
@@ -120,6 +126,9 @@ html[data-content-size="small"] .state-path article strong,
 html[data-content-size="small"] .state-path article small,
 html[data-content-size="small"] .code-stage p,
 html[data-content-size="small"] .practice-step-copy > p,
+html[data-content-size="small"] .practice-case-study-label,
+html[data-content-size="small"] .practice-case-study-facts dt,
+html[data-content-size="small"] .practice-case-study-references,
 html[data-content-size="small"] .practice-hints p,
 html[data-content-size="small"] .practice-checkpoint,
 html[data-content-size="small"] .practice-extension p,
@@ -138,6 +147,9 @@ html[data-content-size="large"] .state-path article strong,
 html[data-content-size="large"] .state-path article small,
 html[data-content-size="large"] .code-stage p,
 html[data-content-size="large"] .practice-step-copy > p,
+html[data-content-size="large"] .practice-case-study-label,
+html[data-content-size="large"] .practice-case-study-facts dt,
+html[data-content-size="large"] .practice-case-study-references,
 html[data-content-size="large"] .practice-hints p,
 html[data-content-size="large"] .practice-checkpoint,
 html[data-content-size="large"] .practice-extension p,
@@ -1811,6 +1823,26 @@ pre {
 .practice-intro { padding: 20px 24px 0; }
 .practice-intro p { margin: 0; }
 .practice-workspace > .rich-callout { margin-inline: 24px; }
+.practice-case-study { min-width: 0; margin: 20px 24px 0; overflow: hidden; border: 1px solid rgba(167,139,250,.26); border-radius: 11px; background: rgba(17,22,31,.66); }
+.practice-case-study-head { min-width: 0; padding: 17px 18px; border-bottom: 1px solid var(--line); background: linear-gradient(145deg, rgba(167,139,250,.09), rgba(17,22,31,.34)); }
+.practice-case-study-label { display: block; color: var(--violet); font-size: 10px; font-weight: 750; letter-spacing: .08em; text-transform: uppercase; }
+.practice-case-study-title { margin: 5px 0 6px; color: #e3e8ef; font-size: 16px; line-height: 1.4; overflow-wrap: anywhere; }
+.practice-case-study-summary { margin: 0; color: #aebdce; font-size: 12px; line-height: 1.65; }
+.practice-case-study-section { min-width: 0; padding: 16px 18px; }
+.practice-case-study-section + .practice-case-study-section { border-top: 1px solid var(--line); }
+.practice-case-study-section h5 { margin: 0 0 9px; color: #d8e0ea; font-size: 12px; line-height: 1.45; }
+.practice-case-study-section > p { margin: 0; color: #aebdce; font-size: 11px; line-height: 1.65; overflow-wrap: anywhere; }
+.practice-case-study-facts { display: grid; min-width: 0; margin: 0; }
+.practice-case-study-facts > div { display: grid; grid-template-columns: minmax(125px, .48fr) minmax(0, 1.52fr); gap: 14px; min-width: 0; padding: 9px 0; }
+.practice-case-study-facts > div:first-child { padding-top: 0; }
+.practice-case-study-facts > div:last-child { padding-bottom: 0; }
+.practice-case-study-facts > div + div { border-top: 1px solid rgba(54,66,82,.72); }
+.practice-case-study-facts dt { min-width: 0; color: #b9acd9; font-size: 10px; font-weight: 700; line-height: 1.5; overflow-wrap: anywhere; }
+.practice-case-study-facts dd { min-width: 0; margin: 0; color: #b7c3d1; font-size: 11px; line-height: 1.6; overflow-wrap: anywhere; }
+.practice-case-study-section pre { box-sizing: border-box; width: 100%; min-width: 0; max-width: 100%; margin: 11px 0 0; padding: 13px; overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; background: #080c12; }
+.practice-case-study-section pre code { color: #c4b5fd; font: 11px/1.65 "Cascadia Code", Consolas, monospace; white-space: pre; }
+.practice-case-study-references { display: flex; flex-wrap: wrap; gap: 6px; min-width: 0; margin: 0 0 13px; color: #c6b9e8; font-size: 10px; line-height: 1.45; }
+.practice-case-study-references span { min-width: 0; padding: 5px 8px; border: 1px solid rgba(167,139,250,.23); border-radius: 999px; background: rgba(167,139,250,.055); overflow-wrap: anywhere; }
 .practice-expectation { margin: 20px 24px 0; border: 1px solid rgba(96,165,250,.22); border-radius: 10px; background: rgba(96,165,250,.045); }
 .practice-expectation summary { display: flex; align-items: center; justify-content: space-between; gap: 15px; padding: 14px 16px; color: #9ecdfb; font-size: 11px; font-weight: 700; list-style: none; cursor: pointer; }
 .practice-expectation summary::-webkit-details-marker { display: none; }
@@ -3001,6 +3033,9 @@ html[data-content-size="large"] .assessment-page {
   .lesson-visual, .worked-format, .practice-workspace { margin-inline: -4px; }
   .practice-steps > li { grid-template-columns: 34px 1fr; padding-inline: 17px; }
   .practice-intro, .cleanup-block { padding-inline: 17px; }
+  .practice-case-study { margin-inline: 17px; }
+  .practice-case-study-head, .practice-case-study-section { padding-inline: 14px; }
+  .practice-case-study-facts > div { grid-template-columns: minmax(0, 1fr); gap: 3px; }
   .practice-expectation { margin-inline: 17px; }
   .assessment-page .breadcrumb { margin-bottom: 28px; }
   .assessment-activity { padding-inline: 14px; }
