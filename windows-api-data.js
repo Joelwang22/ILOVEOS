@@ -179,6 +179,9 @@
       source: "https://learn.microsoft.com/windows/win32/api/psapi/nf-psapi-getmodulefilenameexw",
     },
     CreateEventW: { parameters: [{ name: "lpEventAttributes", type: "ctypes.c_void_p | None", description: "Optional SECURITY_ATTRIBUTES pointer." }, { name: "bManualReset", type: "wintypes.BOOL", description: "True for manual reset; false for auto reset." }, { name: "bInitialState", type: "wintypes.BOOL", description: "Initial signaled state." }, { name: "lpName", type: "wintypes.LPCWSTR | None", description: "Optional UTF-16 object name." }], returns: "wintypes.HANDLE | None", source: "https://learn.microsoft.com/windows/win32/api/synchapi/nf-synchapi-createeventw" },
+    CreateEventA: { parameters: [{ name: "lpEventAttributes", type: "ctypes.c_void_p | None", description: "Optional SECURITY_ATTRIBUTES pointer." }, { name: "bManualReset", type: "wintypes.BOOL", description: "True for manual reset; false for auto reset." }, { name: "bInitialState", type: "wintypes.BOOL", description: "Initial signaled state." }, { name: "lpName", type: "wintypes.LPCSTR | None", description: "Optional code-page event name as bytes." }], returns: "wintypes.HANDLE | None", source: "https://learn.microsoft.com/windows/win32/api/synchapi/nf-synchapi-createeventa" },
+    CreateEventExW: { parameters: [{ name: "lpEventAttributes", type: "ctypes.c_void_p | None", description: "Optional SECURITY_ATTRIBUTES pointer." }, { name: "lpName", type: "wintypes.LPCWSTR | None", description: "Optional UTF-16 object name." }, { name: "dwFlags", type: "wintypes.DWORD", description: "CREATE_EVENT_* flags selecting event behavior." }, { name: "dwDesiredAccess", type: "wintypes.DWORD", description: "Explicit access rights requested for the event handle." }], returns: "wintypes.HANDLE | None", source: "https://learn.microsoft.com/windows/win32/api/synchapi/nf-synchapi-createeventexw" },
+    CreateEventExA: { parameters: [{ name: "lpEventAttributes", type: "ctypes.c_void_p | None", description: "Optional SECURITY_ATTRIBUTES pointer." }, { name: "lpName", type: "wintypes.LPCSTR | None", description: "Optional code-page event name as bytes." }, { name: "dwFlags", type: "wintypes.DWORD", description: "CREATE_EVENT_* flags selecting event behavior." }, { name: "dwDesiredAccess", type: "wintypes.DWORD", description: "Explicit access rights requested for the event handle." }], returns: "wintypes.HANDLE | None", source: "https://learn.microsoft.com/windows/win32/api/synchapi/nf-synchapi-createeventexa" },
     CreateMutexW: { parameters: [{ name: "lpMutexAttributes", type: "ctypes.c_void_p | None", description: "Optional SECURITY_ATTRIBUTES pointer." }, { name: "bInitialOwner", type: "wintypes.BOOL", description: "Whether the creating thread requests initial ownership." }, { name: "lpName", type: "wintypes.LPCWSTR | None", description: "Optional UTF-16 object name." }], returns: "wintypes.HANDLE | None", source: "https://learn.microsoft.com/windows/win32/api/synchapi/nf-synchapi-createmutexw" },
     WaitForMultipleObjects: { parameters: [{ name: "nCount", type: "wintypes.DWORD", description: "Number of handles in lpHandles." }, { name: "lpHandles", type: "ctypes.POINTER(wintypes.HANDLE)", description: "Input array of waitable handles." }, { name: "bWaitAll", type: "wintypes.BOOL", description: "Wait for all handles or any one handle." }, { name: "dwMilliseconds", type: "wintypes.DWORD", description: "Timeout in milliseconds or INFINITE." }], returns: "wintypes.DWORD", source: "https://learn.microsoft.com/windows/win32/api/synchapi/nf-synchapi-waitformultipleobjects" },
     ReadFile: { parameters: [{ name: "hFile", type: "wintypes.HANDLE", description: "Readable file, pipe, or device handle." }, { name: "lpBuffer", type: "wintypes.LPVOID", description: "Writable output buffer." }, { name: "nNumberOfBytesToRead", type: "wintypes.DWORD", description: "Requested byte count." }, { name: "lpNumberOfBytesRead", type: "ctypes.POINTER(wintypes.DWORD) | None", description: "Output byte count for synchronous I/O." }, { name: "lpOverlapped", type: "ctypes.c_void_p | None", description: "Optional OVERLAPPED pointer for asynchronous I/O." }], returns: "wintypes.BOOL", source: "https://learn.microsoft.com/windows/win32/api/fileapi/nf-fileapi-readfile" },
@@ -256,6 +259,9 @@
     CreateRemoteThread: "Close the returned thread handle with CloseHandle after waiting or otherwise finishing with it.",
     CloseHandle: "This is the cleanup operation. Do not use the handle again after a successful close.",
     CreateEventW: "Close the returned event handle with CloseHandle.",
+    CreateEventA: "Close the returned event handle with CloseHandle.",
+    CreateEventExW: "Close the returned event handle with CloseHandle.",
+    CreateEventExA: "Close the returned event handle with CloseHandle.",
     CreateMutexW: "Release ownership with ReleaseMutex when held, then close the handle with CloseHandle.",
     CreateNamedPipeW: "Disconnect a connected instance where appropriate, then close the pipe handle with CloseHandle.",
     OpenThread: "Close the returned thread handle with CloseHandle.",
@@ -308,6 +314,33 @@
     LocalFree: "Returns null on success. A non-null return is the still-owned input handle and indicates failure.",
     GetWindowsDirectoryW: "Zero indicates failure. A result greater than the supplied capacity reports the required size, including the terminator.",
     GetModuleFileNameExW: "Zero indicates failure. A nonzero result is the number of UTF-16 characters copied, excluding the terminator.",
+    CreateEventW: "Returns an event handle on success. Null indicates failure; then read the last-error code. ERROR_ALREADY_EXISTS means the named event already existed.",
+    CreateEventA: "Returns an event handle on success. Null indicates failure; then read the last-error code. ERROR_ALREADY_EXISTS means the named event already existed.",
+    CreateEventExW: "Returns an event handle on success. Null indicates failure; then read the last-error code. ERROR_ALREADY_EXISTS means the named event already existed.",
+    CreateEventExA: "Returns an event handle on success. Null indicates failure; then read the last-error code. ERROR_ALREADY_EXISTS means the named event already existed.",
+  };
+
+  const variantMetadata = {
+    CreateEventW: {
+      useWhen: "Use the Unicode CreateEvent form for normal named or unnamed event creation.",
+      availability: "Windows XP and later",
+      keyBehaviors: ["A matching named event opens instead of creating a second object."],
+    },
+    CreateEventA: {
+      useWhen: "Use only when an existing byte-oriented caller must supply an ANSI event name.",
+      availability: "Windows XP and later",
+      keyBehaviors: ["ANSI names use the system code page; prefer CreateEventW for Unicode names."],
+    },
+    CreateEventExW: {
+      useWhen: "Use when CREATE_EVENT_* flags or explicit desired access must be selected.",
+      availability: "Windows Vista and later",
+      keyBehaviors: ["CREATE_EVENT_* flags select event behavior while desired access controls the returned handle."],
+    },
+    CreateEventExA: {
+      useWhen: "Use only when extended event options need a byte-oriented ANSI object name.",
+      availability: "Windows Vista and later",
+      keyBehaviors: ["ANSI names use the system code page; CREATE_EVENT_* flags and desired access remain explicit."],
+    },
   };
 
   const examplesByName = {
@@ -752,6 +785,7 @@ class PROCESS_INFORMATION(ctypes.Structure):
   const entries = [...nativeRecords.entries()].map(([name, record]) => {
     const dll = dllFor(name);
     const feature = featureIndex.get(name)?.[0];
+    const metadata = variantMetadata[name] || {};
     return {
       name,
       category: categoryFor(name),
@@ -771,11 +805,19 @@ class PROCESS_INFORMATION(ctypes.Structure):
       cleanup: defaultCleanup(name),
       pywin32: pywin32Names[name] || "No direct pywin32 wrapper is used by this course; use the ctypes declaration when this operation is required.",
       sources: record.sources,
+      useWhen: metadata.useWhen || `Use ${name} when its documented native contract matches the operation.`,
+      availability: metadata.availability || "See the Microsoft Learn requirements for supported Windows versions.",
+      keyBehaviors: metadata.keyBehaviors || [],
     };
   }).sort((left, right) => left.category.localeCompare(right.category) || left.name.localeCompare(right.name));
+
+  const familyData = window.ILOVEOS_WINDOWS_API_FAMILY_DATA;
+  const families = familyData.buildFamilies(entries);
 
   window.ILOVEOS_WINDOWS_API_GUIDE = {
     typeMappings,
     entries,
+    families,
+    legacyApiNames: familyData.legacyApiNames,
   };
 })();

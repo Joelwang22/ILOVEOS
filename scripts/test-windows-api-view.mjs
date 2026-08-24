@@ -18,6 +18,7 @@ const indexHtml = fs.readFileSync(indexPath, "utf8");
 const appSource = fs.readFileSync(path.join(root, "app.js"), "utf8");
 const styles = fs.readFileSync(path.join(root, "styles.css"), "utf8");
 const dataVersion = indexHtml.match(/windows-api-data\.js\?v=([^"']+)/)?.[1];
+const familyVersion = indexHtml.match(/windows-api-families\.js\?v=([^"']+)/)?.[1];
 const viewVersion = indexHtml.match(/windows-api-view\.js\?v=([^"']+)/)?.[1];
 const appVersion = indexHtml.match(/app\.js\?v=([^"']+)/)?.[1];
 const styleVersion = indexHtml.match(/styles\.css\?v=([^"']+)/)?.[1];
@@ -30,6 +31,7 @@ for (const filename of [
   "api-signatures-stage3.js",
   "api-signatures-stage4.js",
   "api-signatures-stage6.js",
+  "windows-api-families.js",
   "windows-api-data.js",
   "reference-overview-view.js",
   "windows-api-view.js",
@@ -45,8 +47,10 @@ function requireCondition(condition, message) {
   if (!condition) errors.push(message);
 }
 
-requireCondition(Boolean(dataVersion && viewVersion && appVersion && styleVersion && overviewVersion), "Windows API guide assets are missing cache versions");
-requireCondition(dataVersion === viewVersion && viewVersion === appVersion && appVersion === styleVersion && styleVersion === overviewVersion, "Windows API guide data, overview, view, app, and stylesheet cache versions do not match");
+requireCondition(Boolean(dataVersion && familyVersion && viewVersion && appVersion && styleVersion && overviewVersion), "Windows API guide assets are missing cache versions");
+requireCondition(dataVersion === familyVersion && familyVersion === viewVersion && viewVersion === appVersion && appVersion === styleVersion && styleVersion === overviewVersion, "Windows API family data, guide data, overview, view, app, and stylesheet cache versions do not match");
+const tiedAssets = [...indexHtml.matchAll(/(?:href|src)="[^"]+\?v=([^"]+)"/g)];
+requireCondition(tiedAssets.length > 0 && tiedAssets.every((match) => match[1] === "windows-api-families-1"), "every tied asset must use the windows-api-families-1 release key");
 requireCondition(dataVersion !== "windows-api-guide", "Windows API guide still uses the stale first-release cache key");
 requireCondition(dataVersion !== "windows-api-guide-2", "Windows API redesign still uses the pre-redesign cache key");
 requireCondition(dataVersion !== "windows-api-guide-3", "Windows API category colors still use the pre-color cache key");
