@@ -207,12 +207,12 @@ try {
       }
     }
 
-    const caseStudyUrl = `${pathToFileURL(path.join(root, "index.html")).href}#/lesson/reading-winapi-docs`;
+    const caseStudyUrl = `${pathToFileURL(path.join(root, "index.html")).href}#/lesson/calling-winapi-python`;
     await client.send("Page.navigate", { url: caseStudyUrl });
     let caseStudyReady = false;
     for (let attempt = 0; attempt < 100; attempt += 1) {
       const probe = await client.send("Runtime.evaluate", {
-        expression: 'Boolean(document.querySelector("[data-practice-case-study]") && document.querySelector("[data-case-study-facts]") && document.querySelector("[data-case-study-reference]"))',
+        expression: 'Boolean(document.querySelector("[data-practice-case-study]") && document.querySelector("[data-case-study-facts]") && document.querySelector("[data-case-study-reference]") && document.querySelector("[data-practice-case-study] pre"))',
         returnByValue: true,
       });
       if (probe.result.value) {
@@ -250,7 +250,7 @@ try {
             sectionReferencesContained: references.length === 5
               && references.every((reference) => visible(reference))
               && containedBy(references, practiceRect),
-            codeRegionsContained: codeRegions.every((pre) => {
+            codeRegionsContained: codeRegions.length > 0 && codeRegions.every((pre) => {
               const preRect = pre.getBoundingClientRect();
               return within(preRect, caseStudyRect)
                 && pre.scrollWidth >= pre.clientWidth

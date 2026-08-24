@@ -150,6 +150,7 @@ for (const [field, practice] of [
   ["step why", { steps: [{ action: "Inspect the supplied value.", why: "Return to the same walkthrough.", observe: "The value is visible." }] }],
   ["step observe", { steps: [{ action: "Inspect the supplied value.", observe: "Return to the same walkthrough." }] }],
   ["step hint", { steps: [{ action: "Inspect the supplied value.", observe: "The value is visible.", hint: "Return to the same walkthrough." }] }],
+  ["step command label", { steps: [{ action: "Run the supplied command.", commands: [{ label: "Use the example elsewhere in this lesson.", code: "Write-Output 'ready'" }], observe: "The fixed word ready is visible." }] }],
   ["expected outcome", { expectedOutcome: "Return to the same walkthrough.", steps: [{ action: "Inspect the supplied value.", observe: "The value is visible." }] }],
   ["practice hint title", { hints: [{ title: "Return to the same walkthrough.", body: "Use the supplied value." }], steps: [{ action: "Inspect the supplied value.", observe: "The value is visible." }] }],
   ["practice hint body", { hints: [{ title: "Supplied value", body: "Return to the same walkthrough." }], steps: [{ action: "Inspect the supplied value.", observe: "The value is visible." }] }],

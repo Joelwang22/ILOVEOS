@@ -230,6 +230,7 @@ export function validatePractice(practice = {}, context = "practice", options = 
       const unsupported = Object.keys(command).filter((key) => key !== "label" && key !== "code");
       if (unsupported.length) errors.push(`${commandPrefix}: unsupported command field ${unsupported.join(", ")}`);
       if (typeof command.label !== "string" || !command.label.trim()) errors.push(`${commandPrefix}: label is required`);
+      if (crossLessonReferenceFinding(command.label)) clarityFinding(`${stepName}: command ${commandIndex + 1}: label: cross-lesson reference`);
       if (typeof command.code !== "string" || !command.code.trim()) errors.push(`${commandPrefix}: code is required`);
       if (typeof command.code === "string" && /<[^>]+>/.test(command.code)) errors.push(`${commandPrefix}: paste-hostile placeholder`);
       if (typeof command.code === "string") {
