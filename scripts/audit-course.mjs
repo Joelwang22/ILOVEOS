@@ -94,7 +94,12 @@ for (const lesson of lessons) {
   requireCondition((expanded.sources || []).length >= 1, `${prefix}: missing primary source`);
   if (expanded.practice) {
     investigationCount += 1;
-    const practiceResult = validatePractice(expanded.practice, prefix, { enforceClarity: true });
+    const practiceResult = validatePractice(expanded.practice, prefix, {
+      enforceClarity: true,
+      readDownloadSource(downloadPath) {
+        return fs.readFileSync(path.join(root, downloadPath), "utf8");
+      },
+    });
     errors.push(...practiceResult.errors);
     warnings.push(...practiceResult.warnings);
     commandCount += practiceResult.commandCount;

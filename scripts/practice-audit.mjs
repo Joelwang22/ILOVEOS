@@ -8,10 +8,51 @@ const terminalPattern = /\b(?:powershell|terminal|command prompt|cmd(?:\.exe)?|b
 const terminalInstructionPattern = /\b(?:run|paste|type|enter|execute|launch|start|invoke)\b/i;
 const codeInstructionPattern = /\b(?:run|paste|type|enter|execute|launch|start|invoke)\b.*\b(?:code|command|script)\b/i;
 const offPageTaskPattern = /\b(?:record|explain|classify|calculate|draw|research|reconstruct|document|summari[sz]e|produce)\b|\bdesign\s+(?:an?\s+|the\s+|your\s+)?(?:system|protocol|solution|policy|channel|workflow|experiment|table|report|record)\b|\bwrite\s+(?:an?\s+|the\s+|your\s+|one\s+)?(?:five-part\s+)?(?:explanation|conclusion|table|list|casebook|report|statement|timeline|comparison|verdict|distinction|prediction|summary)\b|\b(?:create|build|make)\s+(?:an?\s+)?(?:table|list|report|casebook|diagram|map|timeline|comparison)\b/i;
+const unsuppliedChoicePattern = /\bmap one harmless application preference\b|\bchoose\s+a\s+reversible\s+(?:per-user\s+)?preference\b|\bdisposable application profile\b/i;
+const unsuppliedEnvironmentPattern = /\bpre[- ]authori[sz]ed\b|\bdisposable\s+(?:VM|virtual machine)\b/i;
+const negativeInstructionPattern = /\b(?:do not|don't|never|without|avoid|no need to|must not|should not|is not required to)\b/i;
+const readHostPattern = /\bRead-Host\b([^\r\n;|}]*)/gi;
+const sourcedInputPattern = /\b(?:printed|reported|shown|displayed|recorded|captured|matched|selected|supplied|fixed)\b|\bfrom\s+(?:step\s+\d+|the\s+[\w.-]+|[\w.-]+)\b|\benter exactly\b/i;
+const pauseInputPattern = /\b(?:press Enter|close .+ then press Enter)\b/i;
 const dynamicCheckpointPattern = /\b(?:live|printed|recorded|current|actual|your|machine[- ]specific)\s+(?:pid|process id|address|base address|timing|elapsed time|path|inventory|module list)\b|\b(?:pid|process id|address|base address|timing|elapsed time|path|inventory|module list)\s+(?:did|does|was|were|is|are)\b|\b(?:pid|process id|address|base address|timing|elapsed time|path|inventory|module list)\b(?:\s+\w+){0,6}\s+(?:printed|shown|displayed|reported|observed|measured|recorded)\b/i;
 
 const shortCheckpointFields = new Set(["afterStep", "type", "prompt", "answer", "acceptedAnswers", "feedback"]);
 const choiceCheckpointFields = new Set(["afterStep", "type", "prompt", "options", "answerIndex", "feedback"]);
+
+function taskIsNegated(prefix) {
+  const contrastIndex = Math.max(...[...prefix.matchAll(/\b(?:but|however|then|instead)\b/gi)].map((match) => match.index));
+  const negativeIndex = Math.max(...[...prefix.matchAll(new RegExp(negativeInstructionPattern.source, "gi"))].map((match) => match.index));
+  return negativeIndex >= 0 && negativeIndex > contrastIndex;
+}
+
+function taskFinding(value) {
+  if (typeof value !== "string") return null;
+  for (const clause of value.split(/(?<=[.!?;])\s+|\n+/)) {
+    for (const taskMatch of clause.matchAll(new RegExp(offPageTaskPattern.source, "gi"))) {
+      const beforeTask = clause.slice(0, taskMatch.index);
+      if (!taskIsNegated(beforeTask)) return "off-page task verb";
+    }
+    for (const choiceMatch of clause.matchAll(new RegExp(unsuppliedChoicePattern.source, "gi"))) {
+      const beforeChoice = clause.slice(0, choiceMatch.index);
+      if (!taskIsNegated(beforeChoice)) return "unsupplied external choice";
+    }
+    for (const environmentMatch of clause.matchAll(new RegExp(unsuppliedEnvironmentPattern.source, "gi"))) {
+      const beforeEnvironment = clause.slice(0, environmentMatch.index);
+      if (!taskIsNegated(beforeEnvironment)) return "unsupplied external environment";
+    }
+  }
+  return null;
+}
+
+function runtimePromptFindings(source) {
+  const findings = [];
+  const inputPattern = /\binput\s*\(\s*(?:[rubf]{0,2})?(['"])([\s\S]*?)\1\s*\)/gi;
+  for (const match of source.matchAll(inputPattern)) {
+    const finding = taskFinding(match[2]);
+    if (finding) findings.push(finding);
+  }
+  return findings;
+}
 
 export function practiceDownloads(practice = {}) {
   const authored = practice.downloads || (practice.download ? [practice.download] : []);
@@ -40,6 +81,9 @@ export function validatePractice(practice = {}, context = "practice", options = 
   if (practice.extension !== undefined) clarityFinding("extension fields are not allowed");
 
   const taskFields = [
+    ["title", practice.title],
+    ["intro", practice.intro],
+    ["safety", practice.safety],
     ["expected outcome", practice.expectedOutcome],
     ...(Array.isArray(practice.hints)
       ? practice.hints.flatMap((hint, index) => [
@@ -52,7 +96,8 @@ export function validatePractice(practice = {}, context = "practice", options = 
       : []),
   ];
   for (const [field, value] of taskFields) {
-    if (typeof value === "string" && offPageTaskPattern.test(value)) clarityFinding(`${field}: off-page task verb`);
+    const finding = taskFinding(value);
+    if (finding) clarityFinding(`${field}: ${finding}`);
   }
 
   if (!Array.isArray(steps)) {
@@ -71,7 +116,8 @@ export function validatePractice(practice = {}, context = "practice", options = 
     if (typeof step.observe !== "string" || !step.observe.trim()) errors.push(`${prefix}: observe is required`);
 
     for (const [field, value] of [["action", step.action], ["observe", step.observe], ["hint", step.hint]]) {
-      if (typeof value === "string" && offPageTaskPattern.test(value)) clarityFinding(`${stepName}: ${field}: off-page task verb`);
+      const finding = taskFinding(value);
+      if (finding) clarityFinding(`${stepName}: ${field}: ${finding}`);
     }
 
     const stepText = [step.action, step.why, step.observe, step.hint].filter((item) => typeof item === "string").join(" ");
@@ -97,6 +143,15 @@ export function validatePractice(practice = {}, context = "practice", options = 
       if (typeof command.label !== "string" || !command.label.trim()) errors.push(`${commandPrefix}: label is required`);
       if (typeof command.code !== "string" || !command.code.trim()) errors.push(`${commandPrefix}: code is required`);
       if (typeof command.code === "string" && /<[^>]+>/.test(command.code)) errors.push(`${commandPrefix}: paste-hostile placeholder`);
+      if (typeof command.code === "string") {
+        for (const match of command.code.matchAll(readHostPattern)) {
+          const promptMatch = match[1].match(/(?:-Prompt\s+)?(['"])(.*?)\1/i);
+          const prompt = promptMatch?.[2] || "";
+          if (!sourcedInputPattern.test(prompt) && !pauseInputPattern.test(prompt)) {
+            clarityFinding(`${stepName}: command ${commandIndex + 1}: interactive input needs explicit provenance`);
+          }
+        }
+      }
     }
   }
 
@@ -161,6 +216,19 @@ export function validatePractice(practice = {}, context = "practice", options = 
   for (const download of downloads.filter((item) => item.filename?.endsWith(".py"))) {
     const named = steps.some((step) => typeof step?.action === "string" && step.action.includes(download.filename));
     if (!named) clarityFinding(`downloaded artifact ${download.filename} is not explicitly named in a step`);
+    if (typeof options.readDownloadSource === "function") {
+      let source;
+      try {
+        source = options.readDownloadSource(download.path);
+      } catch (error) {
+        errors.push(`${context}: downloaded artifact ${download.filename}: source read failed (${error.message})`);
+      }
+      if (typeof source === "string") {
+        for (const finding of runtimePromptFindings(source)) {
+          clarityFinding(`downloaded artifact ${download.filename}: runtime prompt: ${finding}`);
+        }
+      }
+    }
   }
 
   return { errors, warnings, downloadPaths: downloads.map((item) => item.path), commandCount, checkpointCount, choiceCheckpointCount };

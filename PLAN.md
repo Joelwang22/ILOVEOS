@@ -705,7 +705,7 @@ Final audit record:
 Guided-investigation clarity audit, 24 August 2026:
 
 - All 62 guided investigations pass the closed-loop clarity gate with zero errors and zero warnings, zero extension assignments, zero off-page deliverables, and no dynamic checkpoint answers.
-- The measured course contains 149 copyable practice command blocks, 11 sparse checkpoints, 2 choice checkpoints, and 55 checked download references.
+- The measured course contains 147 copyable practice command blocks, 11 sparse checkpoints, 2 choice checkpoints, and 55 checked download references.
 - Every practice stays within two checkpoints and one choice checkpoint. Checkpoints are used only for invariant supplied-artifact evidence or a fixed distinction the webpage can grade.
 - Every Modules 1-5 investigation received a step-by-step content and artifact-contract review. Process Explorer module-base evidence uses `View > Show Lower Pane`, `View > Lower Pane View > DLLs`, lower-pane `Select Columns > DLL > Base Address`, and an exact module path row; thread-start evidence uses the selected TID in `Properties > Threads`.
 - True Chromium device emulation at desktop, compact, Edge-minimum, and 390-pixel widths, with small, default, and large content sizes, found no document or practice overflow. Commands, 40-pixel copy targets, checkpoint controls, and feedback remain visible and contained.

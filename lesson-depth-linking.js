@@ -226,7 +226,7 @@ window.ILOVEOS_LESSON_DEPTH = {
     phases: {
       learn: ["Walk the PE header chain", "Read MZ, e_lfanew, PE signature, COFF fields, optional fields, directories, and sections."],
       windows: ["Parse without trusting the file", "Apply architecture-aware sizes, bounds checks, and unusual directory rules."],
-      investigation: ["Validate a known PE", "Compare a safe parser with a visual PE tool and Sigcheck."],
+      investigation: ["Validate a known PE", "Compare a safe parser with CFF Explorer and Sigcheck."],
       review: ["Check the structure", "Test header location, PE32 differences, data directories, bounds, and architecture."]
     },
     learning: [

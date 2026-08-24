@@ -55,6 +55,25 @@ assert.deepEqual(valid.warnings, []);
 assert.equal(valid.checkpointCount, 2);
 assert.equal(valid.choiceCheckpointCount, 1);
 
+const negativeSafety = validatePractice({
+  title: "Inspect one fixed artifact",
+  intro: "Use the supplied artifact and visible output.",
+  safety: "Do not write a report, record dynamic values, or use an unrelated target.",
+  steps: [{ action: "Open the supplied page.", observe: "The fixed label is visible." }],
+}, "negative safety", { enforceClarity: true });
+assert.deepEqual(negativeSafety.errors, [], "negative safety wording must not become a learner task");
+
+const sourcedInteractiveInput = validatePractice({
+  title: "Transfer one supplied identity",
+  intro: "Use the PID printed by actor.py.",
+  steps: [{
+    action: "Enter the PID that actor.py printed in step 1.",
+    commands: [{ label: "PowerShell", code: "$targetPid = [int](Read-Host 'Enter the printed PID from actor.py')\nGet-Process -Id $targetPid" }],
+    observe: "The exact supplied process identity is visible.",
+  }],
+}, "sourced input", { enforceClarity: true });
+assert.deepEqual(sourcedInteractiveInput.errors, [], "reordered sourced Read-Host input must remain valid");
+
 const contextualWarning = validatePractice({
   steps: [{ action: "Run one.py from PowerShell.", observe: "The output is visible." }],
 }, "context", { enforceClarity: false });
@@ -97,6 +116,15 @@ for (const [name, practice, expectedText] of [
   ["reordered printed path prompt", { steps: [{ action: "Open the supplied page.", observe: "The tool prints a path." }], checkpoints: [{ afterStep: 1, type: "short", prompt: "Which path did the tool print?", answer: "C:\\temp", feedback: "The path varies." }] }, "checkpoint must not request a dynamic answer"],
   ["reordered reported inventory prompt", { steps: [{ action: "Open the supplied page.", observe: "The program reports inventory." }], checkpoints: [{ afterStep: 1, type: "short", prompt: "List the inventory reported by the program.", answer: "module.dll", feedback: "The inventory varies." }] }, "checkpoint must not request a dynamic answer"],
   ["dynamic checkpoint answer", { steps: [{ action: "Open the supplied page.", observe: "The page shows a fixed label." }], checkpoints: [{ afterStep: 1, type: "short", prompt: "Complete the supplied label.", answer: "current PID", feedback: "The answer must be invariant." }] }, "checkpoint must not request a dynamic answer"],
+  ["stale preference title", { title: "Map one harmless application preference", steps: [{ action: "Open the supplied page.", observe: "The page shows a fixed label." }] }, "unsupplied external choice"],
+  ["stale preference intro", { intro: "Choose a reversible per-user preference in a disposable application profile.", steps: [{ action: "Open the supplied page.", observe: "The page shows a fixed label." }] }, "unsupplied external choice"],
+  ["contradictory safety task", { intro: "Inspect only the supplied fixed value.", safety: "Write a report before continuing.", steps: [{ action: "Open the supplied page.", observe: "The page shows a fixed label." }] }, "safety: off-page task verb"],
+  ["contrasting negative safety task", { safety: "Do not change the supplied value, but write a report before continuing.", steps: [{ action: "Open the supplied page.", observe: "The page shows a fixed label." }] }, "safety: off-page task verb"],
+  ["contrasting task after negated task", { safety: "Do not write a report, but record a timeline before continuing.", steps: [{ action: "Open the supplied page.", observe: "The page shows a fixed label." }] }, "safety: off-page task verb"],
+  ["unsupplied VM service", { safety: "Use only a pre-authorised lab service in a disposable VM.", steps: [{ action: "Open the supplied page.", observe: "The page shows a fixed label." }] }, "unsupplied external environment"],
+  ["unsupplied token launch", { intro: "Use a disposable VM for this launch.", steps: [{ action: "Choose a process and launch a token-created child.", commands: [{ label: "PowerShell", code: "$pid = Read-Host 'Enter any PID'\npy .\\token_launch_lab.py $pid --launch" }], observe: "The child appears." }] }, "unsupplied external environment"],
+  ["unsourced interactive input", { steps: [{ action: "Query a service selected by the learner.", commands: [{ label: "PowerShell", code: "$serviceName = Read-Host 'Enter a service name'\nsc.exe query $serviceName" }], observe: "The current state is visible." }] }, "interactive input needs explicit provenance"],
+  ["unsourced named prompt input", { steps: [{ action: "Query a service selected by the learner.", commands: [{ label: "PowerShell", code: "$serviceName = Read-Host -Prompt 'Enter a service name'\nsc.exe query $serviceName" }], observe: "The current state is visible." }] }, "interactive input needs explicit provenance"],
 ]) {
   const result = validatePractice(practice, name, { enforceClarity: true });
   assert.ok([...result.errors, ...result.warnings].some((message) => message.includes(expectedText)), name);
@@ -114,17 +142,17 @@ const lessons = Array.from(context.window.ILOVEOS_LESSONS, (lesson) => ({
 }));
 const firstBatch = new Set(["foundations", "processes-handles", "threads-scheduling", "memory", "linking-loading"]);
 const secondBatch = new Set(["management", "security", "synchronisation", "ipc", "hooking-injection"]);
-const firstBatchDownloadPaths = [...new Set(lessons
-  .filter((lesson) => firstBatch.has(lesson.module))
-  .flatMap((lesson) => practiceDownloads(lesson.practice).map((download) => download.path)))];
-const offPageRuntimePromptPattern = /input\([^)]*(?:\b(?:record|explain|classify|calculate|draw|design|research|reconstruct|document|summari[sz]e|produce)\b|\bwrite\s+(?:an?|the|your|one)\b)/is;
-for (const downloadPath of firstBatchDownloadPaths) {
-  const source = fs.readFileSync(path.join(root, downloadPath), "utf8");
-  assert.doesNotMatch(source, offPageRuntimePromptPattern, `${downloadPath}: runtime prompt must stay inside the closed-loop showcase`);
-}
+const allDownloadPaths = [...new Set(lessons.flatMap((lesson) => practiceDownloads(lesson.practice).map((download) => download.path)))];
+const runtimeScannedPaths = [];
 const strictResults = lessons.map((lesson) => ({
   lesson,
-  result: validatePractice(lesson.practice, lesson.id, { enforceClarity: true }),
+  result: validatePractice(lesson.practice, lesson.id, {
+    enforceClarity: true,
+    readDownloadSource(downloadPath) {
+      runtimeScannedPaths.push(downloadPath);
+      return fs.readFileSync(path.join(root, downloadPath), "utf8");
+    },
+  }),
 }));
 const strictErrors = strictResults.flatMap(({ result }) => result.errors);
 const strictWarnings = strictResults.flatMap(({ result }) => result.warnings);
@@ -145,6 +173,7 @@ assert.deepEqual(strictWarnings, [], strictWarnings.join("\n"));
 assert.equal(extensionCount, 0, `expected zero extensions, found ${extensionCount}`);
 assert.equal(predictionPromptCount, 0, `expected zero first-batch prediction prompts, found ${predictionPromptCount}`);
 assert.equal(fieldCollectionCount, 0, `expected zero first-batch field worksheets, found ${fieldCollectionCount}`);
+assert.deepEqual([...new Set(runtimeScannedPaths)].sort(), allDownloadPaths.filter((downloadPath) => downloadPath.endsWith(".py")).sort(), "every authored Python download across Modules 1-10 must have runtime prompts scanned");
 assert.deepEqual(offPageTaskFindings, [], offPageTaskFindings.join("\n"));
 assert.deepEqual(dynamicCheckpointFindings, [], dynamicCheckpointFindings.join("\n"));
 for (const { lesson, result } of strictResults) {
@@ -158,6 +187,37 @@ const reviewFindings = [];
 const requireReview = (condition, message) => {
   if (!condition) reviewFindings.push(message);
 };
+
+const serviceControlPracticeText = JSON.stringify(lessonById.get("control-services-python").practice);
+for (const forbiddenText of ["Read-Host", "disposable VM", "pre-authorised", "--confirm"]) {
+  requireReview(!serviceControlPracticeText.includes(forbiddenText), `service-control required showcase must not contain ${forbiddenText}`);
+}
+requireReview(serviceControlPracticeText.includes("EventLog"), "service-control required showcase must use the fixed EventLog service");
+requireReview(/query-only|read-only/i.test(serviceControlPracticeText), "service-control required showcase must be explicitly non-mutating");
+
+const tokenLaunchPracticeText = JSON.stringify(lessonById.get("privileges-impersonation").practice);
+for (const forbiddenText of ["Read-Host", "disposable VM", "--launch", "VM only"]) {
+  requireReview(!tokenLaunchPracticeText.includes(forbiddenText), `token-launch required showcase must not contain ${forbiddenText}`);
+}
+requireReview(tokenLaunchPracticeText.includes("Dry run complete"), "token-launch required showcase must retain fixed dry-run evidence");
+
+const registryPracticeText = JSON.stringify(lessonById.get("registry-structure").practice);
+for (const forbiddenText of ["application preference", "Choose a reversible", "application's own UI"]) {
+  requireReview(!registryPracticeText.includes(forbiddenText), `Registry practice must not retain stale framing: ${forbiddenText}`);
+}
+requireReview(registryPracticeText.includes("HKCU\\\\Software\\\\ILOVEOSLab\\\\Structure\\\\DemoMode"), "Registry practice must name the fixed disposable value");
+
+requireReview(!/state exactly/i.test(lessonById.get("svchost-background").practice.intro), "svchost practice intro must remain a visible observation");
+requireReview(lessonById.get("pe-anatomy").phases.investigation[1].includes("CFF Explorer"), "PE anatomy phase must name CFF Explorer");
+
+const runtimePromptFixture = validatePractice({
+  download: ["downloads/off_page.py", "off_page.py"],
+  steps: [{ action: "Run off_page.py.", commands: [{ label: "PowerShell", code: "py .\\off_page.py" }], observe: "The supplied program pauses." }],
+}, "runtime prompt fixture", {
+  enforceClarity: true,
+  readDownloadSource: () => 'input("Write a report before continuing...")',
+});
+requireReview(runtimePromptFixture.errors.some((message) => message.includes("runtime prompt") && message.includes("off-page task verb")), "all-download runtime prompt scan must reject an off-page input prompt");
 
 const securityModelPractice = lessonById.get("security-model").practice;
 const securityModelText = JSON.stringify(securityModelPractice);
