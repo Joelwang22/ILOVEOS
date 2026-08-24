@@ -104,6 +104,11 @@ for (const [name, canonicalSource] of [
   assert.ok(variant?.sources.includes(canonicalSource), `${name} callable contract must use its canonical Learn page`);
   assert.ok(auditRow?.includes(`](${canonicalSource})`), `${name} source-audit row must use its canonical Learn page`);
 }
+assert.deepEqual(
+  window.ILOVEOS_API_SIGNATURES["ctypes / ctypes.wintypes::CreateFileMappingW"]?.sources,
+  ["https://learn.microsoft.com/en-us/windows/win32/api/memoryapi/nf-memoryapi-createfilemappingw"],
+  "CreateFileMappingW reference popup must use the canonical memoryapi Learn page",
+);
 
 // Completeness gate: deleting one editorial decision, pointing it at an
 // unrelated family, or adding an incomplete sibling must fail before release.
@@ -273,15 +278,16 @@ for (const [surface, key, expectedId] of requiredAuditBindings) {
 // Output values are interpreted after a successful call. Rendering them as
 // selectable inputs teaches the opposite data flow and invites a bogus choice.
 const pureOutputChoiceErrors = [];
-for (const [variantName, parameterName, expectedDirection, returnedConstant] of [
-  ["IsWow64Process2", "pProcessMachine", "out", "IMAGE_FILE_MACHINE_UNKNOWN"],
-  ["IsWow64Process2", "pNativeMachine", "out, optional", "IMAGE_FILE_MACHINE_*"],
-  ["GetExitCodeProcess", "lpExitCode", "out", "STILL_ACTIVE"],
+for (const [variantName, parameterName, expectedDirection, returnedConstant, referenceBindingKey] of [
+  ["IsWow64Process2", "pProcessMachine", "out", "IMAGE_FILE_MACHINE_UNKNOWN", "ctypes / ctypes.wintypes::IsWow64Process2#0.pProcessMachine"],
+  ["IsWow64Process2", "pNativeMachine", "out, optional", "IMAGE_FILE_MACHINE_*", "ctypes / ctypes.wintypes::IsWow64Process2#0.pNativeMachine"],
+  ["GetExitCodeProcess", "lpExitCode", "out", "STILL_ACTIVE", ""],
 ]) {
   const bindingKey = `${variantName}.${parameterName}`;
   const variant = liveVariants.find((item) => item.name === variantName);
   const parameter = variant?.parameters.find((item) => item.name === parameterName);
   if (familyData.resolveParameterChoices(bindingKey, "native")) pureOutputChoiceErrors.push(`${bindingKey} resolves input choices`);
+  if (referenceBindingKey && familyData.resolveParameterChoices(referenceBindingKey, "pywin32")) pureOutputChoiceErrors.push(`${bindingKey} resolves Python/reference input choices`);
   if (parameter?.choiceBinding) pureOutputChoiceErrors.push(`${bindingKey} renders input choices`);
   if (parameter?.direction !== expectedDirection) pureOutputChoiceErrors.push(`${bindingKey} direction is ${parameter?.direction || "missing"}`);
   const outcomeText = `${variant?.result || ""} ${(variant?.keyBehaviors || []).join(" ")}`;

@@ -57,7 +57,7 @@ Object.assign(window.ILOVEOS_API_SIGNATURES, {
       { name: "dwMaximumSizeLow", type: "wintypes.DWORD", optional: false, description: "Low 32 bits of maximum mapping size." },
       { name: "lpName", type: "wintypes.LPCWSTR | None", optional: false, description: "Optional object name used for cross-process lookup." }
     ], returns: "wintypes.HANDLE | None" }],
-    sources: ["https://learn.microsoft.com/windows/win32/api/winbase/nf-winbase-createfilemappingw"]
+    sources: ["https://learn.microsoft.com/en-us/windows/win32/api/memoryapi/nf-memoryapi-createfilemappingw"]
   },
   "ctypes / ctypes.wintypes::OpenFileMappingW": {
     kind: "function",

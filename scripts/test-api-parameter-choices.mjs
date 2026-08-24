@@ -81,6 +81,9 @@ const expectOnly = (html, present, absent, label) => {
 expectOnly(renderNative("OpenProcessToken"), ["TOKEN_QUERY", "TOKEN_DUPLICATE", "TOKEN_ADJUST_PRIVILEGES"], ["SecurityAnonymous", "TokenPrimary"], "native OpenProcessToken");
 expectOnly(renderNative("DuplicateToken"), ["SecurityAnonymous", "SecurityIdentification", "SecurityImpersonation", "SecurityDelegation"], ["TOKEN_QUERY", "TokenPrimary"], "native DuplicateToken");
 assert.ok(!renderNative("CloseHandle").includes("api-parameter-choices"), "CloseHandle must not render a contextual-choice section");
+const nativeWow64Markup = renderNative("IsWow64Process2");
+assert.ok(!nativeWow64Markup.includes("data-copy-api-value"), "native IsWow64Process2 output pointers must not render Copy controls");
+assert.ok(nativeWow64Markup.includes("IMAGE_FILE_MACHINE_UNKNOWN") && nativeWow64Markup.includes("IMAGE_FILE_MACHINE_*"), "native IsWow64Process2 outcome must explain returned machine constants");
 
 const browserCandidates = [
   "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
@@ -141,6 +144,12 @@ const probe = `<script>
       checks.pywin32DuplicateTokenExOnlyBoundValues = hasOnly(choiceSection(duplicateRows.find((row) => row.firstElementChild?.textContent.trim() === "ImpersonationLevel")), ["win32security.SecurityAnonymous", "win32security.SecurityDelegation"], ["win32security.TokenPrimary", "win32security.TOKEN_QUERY"])
         && hasOnly(choiceSection(duplicateRows.find((row) => row.firstElementChild?.textContent.trim() === "TokenType")), ["win32security.TokenPrimary", "win32security.TokenImpersonation"], ["win32security.SecurityAnonymous", "win32security.TOKEN_QUERY"])
         && hasOnly(choiceSection(duplicateRows.find((row) => row.firstElementChild?.textContent.trim() === "DesiredAccess")), ["win32security.TOKEN_QUERY", "win32security.TOKEN_DUPLICATE"], ["win32security.SecurityAnonymous", "win32security.TokenPrimary"]);
+
+      await changeRoute("#/reference/pywin32?api=IsWow64Process2");
+      const wow64OutputRows = ["pProcessMachine", "pNativeMachine"].map(parameterRow);
+      checks.referenceWow64OutputPointersHaveNoCopyControls = wow64OutputRows.every((row) => Boolean(row)
+        && !choiceSection(row)
+        && !row.querySelector("[data-copy-api-value]"));
 
       await changeRoute("#/reference/pywin32?q=win32con.GENERIC_READ");
       checks.pywin32ChoiceConstantIsSearchable = [...document.querySelectorAll("[data-api-feature]")]

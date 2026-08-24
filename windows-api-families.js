@@ -540,17 +540,6 @@
         SYNCHRONIZE: { native: "SYNCHRONIZE", pywin32: "win32con.SYNCHRONIZE", useWhen: "Wait to acquire the mutex." },
       },
     },
-    "machine-type": {
-      kind: "enum",
-      source: "https://learn.microsoft.com/en-us/windows/win32/api/wow64apiset/nf-wow64apiset-iswow64process2",
-      values: {
-        IMAGE_FILE_MACHINE_UNKNOWN: { native: "IMAGE_FILE_MACHINE_UNKNOWN", pywin32: "win32con.IMAGE_FILE_MACHINE_UNKNOWN", useWhen: "Interpret pProcessMachine as native to the host rather than WOW64." },
-        IMAGE_FILE_MACHINE_I386: { native: "IMAGE_FILE_MACHINE_I386", pywin32: "0x014c", useWhen: "Identify an x86 process or native machine." },
-        IMAGE_FILE_MACHINE_AMD64: { native: "IMAGE_FILE_MACHINE_AMD64", pywin32: "0x8664", useWhen: "Identify an x64 process or native machine." },
-        IMAGE_FILE_MACHINE_ARM64: { native: "IMAGE_FILE_MACHINE_ARM64", pywin32: "0xAA64", useWhen: "Identify an ARM64 process or native machine." },
-        IMAGE_FILE_MACHINE_ARM64EC: { native: "IMAGE_FILE_MACHINE_ARM64EC", pywin32: "0xA641", useWhen: "Identify an ARM64EC-compatible process image where supported." },
-      },
-    },
     "module-filter": {
       kind: "enum",
       source: "https://learn.microsoft.com/en-us/windows/win32/api/psapi/nf-psapi-enumprocessmodulesex",
@@ -1412,8 +1401,6 @@
     "ctypes / ctypes.wintypes::OpenServiceW#0.dwDesiredAccess": { choiceSet: "service-access" },
     "ctypes / ctypes.wintypes::ControlService#0.dwControl": { choiceSet: "service-control" },
     "ctypes / ctypes.wintypes::QueryServiceStatusEx#0.InfoLevel": { choiceSet: "service-status-info-level" },
-    "ctypes / ctypes.wintypes::IsWow64Process2#0.pProcessMachine": { choiceSet: "machine-type" },
-    "ctypes / ctypes.wintypes::IsWow64Process2#0.pNativeMachine": { choiceSet: "machine-type", choices: ["IMAGE_FILE_MACHINE_I386", "IMAGE_FILE_MACHINE_AMD64", "IMAGE_FILE_MACHINE_ARM64", "IMAGE_FILE_MACHINE_ARM64EC"] },
     "ctypes / ctypes.wintypes::RegOpenKeyExW#0.ulOptions": { choiceSet: "registry-open-options" },
     "ctypes / ctypes.wintypes::RegOpenKeyExW#0.samDesired": { choiceSet: "registry-access" },
     "ctypes / ctypes.wintypes::SetWindowsHookExW#0.idHook": { choiceSet: "hook-id" },
