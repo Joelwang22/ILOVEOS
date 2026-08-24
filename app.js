@@ -22,6 +22,7 @@
   const searchResults = document.querySelector("#search-results");
   const apiDialog = document.querySelector("#api-detail-dialog");
   const apiDetailContent = document.querySelector("#api-detail-content");
+  let openWindowsApiFamilyId = "";
   const settingsTrigger = document.querySelector("#settings-trigger");
   const settingsPanel = document.querySelector("#settings-panel");
   const settingsClose = document.querySelector("#settings-close");
@@ -202,7 +203,8 @@ handle = <span class="code-function">win32process.GetCurrentProcess</span>()
     const apiLower = api.toLowerCase();
     const featureLower = featureName.toLowerCase();
     const preferredModule = api.startsWith("ctypes.") ? "ctypes / ctypes.wintypes" : api.split(".")[0];
-    const nativeEntry = windowsApiGuide.entries.find((entry) => entry.name.toLowerCase() === featureLower);
+    const nativeEntry = windowsApiGuide.families.flatMap((family) => family.variants)
+      .find((entry) => entry.name.toLowerCase() === featureLower);
     if (nativeEntry && !api.includes(".")) {
       return `<a class="lesson-api-chip linked" href="#/reference/windows-api?q=${encodeURIComponent(nativeEntry.name)}"><code>${escapeHtml(api)}</code><span>Open guide</span></a>`;
     }
@@ -1005,12 +1007,15 @@ user = <span class="code-function">win32api.GetUserName</span>()
   function renderWindowsApiGuide(filter = "") {
     main.innerHTML = windowsApiView.render(windowsApiGuide, filter);
     document.querySelector("#windows-api-filter").addEventListener("input", (event) => {
-      const matches = windowsApiView.filterEntries(windowsApiGuide.entries, event.target.value);
+      const matches = windowsApiView.filterFamilies(windowsApiGuide.families, event.target.value);
       document.querySelector("#windows-api-results").innerHTML = windowsApiView.renderEntries(matches, Boolean(event.target.value.trim()));
-      document.querySelector("#windows-api-count").textContent = `${matches.length} APIs`;
+      document.querySelector("#windows-api-count").textContent = `${matches.length} ${matches.length === 1 ? "Family" : "Families"}`;
     });
-    const exact = windowsApiView.filterEntries(windowsApiGuide.entries, filter).find((entry) => entry.name.toLowerCase() === filter.trim().toLowerCase());
-    if (exact) window.setTimeout(() => openWindowsApiDetails(exact.name), 0);
+    const normalized = filter.trim().toLowerCase();
+    const exact = windowsApiView.filterFamilies(windowsApiGuide.families, filter).find(({ family, selectedVariant }) => (
+      selectedVariant.toLowerCase() === normalized || family.aliases.some((alias) => alias.name.toLowerCase() === normalized)
+    ));
+    if (exact) window.setTimeout(() => openWindowsApiDetails(exact.family.id, exact.selectedVariant), 0);
   }
 
   function manualList(items) {
@@ -1269,10 +1274,10 @@ except pywintypes.error as error:
       </details>`;
   }
 
-  function showApiDialog() {
+  function showApiDialog(resetScroll = true) {
     apiDetailContent.querySelector(".api-dialog-close").addEventListener("click", () => apiDialog.close());
-    apiDialog.showModal();
-    apiDialog.scrollTop = 0;
+    if (!apiDialog.open) apiDialog.showModal();
+    if (resetScroll) apiDialog.scrollTop = 0;
   }
 
   function openApiDetails(moduleName, featureName) {
@@ -1307,11 +1312,19 @@ except pywintypes.error as error:
     showApiDialog();
   }
 
-  function openWindowsApiDetails(name) {
-    const entry = windowsApiGuide.entries.find((item) => item.name === name);
-    if (!entry) return;
-    apiDetailContent.innerHTML = windowsApiView.renderDialog(entry);
-    showApiDialog();
+  function renderWindowsApiDetails(family, variantName, preserveScroll = false) {
+    const scrollTop = apiDialog.scrollTop;
+    apiDetailContent.innerHTML = windowsApiView.renderDialog(family, variantName);
+    showApiDialog(!preserveScroll);
+    if (preserveScroll) apiDialog.scrollTop = scrollTop;
+    apiDetailContent.querySelector(`[data-api-variant="${CSS.escape(variantName)}"]`)?.focus();
+  }
+
+  function openWindowsApiDetails(familyId, variantName) {
+    const family = windowsApiGuide.families.find((item) => item.id === familyId);
+    if (!family) return;
+    openWindowsApiFamilyId = familyId;
+    renderWindowsApiDetails(family, window.ILOVEOS_WINDOWS_API_FAMILY_DATA.resolveSelection(family, variantName));
   }
 
   function openReferenceOverview(kind) {
@@ -1424,13 +1437,13 @@ except pywintypes.error as error:
         kind: "pywin32 API",
         href: `#/reference/pywin32?q=${encodeURIComponent(feature.name)}&api=${encodeURIComponent(feature.name)}`
       }))),
-      ...windowsApiGuide.entries.map((entry) => ({
+      ...windowsApiGuide.families.flatMap((family) => family.variants.map((entry) => ({
         title: entry.name,
-        detail: `${entry.category} · ${entry.dll} · ${entry.summary}`,
-        searchText: `${entry.nativeSignature} ${entry.python} ${entry.parameters.map((parameter) => `${parameter.name} ${parameter.native} ${parameter.python} ${parameter.explanation}`).join(" ")}`,
+        detail: `${family.name} · ${entry.category} · ${entry.dll} · ${entry.summary}`,
+        searchText: `${family.aliases.map((alias) => `${alias.name} ${alias.note}`).join(" ")} ${entry.nativeSignature} ${entry.python} ${entry.parameters.map((parameter) => `${parameter.name} ${parameter.native} ${parameter.python} ${parameter.explanation}`).join(" ")}`,
         kind: "Windows API",
         href: `#/reference/windows-api?q=${encodeURIComponent(entry.name)}`
-      })),
+      }))),
       ...referenceData.sysinternalsTools.map((item) => ({ title: item.name, detail: `${item.short} · ${item.description}`, kind: "Tool", href: `#/toolbox?q=${encodeURIComponent(item.name)}` })),
       ...referenceData.sysinternalsTools.flatMap((tool) => tool.capabilities.map(([name, detail]) => ({
         title: name,
@@ -1482,11 +1495,30 @@ except pywintypes.error as error:
     }
     const trigger = event.target.closest(".api-detail-trigger");
     if (!trigger) return;
-    if (trigger.dataset.windowsApi) openWindowsApiDetails(trigger.dataset.windowsApi);
+    if (trigger.dataset.windowsApiFamily) openWindowsApiDetails(trigger.dataset.windowsApiFamily, trigger.dataset.windowsApiVariant);
     else openApiDetails(trigger.dataset.apiModule, trigger.dataset.apiFeature);
   });
   apiDialog.addEventListener("click", (event) => {
     if (event.target === apiDialog) apiDialog.close();
+    const variant = event.target.closest("[data-api-variant]");
+    if (!variant) return;
+    const family = windowsApiGuide.families.find((item) => item.id === openWindowsApiFamilyId);
+    if (family) renderWindowsApiDetails(family, variant.dataset.apiVariant, true);
+  });
+  apiDialog.addEventListener("keydown", (event) => {
+    const currentTab = event.target.closest("[data-api-variant]");
+    if (!currentTab || !currentTab.closest('[role="tablist"]')) return;
+    const tabs = [...currentTab.closest('[role="tablist"]').querySelectorAll("[data-api-variant]")];
+    const currentIndex = tabs.indexOf(currentTab);
+    const keys = { ArrowRight: 1, ArrowLeft: -1 };
+    let nextIndex;
+    if (event.key === "Home") nextIndex = 0;
+    else if (event.key === "End") nextIndex = tabs.length - 1;
+    else if (event.key in keys) nextIndex = (currentIndex + keys[event.key] + tabs.length) % tabs.length;
+    else return;
+    event.preventDefault();
+    const family = windowsApiGuide.families.find((item) => item.id === openWindowsApiFamilyId);
+    if (family) renderWindowsApiDetails(family, tabs[nextIndex].dataset.apiVariant, true);
   });
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape" && !settingsPanel.hidden) {

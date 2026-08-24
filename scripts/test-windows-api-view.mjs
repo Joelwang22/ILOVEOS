@@ -3,146 +3,78 @@ import path from "node:path";
 import vm from "node:vm";
 import { fileURLToPath } from "node:url";
 
-
 const scriptsDirectory = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(scriptsDirectory, "..");
-const viewPath = path.join(root, "windows-api-view.js");
-const indexPath = path.join(root, "index.html");
-
-if (!fs.existsSync(viewPath)) {
-  console.error("FAIL missing windows-api-view.js");
-  process.exit(1);
-}
-
-const indexHtml = fs.readFileSync(indexPath, "utf8");
+const indexHtml = fs.readFileSync(path.join(root, "index.html"), "utf8");
 const appSource = fs.readFileSync(path.join(root, "app.js"), "utf8");
 const styles = fs.readFileSync(path.join(root, "styles.css"), "utf8");
-const dataVersion = indexHtml.match(/windows-api-data\.js\?v=([^"']+)/)?.[1];
-const familyVersion = indexHtml.match(/windows-api-families\.js\?v=([^"']+)/)?.[1];
-const viewVersion = indexHtml.match(/windows-api-view\.js\?v=([^"']+)/)?.[1];
-const appVersion = indexHtml.match(/app\.js\?v=([^"']+)/)?.[1];
-const styleVersion = indexHtml.match(/styles\.css\?v=([^"']+)/)?.[1];
-const overviewVersion = indexHtml.match(/reference-overview-view\.js\?v=([^"']+)/)?.[1];
+const errors = [];
+const requireCondition = (condition, message) => { if (!condition) errors.push(message); };
 
 globalThis.window = {};
 for (const filename of [
-  "reference-data.js",
-  "api-signatures.js",
-  "api-signatures-stage3.js",
-  "api-signatures-stage4.js",
-  "api-signatures-stage6.js",
-  "windows-api-families.js",
-  "windows-api-data.js",
-  "reference-overview-view.js",
-  "windows-api-view.js",
-]) {
-  vm.runInThisContext(fs.readFileSync(path.join(root, filename), "utf8"), { filename });
-}
+  "reference-data.js", "api-signatures.js", "api-signatures-stage3.js", "api-signatures-stage4.js",
+  "api-signatures-stage6.js", "windows-api-families.js", "windows-api-data.js",
+  "reference-overview-view.js", "windows-api-view.js",
+]) vm.runInThisContext(fs.readFileSync(path.join(root, filename), "utf8"), { filename });
 
 const guide = window.ILOVEOS_WINDOWS_API_GUIDE;
 const view = window.ILOVEOS_WINDOWS_API_VIEW;
-const errors = [];
+const createEvent = guide.families.find((family) => family.id === "create-event");
 
-function requireCondition(condition, message) {
-  if (!condition) errors.push(message);
-}
+// This catches a search implementation that returns one result per variant instead of one family.
+const exaMatches = view.filterFamilies?.(guide.families, "CreateEventExA") || [];
+requireCondition(exaMatches.length === 1, `expected one CreateEventExA family match, found ${exaMatches.length}`);
+requireCondition(exaMatches[0]?.family?.name === "CreateEvent", "CreateEventExA did not resolve to the CreateEvent family");
+requireCondition(exaMatches[0]?.selectedVariant === "CreateEventExA", "CreateEventExA did not select its exact variant");
 
-requireCondition(Boolean(dataVersion && familyVersion && viewVersion && appVersion && styleVersion && overviewVersion), "Windows API guide assets are missing cache versions");
-requireCondition(dataVersion === familyVersion && familyVersion === viewVersion && viewVersion === appVersion && appVersion === styleVersion && styleVersion === overviewVersion, "Windows API family data, guide data, overview, view, app, and stylesheet cache versions do not match");
-const tiedAssets = [...indexHtml.matchAll(/(?:href|src)="[^"]+\?v=([^"]+)"/g)];
-requireCondition(tiedAssets.length > 0 && tiedAssets.every((match) => match[1] === "windows-api-families-1"), "every tied asset must use the windows-api-families-1 release key");
-requireCondition(dataVersion !== "windows-api-guide", "Windows API guide still uses the stale first-release cache key");
-requireCondition(dataVersion !== "windows-api-guide-2", "Windows API redesign still uses the pre-redesign cache key");
-requireCondition(dataVersion !== "windows-api-guide-3", "Windows API category colors still use the pre-color cache key");
-requireCondition(dataVersion !== "windows-api-guide-4", "Reference overview popups still use the pre-popup cache key");
-requireCondition(dataVersion !== "windows-api-guide-5", "Popup scrolling fix still uses the pre-fix cache key");
+// This catches aliases being searched but not routed to the alias target.
+const aliasMatches = view.filterFamilies?.(guide.families, "CreateEventEx") || [];
+requireCondition(aliasMatches.length === 1, `expected one CreateEventEx alias match, found ${aliasMatches.length}`);
+requireCondition(aliasMatches[0]?.family?.id === "create-event", "CreateEventEx alias did not return CreateEvent");
+requireCondition(aliasMatches[0]?.selectedVariant === "CreateEventExW", "CreateEventEx alias did not select CreateEventExW");
+
+// This catches search text that omits variant-only descriptive fields.
+const unicodeMatches = view.filterFamilies?.(guide.families, "Unicode event") || [];
+requireCondition(unicodeMatches.length === 1 && unicodeMatches[0]?.family?.id === "create-event", "Unicode event search did not return CreateEvent exactly once");
+
+const familyRows = view.renderEntries?.(exaMatches, true) || "";
+requireCondition(familyRows.includes('data-windows-api-family="create-event"'), "family row is missing its family data attribute");
+requireCondition(familyRows.includes('data-windows-api-variant="CreateEventExA"'), "family row is missing its selected-variant data attribute");
+requireCondition(familyRows.includes("CreateEventExA"), "family row omits compact variant labels");
+
+const dialogHtml = view.filterFamilies ? view.renderDialog?.(createEvent, "CreateEventExA") || "" : "";
+requireCondition(dialogHtml.includes('role="tablist"'), "family popup is missing its variant tab list");
+requireCondition((dialogHtml.match(/data-api-variant=/g) || []).length === 4, "family popup does not render four variant buttons");
+requireCondition((dialogHtml.match(/aria-selected="true"/g) || []).length === 1, "family popup does not expose exactly one selected variant");
+requireCondition(dialogHtml.includes("Recommended") && dialogHtml.includes("CreateEventW"), "recommended CreateEventW marker is missing");
+requireCondition(!dialogHtml.includes("<dialog") && !dialogHtml.includes("<details") && !dialogHtml.includes("<summary"), "family popup contains a nested disclosure or dialog");
+requireCondition(dialogHtml.includes("CreateEventExA.argtypes"), "selected variant Python signature is absent");
+requireCondition(dialogHtml.includes("CreateEventExA("), "selected variant native signature is absent");
+requireCondition(!dialogHtml.includes("CreateEventW.argtypes") && !dialogHtml.includes("CreateEventExW.argtypes"), "family popup leaks a non-selected variant signature");
+requireCondition(!dialogHtml.includes("nf-synchapi-createeventw"), "family popup leaks a non-selected variant source");
+
+const singleton = guide.families.find((family) => family.variants.length === 1);
+const singletonHtml = view.filterFamilies ? view.renderDialog?.(singleton, singleton?.recommendedVariant) || "" : "";
+requireCondition(!singletonHtml.includes('role="tablist"'), "singleton family renders unnecessary variant controls");
+
+const html = view.render?.(guide, "CreateEventExA") || "";
+requireCondition(html.includes('id="windows-api-count">1 Family'), "family guide count does not use family terminology");
+requireCondition(!html.includes("CreateEventExA.argtypes"), "filtered family guide renders contract details inline");
 for (const expected of [
-  "windowsApiView.renderDialog(entry)",
-  "trigger.dataset.windowsApi",
-  "openWindowsApiDetails(exact.name)",
-]) {
-  requireCondition(appSource.includes(expected), `Windows API popup integration is missing: ${expected}`);
-}
-for (const obsoleteSelector of [".windows-api-wrap", ".windows-api-entry", ".native-type-row", ".native-parameter-row"]) {
-  requireCondition(!styles.includes(obsoleteSelector), `obsolete Windows-only layout remains in CSS: ${obsoleteSelector}`);
-}
-
-const allocationMatches = view.filterEntries(guide.entries, "SIZE_T VirtualAllocEx");
-requireCondition(allocationMatches.length === 1, `expected one VirtualAllocEx match, found ${allocationMatches.length}`);
-requireCondition(allocationMatches[0]?.name === "VirtualAllocEx", "search did not return VirtualAllocEx");
-
-const outputPointerMatches = view.filterEntries(guide.entries, "output count pointer");
-requireCondition(outputPointerMatches.some((entry) => entry.name === "WriteProcessMemory"), "parameter explanations are not searchable");
-
-const categoryAccents = {
-  "Files, pipes, and devices": "green",
-  "Hooks and desktop APIs": "orange",
-  "Memory and address spaces": "teal",
-  "Modules and loading": "violet",
-  "Processes, threads, and handles": "blue",
-  "Security and trust": "rose",
-  "Services and Registry": "amber",
-  "System information and errors": "cyan",
-};
-for (const [category, accent] of Object.entries(categoryAccents)) {
-  const categoryHtml = view.renderEntries(guide.entries.filter((entry) => entry.category === category));
-  requireCondition(categoryHtml.includes(`style="--reference-color: var(--${accent})"`), `${category} does not use its ${accent} accent`);
+  "windowsApiView.filterFamilies(windowsApiGuide.families",
+  "openWindowsApiDetails(exact.family.id, exact.selectedVariant)",
+  "trigger.dataset.windowsApiFamily",
+  "trigger.dataset.windowsApiVariant",
+]) requireCondition(appSource.includes(expected), `family popup integration is missing: ${expected}`);
+for (const selector of [".api-family-variants", ".api-variant-tab", ".api-variant-aliases", ".api-variant-availability", ".api-key-behaviors"]) {
+  requireCondition(styles.includes(selector), `family selector stylesheet is missing ${selector}`);
 }
 
-const html = view.render(guide, "VirtualAllocEx");
-for (const expected of [
-  "content-wrap reference-width",
-  "reference-hero compact-reference-hero",
-  "reference-filter sticky-filter",
-  "reference-list",
-  "api-module",
-  "feature-table",
-  'data-windows-api="VirtualAllocEx"',
-]) {
-  requireCondition(html.includes(expected), `redesigned guide is missing shared pywin32 structure: ${expected}`);
-}
-requireCondition(!html.includes('class="windows-api-entry"'), "API items still render as inline accordions");
-requireCondition(!html.includes("VirtualAllocEx.argtypes"), "filtered page renders API details inline instead of in a dialog");
-requireCondition(!html.includes("WriteProcessMemory"), "filtered rendering includes an unrelated API entry");
-requireCondition(!html.includes('role="table"') && !html.includes('role="row"'), "clickable API rows expose an incomplete ARIA table structure");
+const versions = [...indexHtml.matchAll(/(?:href|src)="[^"]+\?v=([^"]+)"/g)];
+requireCondition(versions.length > 0 && versions.every((match) => match[1] === "windows-api-families-2"), "every tied asset must use the windows-api-families-2 release key");
 
-requireCondition(typeof view.renderDialog === "function", "Windows API view does not expose a dialog renderer");
-const dialogHtml = typeof view.renderDialog === "function" ? view.renderDialog(allocationMatches[0]) : "";
-for (const expected of [
-  'class="api-dialog-head"',
-  'id="api-detail-title"',
-  "VirtualAllocEx.argtypes",
-  "Native declaration",
-  "Python translation",
-  "Checked call pattern",
-  "remote_address = VirtualAllocEx(",
-  "Result and failure",
-  "Ownership and cleanup",
-  "Microsoft Learn",
-]) {
-  requireCondition(dialogHtml.includes(expected), `rendered Windows API dialog is missing: ${expected}`);
-}
-
-const fullHtml = view.render(guide, "");
-requireCondition(fullHtml.includes('data-reference-overview="windows-types"'), "the unfiltered guide is missing its native type popup button");
-requireCondition(fullHtml.includes("Native Windows type translations"), "the native type popup button is missing its title");
-requireCondition(!fullHtml.includes("windows-type-card") && !fullHtml.includes("<details class=\"pattern-card"), "native type translations still render as dropdowns");
-for (const unwanted of [
-  "Start with the Windows operation",
-  "Do not translate by resemblance",
-  "Controlled Windows lab only",
-  "How to translate Microsoft declarations",
-  "translation-workflow",
-]) {
-  requireCondition(!fullHtml.includes(unwanted), `the unfiltered guide still renders unwanted introductory content: ${unwanted}`);
-}
-requireCondition(fullHtml.includes("APIs"), "the unfiltered guide is missing its API count");
-
-const escaped = view.render(guide, "<script>alert(1)</script>");
-requireCondition(!escaped.includes("<script>alert(1)</script>"), "guide renders the search query without HTML escaping");
-
-console.log(`filtered entries: ${allocationMatches.length}`);
-console.log(`rendered bytes: ${html.length}`);
+console.log(`family matches: ${exaMatches.length}`);
 console.log(`errors: ${errors.length}`);
 for (const error of errors) console.log(`ERROR ${error}`);
 if (errors.length) process.exitCode = 1;

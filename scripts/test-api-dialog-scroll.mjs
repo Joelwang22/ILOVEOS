@@ -88,15 +88,37 @@ try {
 
   const baseUrl = pathToFileURL(`${root}${path.sep}`).href;
   const reopeningProbe = `<script>
-    window.addEventListener("DOMContentLoaded", () => {
-      const triggers = [...document.querySelectorAll(".windows-api-detail-trigger")];
+    window.addEventListener("DOMContentLoaded", async () => {
+      const wait = () => new Promise((resolve) => setTimeout(resolve, 50));
       const popup = document.querySelector("#api-detail-dialog");
-      triggers[0].click();
+      const linkIsReachable = () => {
+        const link = popup.querySelector(".api-source-links a:last-child");
+        const dialogRect = popup.getBoundingClientRect();
+        const linkRect = link?.getBoundingClientRect();
+        return Boolean(linkRect && linkRect.top >= dialogRect.top - 1 && linkRect.bottom <= dialogRect.bottom + 1);
+      };
+      await wait();
+      const filter = document.querySelector("#windows-api-filter");
+      filter.value = "CreateEvent";
+      filter.dispatchEvent(new Event("input", { bubbles: true }));
+      document.querySelector('[data-windows-api-family="create-event"]')?.click();
+      await wait();
+      popup.querySelector('[data-api-variant="CreateEventExA"]')?.click();
+      await wait();
       popup.scrollTop = popup.scrollHeight;
-      const firstScrollTop = popup.scrollTop;
-      popup.querySelector(".api-dialog-close").click();
-      triggers[1].click();
-      const result = { firstScrollTop, reopenedScrollTop: popup.scrollTop };
+      const firstVariantLinkReachable = linkIsReachable();
+      const firstVariantScrollTop = popup.scrollTop;
+      popup.querySelector('[data-api-variant="CreateEventExW"]')?.click();
+      await wait();
+      popup.scrollTop = popup.scrollHeight;
+      const switchedVariantLinkReachable = linkIsReachable();
+      const switchedVariantScrollTop = popup.scrollTop;
+      popup.querySelector(".api-dialog-close")?.click();
+      filter.value = "VirtualAllocEx";
+      filter.dispatchEvent(new Event("input", { bubbles: true }));
+      document.querySelector('[data-windows-api-family="virtual-alloc-ex"]')?.click();
+      await wait();
+      const result = { firstVariantScrollTop, firstVariantLinkReachable, switchedVariantScrollTop, switchedVariantLinkReachable, reopenedScrollTop: popup.scrollTop };
       const output = document.createElement("pre");
       output.id = "reopen-result";
       output.textContent = JSON.stringify(result);
@@ -111,6 +133,7 @@ try {
     "--headless=new",
     "--disable-gpu",
     "--no-first-run",
+    "--virtual-time-budget=5000",
     `--user-data-dir=${path.join(tempDirectory, "reopen-profile")}`,
     "--window-size=390,600",
     "--force-device-scale-factor=1",
@@ -122,8 +145,8 @@ try {
   if (!reopenMatch) throw new Error(`browser did not return popup reopening metrics (exit ${reopenRun.status}): ${reopenRun.stderr.trim()}`);
   const reopenResult = JSON.parse(reopenMatch[1].replaceAll("&quot;", '"'));
   console.log(JSON.stringify(reopenResult));
-  if (reopenResult.firstScrollTop <= 0 || reopenResult.reopenedScrollTop !== 0) {
-    console.error("ERROR a newly opened popup does not start at the top");
+  if (reopenResult.firstVariantScrollTop <= 0 || !reopenResult.firstVariantLinkReachable || reopenResult.switchedVariantScrollTop <= 0 || !reopenResult.switchedVariantLinkReachable || reopenResult.reopenedScrollTop !== 0) {
+    console.error("ERROR family popup sources are not reachable after switching variants, or a newly opened popup does not start at the top");
     process.exitCode = 1;
   }
 } finally {

@@ -1,13 +1,10 @@
 (() => {
   const overviewView = window.ILOVEOS_REFERENCE_OVERVIEW_VIEW;
+  const familyData = window.ILOVEOS_WINDOWS_API_FAMILY_DATA;
 
   function escapeHtml(value) {
     return String(value).replace(/[&<>'"]/g, (character) => ({
-      "&": "&amp;",
-      "<": "&lt;",
-      ">": "&gt;",
-      "'": "&#39;",
-      '"': "&quot;",
+      "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;",
     })[character]);
   }
 
@@ -15,31 +12,35 @@
     return query.trim().toLowerCase().replace(/[^a-z0-9_*]+/g, " ").split(/\s+/).filter(Boolean);
   }
 
-  function entrySearchText(entry) {
+  function variantSearchText(variant) {
     return [
-      entry.name,
-      entry.category,
-      entry.dll,
-      entry.summary,
-      entry.nativeSignature,
-      entry.python,
-      entry.result,
-      entry.cleanup,
-      entry.pywin32,
-      ...entry.parameters.flatMap((parameter) => [parameter.name, parameter.direction, parameter.native, parameter.python, parameter.explanation]),
+      variant.name, variant.category, variant.dll, variant.summary, variant.nativeSignature, variant.python,
+      variant.example, variant.result, variant.cleanup, variant.pywin32, variant.useWhen, variant.availability,
+      ...(variant.keyBehaviors || []),
+      ...(variant.parameters || []).flatMap((parameter) => [parameter.name, parameter.direction, parameter.native, parameter.python, parameter.explanation]),
+    ].join(" ");
+  }
+
+  function familySearchText(family) {
+    return [
+      family.name, family.summary, family.recommendedVariant,
+      ...(family.aliases || []).flatMap((alias) => [alias.name, alias.target, alias.note]),
+      ...(family.variants || []).map(variantSearchText),
     ].join(" ").toLowerCase().replace(/[^a-z0-9_*]+/g, " ");
   }
 
-  function filterEntries(entries, query = "") {
-    const required = tokens(query);
-    if (!required.length) return entries;
-    return entries.filter((entry) => {
-      const searchable = entrySearchText(entry);
-      return required.every((token) => searchable.includes(token));
-    });
+  function selectForQuery(family, query) {
+    return familyData.resolveSelection(family, query);
   }
 
-  function renderTypeMappings(mappings) {
+  function filterFamilies(families, query = "") {
+    const required = tokens(query);
+    return families
+      .map((family) => ({ family, selectedVariant: selectForQuery(family, query) }))
+      .filter(({ family }) => !required.length || required.every((token) => familySearchText(family).includes(token)));
+  }
+
+  function renderTypeMappings() {
     return overviewView.renderButton({
       kind: "windows-types",
       title: "Native Windows type translations",
@@ -47,116 +48,126 @@
     });
   }
 
-  function renderParameterList(entry) {
-    if (!entry.parameters.length) return '<p class="no-parameters">This function takes no parameters.</p>';
-    return `
-      <div class="parameter-list" aria-label="${escapeHtml(entry.name)} parameter translations">
-        ${entry.parameters.map((parameter) => `
-          <div>
-            <code>${escapeHtml(parameter.name)}</code>
-            <span class="parameter-type">${escapeHtml(parameter.direction)} · ${escapeHtml(parameter.native)} → ${escapeHtml(parameter.python)}</span>
-            <span>${escapeHtml(parameter.explanation)}</span>
-          </div>`).join("")}
-      </div>`;
+  function renderParameterList(variant) {
+    if (!variant.parameters.length) return '<p class="no-parameters">This function takes no parameters.</p>';
+    return `<div class="parameter-list" aria-label="${escapeHtml(variant.name)} parameter translations">
+      ${variant.parameters.map((parameter) => `<div>
+        <code>${escapeHtml(parameter.name)}</code>
+        <span class="parameter-type">${escapeHtml(parameter.direction)} · ${escapeHtml(parameter.native)} → ${escapeHtml(parameter.python)}</span>
+        <span>${escapeHtml(parameter.explanation)}</span>
+      </div>`).join("")}
+    </div>`;
   }
 
-  function renderEntryRow(entry) {
-    return `
-      <button class="feature-row api-detail-trigger windows-api-detail-trigger" type="button" data-windows-api="${escapeHtml(entry.name)}" aria-label="View the native and Python contracts for ${escapeHtml(entry.name)}">
-        <code>${escapeHtml(entry.name)}</code>
-        <strong>${escapeHtml(entry.dll)}</strong>
-        <span>${escapeHtml(entry.summary)}</span>
-        <span class="feature-open" aria-hidden="true">+</span>
-      </button>`;
+  function selectedVariant(match) {
+    return match.family.variants.find((variant) => variant.name === match.selectedVariant)
+      || match.family.variants.find((variant) => variant.name === match.family.recommendedVariant)
+      || match.family.variants[0];
+  }
+
+  function renderFamilyRow(match) {
+    const { family } = match;
+    const variant = selectedVariant(match);
+    const dlls = [...new Set(family.variants.map((item) => item.dll))];
+    return `<button class="feature-row api-detail-trigger windows-api-detail-trigger" type="button"
+      data-windows-api-family="${escapeHtml(family.id)}" data-windows-api-variant="${escapeHtml(variant.name)}"
+      aria-label="View the ${escapeHtml(family.name)} Windows API family, selected variant ${escapeHtml(variant.name)}">
+      <code>${escapeHtml(family.name)}</code>
+      <strong>${escapeHtml(dlls.length === 1 ? dlls[0] : "Multiple DLLs")}</strong>
+      <span>${escapeHtml(family.summary)} <small class="api-family-variant-labels">${family.variants.map((item) => escapeHtml(item.name)).join(" · ")}</small></span>
+      <span class="feature-open" aria-hidden="true">+</span>
+    </button>`;
   }
 
   function categoryAccent(category) {
     return ({
-      "Files, pipes, and devices": "green",
-      "Hooks and desktop APIs": "orange",
-      "Memory and address spaces": "teal",
-      "Modules and loading": "violet",
-      "Processes, threads, and handles": "blue",
-      "Security and trust": "rose",
-      "Services and Registry": "amber",
-      "System information and errors": "cyan",
+      "Files, pipes, and devices": "green", "Hooks and desktop APIs": "orange",
+      "Memory and address spaces": "teal", "Modules and loading": "violet",
+      "Processes, threads, and handles": "blue", "Security and trust": "rose",
+      "Services and Registry": "amber", "System information and errors": "cyan",
     })[category] || "violet";
   }
 
-  function renderEntries(entries, openCategories = false) {
-    const groups = new Map();
-    for (const entry of entries) {
-      if (!groups.has(entry.category)) groups.set(entry.category, []);
-      groups.get(entry.category).push(entry);
-    }
-    if (!entries.length) return '<div class="search-empty">No matching API. Try its name, DLL, native type, parameter, result, failure, or cleanup rule.</div>';
-    return [...groups.entries()].map(([category, categoryEntries]) => `
-      <details class="api-module windows-api-module" style="--reference-color: var(--${categoryAccent(category)})" ${openCategories ? "open" : ""}>
-        <summary>
-          <span class="api-module-title"><code>${escapeHtml(category)}</code><span>Native Windows contracts and Python translations</span></span>
-          <span class="api-summary-meta"><span class="entry-count">${categoryEntries.length} ${categoryEntries.length === 1 ? "entry" : "entries"}</span><span class="details-chevron">⌄</span></span>
-        </summary>
-        <div class="api-module-body windows-api-module-body">
-          <div class="feature-table">
-            <div class="feature-row feature-head"><span>API</span><span>DLL</span><span>What it does</span><span></span></div>
-            ${categoryEntries.map(renderEntryRow).join("")}
-          </div>
-        </div>
-      </details>`).join("");
+  function familyCategory(match) {
+    return selectedVariant(match).category;
   }
 
-  function renderDialog(entry) {
-    if (!entry) return '<div class="api-dialog-body"><p class="search-empty">This Windows API entry is unavailable.</p></div>';
-    return `
-      <header class="api-dialog-head">
-        <div><span>${escapeHtml(entry.category)} · ${escapeHtml(entry.dll)}</span><h2 id="api-detail-title">${escapeHtml(entry.name)}</h2><p>${escapeHtml(entry.summary)}</p></div>
-        <button class="api-dialog-close" type="button" aria-label="Close API details">×</button>
-      </header>
-      <div class="api-dialog-body windows-api-dialog-body">
-        <section class="api-dialog-summary"><p>${escapeHtml(entry.pywin32)}</p><span>Recommended Python path</span></section>
-        <section class="signature-block windows-contract-block">
-          <div class="windows-signature-grid">
-            <section><h3>Native declaration</h3><pre><code>${escapeHtml(entry.nativeSignature)}</code></pre></section>
-            <section><h3>Python translation</h3><pre><code>${escapeHtml(entry.python)}</code></pre></section>
-          </div>
-          <h3>Parameters</h3>
-          ${renderParameterList(entry)}
-        </section>
-        <section class="signature-block windows-call-block">
-          <h3>Checked call pattern</h3>
-          <pre><code>${escapeHtml(entry.example)}</code></pre>
-        </section>
-        <section class="signature-block windows-outcome-block">
-          <h3>Result and failure</h3>
-          <div class="return-card"><code>Result</code><span>${escapeHtml(entry.result)}</span></div>
-          <h3>Ownership and cleanup</h3>
-          <div class="return-card"><code>Cleanup</code><span>${escapeHtml(entry.cleanup)}</span></div>
-        </section>
-        <div class="api-source-links">
-          ${entry.sources.map((source, index) => `<a href="${escapeHtml(source)}" target="_blank" rel="noreferrer">Microsoft Learn${entry.sources.length > 1 ? ` ${index + 1}` : ""} ↗</a>`).join("")}
-        </div>
-      </div>`;
+  function renderEntries(matches, openCategories = false) {
+    const groups = new Map();
+    for (const match of matches) {
+      const category = familyCategory(match);
+      if (!groups.has(category)) groups.set(category, []);
+      groups.get(category).push(match);
+    }
+    if (!matches.length) return '<div class="search-empty">No matching Windows API family. Try its family name, variant, alias, DLL, type, parameter, result, or cleanup rule.</div>';
+    return [...groups.entries()].map(([category, categoryMatches]) => `<details class="api-module windows-api-module" style="--reference-color: var(--${categoryAccent(category)})" ${openCategories ? "open" : ""}>
+      <summary><span class="api-module-title"><code>${escapeHtml(category)}</code><span>Native Windows contracts and Python translations</span></span>
+        <span class="api-summary-meta"><span class="entry-count">${categoryMatches.length} ${categoryMatches.length === 1 ? "family" : "families"}</span><span class="details-chevron">⌄</span></span>
+      </summary>
+      <div class="api-module-body windows-api-module-body"><div class="feature-table">
+        <div class="feature-row feature-head"><span>API family</span><span>DLL</span><span>What it does</span><span></span></div>
+        ${categoryMatches.map(renderFamilyRow).join("")}
+      </div></div>
+    </details>`).join("");
+  }
+
+  function renderAliases(family) {
+    if (!family.aliases.length) return "";
+    return `<div class="api-variant-aliases" aria-label="Aliases">
+      <strong>Aliases</strong>${family.aliases.map((alias) => `<span><code>${escapeHtml(alias.name)}</code> → <code>${escapeHtml(alias.target)}</code>${alias.note ? `: ${escapeHtml(alias.note)}` : ""}</span>`).join("")}
+    </div>`;
+  }
+
+  function renderTabs(family, selectedName) {
+    if (family.variants.length < 2) return "";
+    return `<div class="api-family-variants" role="tablist" aria-label="${escapeHtml(family.name)} variants">
+      ${family.variants.map((variant) => {
+        const isSelected = variant.name === selectedName;
+        return `<button class="api-variant-tab" type="button" role="tab" data-api-variant="${escapeHtml(variant.name)}"
+          aria-selected="${isSelected}" tabindex="${isSelected ? "0" : "-1"}">${escapeHtml(variant.name)}${variant.name === family.recommendedVariant ? ' <span class="api-variant-recommended">Recommended</span>' : ""}</button>`;
+      }).join("")}
+    </div>`;
+  }
+
+  function renderDialog(family, selectedVariantName) {
+    if (!family) return '<div class="api-dialog-body"><p class="search-empty">This Windows API family is unavailable.</p></div>';
+    const name = familyData.resolveSelection(family, selectedVariantName);
+    const variant = family.variants.find((item) => item.name === name) || family.variants[0];
+    return `<header class="api-dialog-head">
+      <div><span>${escapeHtml(variant.category)} · ${escapeHtml(variant.dll)}</span><h2 id="api-detail-title">${escapeHtml(family.name)} · ${escapeHtml(variant.name)}</h2><p>${escapeHtml(family.summary)}</p></div>
+      <button class="api-dialog-close" type="button" aria-label="Close API details">×</button>
+    </header>
+    <div class="api-dialog-body windows-api-dialog-body" style="--reference-color: var(--${categoryAccent(variant.category)})">
+      ${renderAliases(family)}
+      ${renderTabs(family, variant.name)}
+      <section class="api-dialog-summary"><p>${escapeHtml(variant.useWhen)}</p><span>Use when</span></section>
+      <div class="api-variant-availability"><strong>Availability</strong><span>${escapeHtml(variant.availability)}</span></div>
+      <section class="api-dialog-summary"><p>${escapeHtml(variant.pywin32)}</p><span>Recommended Python path</span></section>
+      <section class="signature-block windows-contract-block">
+        <div class="windows-signature-grid"><section><h3>Native declaration</h3><pre><code>${escapeHtml(variant.nativeSignature)}</code></pre></section>
+          <section><h3>Python translation</h3><pre><code>${escapeHtml(variant.python)}</code></pre></section></div>
+        <h3>Parameters</h3>${renderParameterList(variant)}
+      </section>
+      <section class="signature-block windows-call-block"><h3>Checked call pattern</h3><pre><code>${escapeHtml(variant.example)}</code></pre></section>
+      ${variant.keyBehaviors.length ? `<section class="signature-block api-key-behaviors"><h3>Key behaviors</h3><ul>${variant.keyBehaviors.map((behavior) => `<li>${escapeHtml(behavior)}</li>`).join("")}</ul></section>` : ""}
+      <section class="signature-block windows-outcome-block"><h3>Result and failure</h3><div class="return-card"><code>Result</code><span>${escapeHtml(variant.result)}</span></div>
+        <h3>Ownership and cleanup</h3><div class="return-card"><code>Cleanup</code><span>${escapeHtml(variant.cleanup)}</span></div></section>
+      <div class="api-source-links">${variant.sources.map((source, index) => `<a href="${escapeHtml(source)}" target="_blank" rel="noreferrer">Microsoft Learn${variant.sources.length > 1 ? ` ${index + 1}` : ""} ↗</a>`).join("")}</div>
+    </div>`;
   }
 
   function render(guide, query = "") {
-    const matches = filterEntries(guide.entries, query);
-    return `
-      <div class="content-wrap reference-width">
-        <div class="breadcrumb"><span><a href="#/">Course</a></span><span>Windows API guide</span></div>
-        <header class="reference-hero compact-reference-hero">
-          <h1>Find the native Windows API you need.</h1>
-          <span class="source-note">Cross-checked with <a href="https://learn.microsoft.com/windows/win32/apiindex/windows-api-list" target="_blank" rel="noreferrer">the Microsoft Windows API index ↗</a></span>
-        </header>
-        ${query ? "" : renderTypeMappings(guide.typeMappings)}
-        <div class="reference-filter sticky-filter">
-          <input id="windows-api-filter" type="search" value="${escapeHtml(query)}" placeholder="Try: VirtualAllocEx, SIZE_T, output pointer, Kernel32…" aria-label="Search the Windows API guide" autocomplete="off" />
-          <span class="reference-count" id="windows-api-count">${matches.length} APIs</span>
-        </div>
-        <section class="reference-list" id="windows-api-results" aria-live="polite">
-          ${renderEntries(matches, Boolean(query))}
-        </section>
-      </div>`;
+    const matches = filterFamilies(guide.families, query);
+    return `<div class="content-wrap reference-width">
+      <div class="breadcrumb"><span><a href="#/">Course</a></span><span>Windows API guide</span></div>
+      <header class="reference-hero compact-reference-hero"><h1>Find the native Windows API you need.</h1>
+        <span class="source-note">Cross-checked with <a href="https://learn.microsoft.com/windows/win32/apiindex/windows-api-list" target="_blank" rel="noreferrer">the Microsoft Windows API index ↗</a></span></header>
+      ${query ? "" : renderTypeMappings()}
+      <div class="reference-filter sticky-filter"><input id="windows-api-filter" type="search" value="${escapeHtml(query)}" placeholder="Try: VirtualAllocEx, SIZE_T, output pointer, Kernel32…" aria-label="Search the Windows API guide" autocomplete="off" />
+        <span class="reference-count" id="windows-api-count">${matches.length} ${matches.length === 1 ? "Family" : "Families"}</span></div>
+      <section class="reference-list" id="windows-api-results" aria-live="polite">${renderEntries(matches, Boolean(query))}</section>
+    </div>`;
   }
 
-  window.ILOVEOS_WINDOWS_API_VIEW = { filterEntries, render, renderDialog, renderEntries };
+  window.ILOVEOS_WINDOWS_API_VIEW = { filterFamilies, render, renderDialog, renderEntries };
 })();
