@@ -1291,7 +1291,7 @@ pre {
 }
 
 .lesson-lead {
-  max-width: 78ch;
+  max-width: none;
   margin-bottom: 50px;
   color: var(--muted);
   font-size: 18px;
@@ -1299,7 +1299,7 @@ pre {
 
 .learning-block > p,
 .learning-block > ul {
-  max-width: 84ch;
+  max-width: none;
 }
 
 .mobile-lesson-sections {
