@@ -1,6 +1,7 @@
 """A corrected ctypes service controller with query, confirmation, and waiting.
 
-Use only with a non-critical service you are authorised to control in a VM.
+Query mode is read-only and may inspect the fixed EventLog service.
+Use start or stop only with a non-critical service you are authorised to control in a VM.
 """
 
 from __future__ import annotations

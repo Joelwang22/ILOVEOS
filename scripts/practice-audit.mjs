@@ -22,6 +22,7 @@ const readHostPattern = /\bRead-Host\b([^\r\n;|}]*)/gi;
 const sourcedInputPattern = /\b(?:printed|reported|shown|displayed|recorded|captured|matched|selected|supplied|fixed)\b|\bfrom\s+(?:step\s+\d+|the\s+[\w.-]+|[\w.-]+)\b|\benter exactly\b/i;
 const pauseInputPattern = /\b(?:press Enter|close .+ then press Enter)\b/i;
 const dynamicCheckpointPattern = /\b(?:live|printed|recorded|current|actual|your|machine[- ]specific)\s+(?:pid|process id|address|base address|timing|elapsed time|path|inventory|module list)\b|\b(?:pid|process id|address|base address|timing|elapsed time|path|inventory|module list)\s+(?:did|does|was|were|is|are)\b|\b(?:pid|process id|address|base address|timing|elapsed time|path|inventory|module list)\b(?:\s+\w+){0,6}\s+(?:printed|shown|displayed|reported|observed|measured|recorded)\b/i;
+const runtimeLaunchInvitationPattern = /\b(?:add|pass|use|run\s+with)\s+--launch\b/i;
 
 const shortCheckpointFields = new Set(["afterStep", "type", "prompt", "answer", "acceptedAnswers", "feedback"]);
 const choiceCheckpointFields = new Set(["afterStep", "type", "prompt", "options", "answerIndex", "feedback"]);
@@ -68,6 +69,18 @@ function runtimePromptFindings(source) {
   return findings;
 }
 
+function runtimePrintFindings(source) {
+  const findings = [];
+  const printPattern = /\bprint\s*\(\s*([rubf]{0,2})(['"])([\s\S]*?)\2\s*\)/gi;
+  for (const match of source.matchAll(printPattern)) {
+    const printedProse = match[3].replace(/\{[^{}]*\}/g, "");
+    const task = taskFinding(printedProse);
+    if (task) findings.push(task);
+    if (runtimeLaunchInvitationPattern.test(printedProse)) findings.push("launch invitation");
+  }
+  return findings;
+}
+
 export function practiceDownloads(practice = {}) {
   const authored = practice.downloads || (practice.download ? [practice.download] : []);
   return authored.map(([path, filename, label]) => ({
@@ -91,6 +104,9 @@ export function validatePractice(practice = {}, context = "practice", options = 
   const clarityFinding = (message) => {
     (options.enforceClarity ? errors : warnings).push(`${context}: ${message}`);
   };
+  const crossLessonClarityFinding = (field, value) => {
+    if (crossLessonReferenceFinding(value)) clarityFinding(`${field}: cross-lesson reference`);
+  };
   const steps = practice.steps || [];
   const caseStudySectionTitles = new Set();
   const consumingCaseStudySteps = new Set();
@@ -99,6 +115,7 @@ export function validatePractice(practice = {}, context = "practice", options = 
 
   const taskFields = [
     ["title", practice.title],
+    ["time", practice.time],
     ["intro", practice.intro],
     ["safety", practice.safety],
     ["expected outcome", practice.expectedOutcome],
@@ -117,6 +134,11 @@ export function validatePractice(practice = {}, context = "practice", options = 
     if (finding) clarityFinding(`${field}: ${finding}`);
     if (crossLessonReferenceFinding(value)) clarityFinding(`${field}: cross-lesson reference`);
   }
+  for (const [downloadIndex, download] of downloads.entries()) {
+    for (const field of ["path", "filename", "label"]) {
+      crossLessonClarityFinding(`download ${downloadIndex + 1} ${field}`, download[field]);
+    }
+  }
 
   if (practice.caseStudy !== undefined) {
     const caseStudy = practice.caseStudy;
@@ -129,6 +151,7 @@ export function validatePractice(practice = {}, context = "practice", options = 
         if (typeof caseStudy[field] !== "string" || !caseStudy[field].trim()) {
           errors.push(`${context}: case study ${field} is required`);
         }
+        crossLessonClarityFinding(`case study ${field}`, caseStudy[field]);
       }
       if (!Array.isArray(caseStudy.sections) || !caseStudy.sections.length) {
         errors.push(`${context}: case study sections must be a non-empty array`);
@@ -150,6 +173,7 @@ export function validatePractice(practice = {}, context = "practice", options = 
           } else {
             caseStudySectionTitles.add(section.title);
           }
+          crossLessonClarityFinding(`case study section ${sectionIndex + 1} title`, section.title);
 
           const hasBody = section.body !== undefined;
           const hasFacts = section.facts !== undefined;
@@ -157,6 +181,8 @@ export function validatePractice(practice = {}, context = "practice", options = 
           if (!hasBody && !hasFacts && !hasCode) errors.push(`${prefix}: must include body, facts, or code`);
           if (hasBody && (typeof section.body !== "string" || !section.body.trim())) errors.push(`${prefix}: body must be a non-empty string`);
           if (hasCode && (typeof section.code !== "string" || !section.code.trim())) errors.push(`${prefix}: code must be a non-empty string`);
+          crossLessonClarityFinding(`case study section ${sectionIndex + 1} body`, section.body);
+          crossLessonClarityFinding(`case study section ${sectionIndex + 1} code`, section.code);
           if (hasFacts) {
             if (!Array.isArray(section.facts) || !section.facts.length) {
               errors.push(`${prefix}: facts must be a non-empty array`);
@@ -164,6 +190,13 @@ export function validatePractice(practice = {}, context = "practice", options = 
               || row.length !== 2
               || row.some((value) => typeof value !== "string" || !value.trim()))) {
               errors.push(`${prefix}: fact rows must contain exactly two non-empty strings`);
+            }
+            if (Array.isArray(section.facts)) {
+              for (const [factIndex, row] of section.facts.entries()) {
+                if (!Array.isArray(row)) continue;
+                crossLessonClarityFinding(`case study section ${sectionIndex + 1} fact ${factIndex + 1} term`, row[0]);
+                crossLessonClarityFinding(`case study section ${sectionIndex + 1} fact ${factIndex + 1} description`, row[1]);
+              }
             }
           }
         }
@@ -207,6 +240,7 @@ export function validatePractice(practice = {}, context = "practice", options = 
       } else {
         consumingCaseStudySteps.add(index);
         for (const title of step.caseStudySections) {
+          crossLessonClarityFinding(`${stepName}: case-study section reference`, title);
           if (!caseStudySectionTitles.has(title)) errors.push(`${prefix}: unknown case-study section ${title}`);
         }
       }
@@ -232,6 +266,7 @@ export function validatePractice(practice = {}, context = "practice", options = 
       if (typeof command.label !== "string" || !command.label.trim()) errors.push(`${commandPrefix}: label is required`);
       if (crossLessonReferenceFinding(command.label)) clarityFinding(`${stepName}: command ${commandIndex + 1}: label: cross-lesson reference`);
       if (typeof command.code !== "string" || !command.code.trim()) errors.push(`${commandPrefix}: code is required`);
+      crossLessonClarityFinding(`${stepName}: command ${commandIndex + 1}: code`, command.code);
       if (typeof command.code === "string" && /<[^>]+>/.test(command.code)) errors.push(`${commandPrefix}: paste-hostile placeholder`);
       if (typeof command.code === "string") {
         for (const match of command.code.matchAll(readHostPattern)) {
@@ -268,6 +303,8 @@ export function validatePractice(practice = {}, context = "practice", options = 
       }
       if (typeof checkpoint.prompt !== "string" || !checkpoint.prompt.trim()) errors.push(`${prefix}: prompt is required`);
       if (typeof checkpoint.feedback !== "string" || !checkpoint.feedback.trim()) errors.push(`${prefix}: feedback is required`);
+      crossLessonClarityFinding(`checkpoint ${index + 1}: prompt`, checkpoint.prompt);
+      crossLessonClarityFinding(`checkpoint ${index + 1}: feedback`, checkpoint.feedback);
       if (typeof checkpoint.prompt === "string" && dynamicCheckpointPattern.test(checkpoint.prompt)) {
         errors.push(`${prefix}: checkpoint must not request a dynamic answer`);
       }
@@ -292,6 +329,11 @@ export function validatePractice(practice = {}, context = "practice", options = 
           errors.push(`${prefix}: options must contain at least two choices`);
         } else if (checkpoint.options.some((option) => typeof option !== "string" || !option.trim())) {
           errors.push(`${prefix}: options must contain non-empty strings`);
+        }
+        if (Array.isArray(checkpoint.options)) {
+          for (const [optionIndex, option] of checkpoint.options.entries()) {
+            crossLessonClarityFinding(`checkpoint ${index + 1}: option ${optionIndex + 1}`, option);
+          }
         }
         if (!Number.isInteger(checkpoint.answerIndex)
           || !Array.isArray(checkpoint.options)
@@ -320,6 +362,9 @@ export function validatePractice(practice = {}, context = "practice", options = 
       if (typeof source === "string") {
         for (const finding of runtimePromptFindings(source)) {
           clarityFinding(`downloaded artifact ${download.filename}: runtime prompt: ${finding}`);
+        }
+        for (const finding of runtimePrintFindings(source)) {
+          clarityFinding(`downloaded artifact ${download.filename}: runtime print: ${finding}`);
         }
       }
     }

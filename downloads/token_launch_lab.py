@@ -1,6 +1,6 @@
-"""Audit a same-user token duplication and optional process launch.
+"""Audit a same-user token duplication without launching a child process.
 
-The default is a dry run. Use only with a process and account you own in a VM.
+This artifact performs a dry run only. Use it with a process and account you own.
 """
 
 from __future__ import annotations
@@ -8,7 +8,6 @@ from __future__ import annotations
 import argparse
 import win32api
 import win32con
-import win32process
 import win32security
 
 
@@ -20,18 +19,20 @@ def same_sid(left, right) -> bool:
     return win32security.ConvertSidToStringSid(left) == win32security.ConvertSidToStringSid(right)
 
 
-def close(handle) -> None:
+def close(handle, label: str) -> int:
     if handle is not None:
         win32api.CloseHandle(handle)
+        print(f"Closed owned handle: {label}")
+        return 1
+    return 0
 
 
 parser = argparse.ArgumentParser()
 parser.add_argument("pid", type=int, help="PID of a process you own")
-parser.add_argument("command", nargs="?", default="notepad.exe")
-parser.add_argument("--launch", action="store_true")
 args = parser.parse_args()
 
-process = source_token = current_token = primary = child_process = child_thread = None
+process = source_token = current_token = primary = None
+closed_handles = 0
 try:
     process = win32api.OpenProcess(
         win32con.PROCESS_QUERY_LIMITED_INFORMATION, False, args.pid
@@ -64,27 +65,10 @@ try:
         None,
     )
     print("Created one owned primary-token duplicate.")
-    if not args.launch:
-        print("Dry run complete. Add --launch only after reviewing the source and command.")
-    else:
-        startup = win32process.STARTUPINFO()
-        child_process, child_thread, child_pid, child_tid = win32process.CreateProcessAsUser(
-            primary,
-            None,
-            args.command,
-            None,
-            None,
-            False,
-            win32con.CREATE_NEW_CONSOLE,
-            None,
-            None,
-            startup,
-        )
-        print(f"Created PID {child_pid}, TID {child_tid}")
+    print("Dry run evidence: child process created=no")
 finally:
-    close(child_thread)
-    close(child_process)
-    close(primary)
-    close(current_token)
-    close(source_token)
-    close(process)
+    closed_handles += close(primary, "primary token")
+    closed_handles += close(current_token, "current process token")
+    closed_handles += close(source_token, "source process token")
+    closed_handles += close(process, "source process")
+    print(f"Cleanup evidence: owned handles closed={closed_handles}")

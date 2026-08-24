@@ -76,6 +76,58 @@ const validCaseStudyResult = validatePractice(validCaseStudy, "valid case study"
 assert.deepEqual(validCaseStudyResult.errors, []);
 assert.equal(validCaseStudyResult.caseStudyCount, 1);
 
+const crossLessonRenderedPhrase = "Use the example elsewhere in this lesson.";
+const renderedCrossLessonFailures = [];
+for (const [field, mutate] of [
+  ["case-study label", (practice) => { practice.caseStudy.label = crossLessonRenderedPhrase; }],
+  ["case-study title", (practice) => { practice.caseStudy.title = crossLessonRenderedPhrase; }],
+  ["case-study summary", (practice) => { practice.caseStudy.summary = crossLessonRenderedPhrase; }],
+  ["case-study section title", (practice) => {
+    practice.caseStudy.sections[0].title = crossLessonRenderedPhrase;
+    practice.steps[0].caseStudySections = [crossLessonRenderedPhrase];
+  }],
+  ["case-study step reference", (practice) => { practice.steps[0].caseStudySections = [crossLessonRenderedPhrase]; }],
+  ["case-study section body", (practice) => { practice.caseStudy.sections[1].body = crossLessonRenderedPhrase; }],
+  ["case-study fact term", (practice) => { practice.caseStudy.sections[0].facts[0][0] = crossLessonRenderedPhrase; }],
+  ["case-study fact description", (practice) => { practice.caseStudy.sections[0].facts[0][1] = crossLessonRenderedPhrase; }],
+  ["case-study section code", (practice) => { practice.caseStudy.sections[0].code = crossLessonRenderedPhrase; }],
+]) {
+  const practice = structuredClone(validCaseStudy);
+  mutate(practice);
+  const result = validatePractice(practice, field, { enforceClarity: true });
+  if (!result.errors.some((message) => message.includes("cross-lesson reference"))) renderedCrossLessonFailures.push(field);
+}
+
+for (const [field, practice] of [
+  ["practice time", { time: crossLessonRenderedPhrase, steps: [{ action: "Inspect the supplied value.", observe: "The fixed value is visible." }] }],
+  ["download path", { download: [crossLessonRenderedPhrase, "one.txt", "Download one.txt"], steps: [{ action: "Inspect the supplied value.", observe: "The fixed value is visible." }] }],
+  ["download filename", { download: ["downloads/one.txt", crossLessonRenderedPhrase, "Download one.txt"], steps: [{ action: "Inspect the supplied value.", observe: "The fixed value is visible." }] }],
+  ["download label", { download: ["downloads/one.txt", "one.txt", crossLessonRenderedPhrase], steps: [{ action: "Inspect the supplied value.", observe: "The fixed value is visible." }] }],
+  ["command code", {
+    steps: [{
+      action: "Run the supplied command.",
+      commands: [{ label: "PowerShell", code: `# ${crossLessonRenderedPhrase}\nWrite-Output 'ready'` }],
+      observe: "The fixed word ready is visible.",
+    }],
+  }],
+  ["checkpoint prompt", {
+    steps: [{ action: "Inspect the supplied value.", observe: "The fixed value is visible." }],
+    checkpoints: [{ afterStep: 1, type: "short", prompt: crossLessonRenderedPhrase, answer: "OS", feedback: "OS is fixed." }],
+  }],
+  ["checkpoint option", {
+    steps: [{ action: "Inspect the supplied value.", observe: "The fixed value is visible." }],
+    checkpoints: [{ afterStep: 1, type: "choice", prompt: "Choose the fixed value.", options: [crossLessonRenderedPhrase, "OS"], answerIndex: 1, feedback: "OS is fixed." }],
+  }],
+  ["checkpoint feedback", {
+    steps: [{ action: "Inspect the supplied value.", observe: "The fixed value is visible." }],
+    checkpoints: [{ afterStep: 1, type: "short", prompt: "Complete the fixed value.", answer: "OS", feedback: crossLessonRenderedPhrase }],
+  }],
+]) {
+  const result = validatePractice(practice, field, { enforceClarity: true });
+  if (!result.errors.some((message) => message.includes("cross-lesson reference"))) renderedCrossLessonFailures.push(field);
+}
+assert.deepEqual(renderedCrossLessonFailures, [], `rendered fields missing cross-lesson validation:\n${renderedCrossLessonFailures.join("\n")}`);
+
 for (const [name, practice, expectedText] of [
   ["unsupported case-study field", { ...validCaseStudy, caseStudy: { ...validCaseStudy.caseStudy, theme: "terminal" } }, "unsupported case-study field theme"],
   ["unsupported case-study section field", {
@@ -411,12 +463,47 @@ for (const forbiddenText of ["Read-Host", "disposable VM", "pre-authorised", "--
 }
 requireReview(serviceControlPracticeText.includes("EventLog"), "service-control required showcase must use the fixed EventLog service");
 requireReview(/query-only|read-only/i.test(serviceControlPracticeText), "service-control required showcase must be explicitly non-mutating");
+const serviceControllerSource = fs.readFileSync(path.join(root, "downloads", "service_controller_lab.py"), "utf8");
+const serviceControllerOpening = serviceControllerSource.split(/\r?\n/).slice(0, 8).join(" ");
+requireReview(
+  serviceControllerOpening.includes("Query mode is read-only and may inspect the fixed EventLog service."),
+  "service_controller_lab.py opening must explicitly allow the fixed read-only EventLog query",
+);
+requireReview(
+  serviceControllerOpening.includes("Use start or stop only with a non-critical service you are authorised to control in a VM."),
+  "service_controller_lab.py VM warning must apply only to mutating start/stop modes",
+);
+requireReview(
+  !serviceControllerOpening.includes("Use only with a non-critical service"),
+  "service_controller_lab.py must not apply its mutation warning unconditionally",
+);
 
 const tokenLaunchPracticeText = JSON.stringify(lessonById.get("privileges-impersonation").practice);
 for (const forbiddenText of ["Read-Host", "disposable VM", "--launch", "VM only"]) {
   requireReview(!tokenLaunchPracticeText.includes(forbiddenText), `token-launch required showcase must not contain ${forbiddenText}`);
 }
-requireReview(tokenLaunchPracticeText.includes("Dry run complete"), "token-launch required showcase must retain fixed dry-run evidence");
+for (const requiredText of [
+  "Dry run evidence: child process created=no",
+  "Closed owned handle: primary token",
+  "Cleanup evidence: owned handles closed=4",
+]) {
+  requireReview(tokenLaunchPracticeText.includes(requiredText), `token-launch required showcase must name exact evidence: ${requiredText}`);
+}
+requireReview(
+  !tokenLaunchPracticeText.includes("Confirm the process and token handles close"),
+  "token-launch cleanup must not ask the learner to confirm silent handle closure",
+);
+const tokenLaunchSource = fs.readFileSync(path.join(root, "downloads", "token_launch_lab.py"), "utf8");
+for (const forbiddenText of ["Add --launch", "parser.add_argument(\"--launch\"", "CreateProcessAsUser", "STARTUPINFO"]) {
+  requireReview(!tokenLaunchSource.includes(forbiddenText), `token_launch_lab.py dry-run artifact must not contain ${forbiddenText}`);
+}
+for (const requiredText of [
+  "Dry run evidence: child process created=no",
+  "Closed owned handle: {label}",
+  "Cleanup evidence: owned handles closed={closed_handles}",
+]) {
+  requireReview(tokenLaunchSource.includes(requiredText), `token_launch_lab.py must emit deterministic evidence: ${requiredText}`);
+}
 
 const registryPracticeText = JSON.stringify(lessonById.get("registry-structure").practice);
 for (const forbiddenText of ["application preference", "Choose a reversible", "application's own UI"]) {
@@ -435,6 +522,27 @@ const runtimePromptFixture = validatePractice({
   readDownloadSource: () => 'input("Write a report before continuing...")',
 });
 requireReview(runtimePromptFixture.errors.some((message) => message.includes("runtime prompt") && message.includes("off-page task verb")), "all-download runtime prompt scan must reject an off-page input prompt");
+
+const runtimePrintInvitationFixture = validatePractice({
+  download: ["downloads/token.py", "token.py"],
+  steps: [{ action: "Run token.py.", commands: [{ label: "PowerShell", code: "py .\\token.py" }], observe: "The dry-run evidence is visible." }],
+}, "runtime print invitation fixture", {
+  enforceClarity: true,
+  readDownloadSource: () => 'print("Add --launch only after reviewing the source and command.")',
+});
+requireReview(
+  runtimePrintInvitationFixture.errors.some((message) => message.includes("runtime print") && message.includes("launch invitation")),
+  "all-download runtime print scan must reject a launch invitation",
+);
+
+const runtimePrintEvidenceFixture = validatePractice({
+  download: ["downloads/token.py", "token.py"],
+  steps: [{ action: "Run token.py.", commands: [{ label: "PowerShell", code: "py .\\token.py" }], observe: "The dry-run evidence is visible." }],
+}, "runtime print evidence fixture", {
+  enforceClarity: true,
+  readDownloadSource: () => 'print("Dry run evidence: child process created=no")\nprint("Cleanup evidence: owned handles closed=4")',
+});
+requireReview(runtimePrintEvidenceFixture.errors.length === 0, "deterministic runtime evidence prints must remain valid");
 
 const securityModelPractice = lessonById.get("security-model").practice;
 const securityModelText = JSON.stringify(securityModelPractice);
