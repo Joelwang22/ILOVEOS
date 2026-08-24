@@ -91,6 +91,11 @@ for (const [name, practice, expectedText] of [
   ["three checkpoints", { steps: [{ action: "Open the supplied page.", observe: "The page shows three fixed labels." }], checkpoints: [1, 2, 3].map((afterStep) => ({ afterStep: 1, type: "short", prompt: `Complete fixed label ${afterStep}.`, answer: `OS${afterStep}`, feedback: `OS${afterStep} is fixed.` })) }, "no more than two checkpoints"],
   ["two choice checkpoints", { steps: [{ action: "Open the supplied page.", observe: "The page shows two fixed results." }], checkpoints: [1, 2].map((number) => ({ afterStep: 1, type: "choice", prompt: `Choose fixed result ${number}.`, options: ["OS", "DOS"], answerIndex: 0, feedback: "OS is fixed." })) }, "no more than one choice checkpoint"],
   ["dynamic checkpoint prompt", { steps: [{ action: "Open the supplied page.", observe: "The page prints its live PID." }], checkpoints: [{ afterStep: 1, type: "short", prompt: "What live PID did the program print?", answer: "1234", feedback: "The PID was printed." }] }, "checkpoint must not request a dynamic answer"],
+  ["reordered printed PID prompt", { steps: [{ action: "Open the supplied page.", observe: "The program prints a PID." }], checkpoints: [{ afterStep: 1, type: "short", prompt: "Enter the PID printed by the program.", answer: "1234", feedback: "The PID varies." }] }, "checkpoint must not request a dynamic answer"],
+  ["reordered shown address prompt", { steps: [{ action: "Open the supplied page.", observe: "The program shows an address." }], checkpoints: [{ afterStep: 1, type: "short", prompt: "Type the address shown above.", answer: "0x1234", feedback: "The address varies." }] }, "checkpoint must not request a dynamic answer"],
+  ["reordered observed timing prompt", { steps: [{ action: "Open the supplied page.", observe: "The run shows timing." }], checkpoints: [{ afterStep: 1, type: "short", prompt: "Provide the timing observed in the run.", answer: "10 ms", feedback: "The timing varies." }] }, "checkpoint must not request a dynamic answer"],
+  ["reordered printed path prompt", { steps: [{ action: "Open the supplied page.", observe: "The tool prints a path." }], checkpoints: [{ afterStep: 1, type: "short", prompt: "Which path did the tool print?", answer: "C:\\temp", feedback: "The path varies." }] }, "checkpoint must not request a dynamic answer"],
+  ["reordered reported inventory prompt", { steps: [{ action: "Open the supplied page.", observe: "The program reports inventory." }], checkpoints: [{ afterStep: 1, type: "short", prompt: "List the inventory reported by the program.", answer: "module.dll", feedback: "The inventory varies." }] }, "checkpoint must not request a dynamic answer"],
   ["dynamic checkpoint answer", { steps: [{ action: "Open the supplied page.", observe: "The page shows a fixed label." }], checkpoints: [{ afterStep: 1, type: "short", prompt: "Complete the supplied label.", answer: "current PID", feedback: "The answer must be invariant." }] }, "checkpoint must not request a dynamic answer"],
 ]) {
   const result = validatePractice(practice, name, { enforceClarity: true });
@@ -143,6 +148,39 @@ const reviewFindings = [];
 const requireReview = (condition, message) => {
   if (!condition) reviewFindings.push(message);
 };
+
+const securityModelPractice = lessonById.get("security-model").practice;
+const securityModelText = JSON.stringify(securityModelPractice);
+requireReview(
+  securityModelPractice.download?.[0] === "downloads/process_access_lab.py",
+  "security-model must download the complete process_access_lab.py probe",
+);
+requireReview(!securityModelText.includes("@'\\nimport"), "security-model must not embed multiline Python in PowerShell");
+requireReview(securityModelText.includes("0x001FFFFF"), "security-model must use the current PROCESS_ALL_ACCESS value");
+requireReview(!securityModelText.includes("0x001F0FFF"), "security-model must not label the legacy mask as current PROCESS_ALL_ACCESS");
+requireReview(fs.existsSync(path.join(root, "downloads", "process_access_lab.py")), "process_access_lab.py must exist");
+const processAccessSource = fs.readFileSync(path.join(root, "downloads", "process_access_lab.py"), "utf8");
+for (const requiredText of ["OpenProcess", "CloseHandle", "0x001FFFFF", "0x00001000", "if __name__ == \"__main__\""]) {
+  requireReview(processAccessSource.includes(requiredText), `process_access_lab.py must contain ${requiredText}`);
+}
+
+const eventsPractice = lessonById.get("events-waits").practice;
+const eventsPracticeText = JSON.stringify(eventsPractice);
+const eventsCommands = eventsPractice.steps.flatMap((step) => step.commands || []).map((command) => command.code);
+requireReview(!eventsPracticeText.includes("@'\\nimport"), "events-waits must invoke its downloaded Python artifact directly");
+for (const invocation of ["py .\\event_pair_lab.py creator", "py .\\event_pair_lab.py waiter --timeout-ms 10000"]) {
+  requireReview(eventsCommands.includes(invocation), `events-waits must show the exact invocation ${invocation}`);
+}
+
+const registryCleanup = lessonById.get("registry-structure").practice.steps.at(-1).commands[0].code;
+requireReview(/\.Property\)\.Count|\.Property\.Count/.test(registryCleanup), "registry cleanup must test value names as well as subkeys");
+requireReview(/Get-ChildItem/.test(registryCleanup), "registry cleanup must preserve unexpected subkeys");
+
+const largePipelineStep = lessonById.get("anonymous-pipes").practice.steps[1];
+const largePipelineText = JSON.stringify(largePipelineStep);
+requireReview(!/findstr\.exe/i.test(largePipelineText), "large pipeline must not send a 200000-character line through findstr.exe");
+requireReview(largePipelineText.includes("200000 bytes"), "large pipeline must retain fixed 200000-byte evidence");
+requireReview(largePipelineText.includes("-EncodedCommand"), "large pipeline must preserve the producer script as one native-process argument");
 
 const task3PracticeText = lessons
   .filter((lesson) => secondBatch.has(lesson.module))
