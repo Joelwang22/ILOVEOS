@@ -93,7 +93,7 @@
       </div>`;
     };
     return `<section class="api-parameter-choices" aria-label="${escapeHtml(resolved.id)} choices">
-      <strong>Common ${escapeHtml(resolved.kind === "bitmask" ? "access values" : "values")}</strong>
+      <strong>Common ${escapeHtml(resolved.kind === "bitmask" ? "flags" : "values")}</strong>
       ${resolved.values.map((value, index) => renderRow(value, index)).join("")}
       ${resolved.example ? renderRow(resolved.example, 0, true) : ""}
       <a href="${escapeHtml(resolved.source)}" target="_blank" rel="noreferrer">Full list on Microsoft Learn &#8599;</a>

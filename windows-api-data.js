@@ -186,7 +186,7 @@
     WaitForMultipleObjects: { parameters: [{ name: "nCount", type: "wintypes.DWORD", description: "Number of handles in lpHandles." }, { name: "lpHandles", type: "ctypes.POINTER(wintypes.HANDLE)", description: "Input array of waitable handles." }, { name: "bWaitAll", type: "wintypes.BOOL", description: "Wait for all handles or any one handle." }, { name: "dwMilliseconds", type: "wintypes.DWORD", description: "Timeout in milliseconds or INFINITE." }], returns: "wintypes.DWORD", source: "https://learn.microsoft.com/windows/win32/api/synchapi/nf-synchapi-waitformultipleobjects" },
     ReadFile: { parameters: [{ name: "hFile", type: "wintypes.HANDLE", description: "Readable file, pipe, or device handle." }, { name: "lpBuffer", type: "wintypes.LPVOID", description: "Writable output buffer." }, { name: "nNumberOfBytesToRead", type: "wintypes.DWORD", description: "Requested byte count." }, { name: "lpNumberOfBytesRead", type: "ctypes.POINTER(wintypes.DWORD) | None", description: "Output byte count for synchronous I/O." }, { name: "lpOverlapped", type: "ctypes.c_void_p | None", description: "Optional OVERLAPPED pointer for asynchronous I/O." }], returns: "wintypes.BOOL", source: "https://learn.microsoft.com/windows/win32/api/fileapi/nf-fileapi-readfile" },
     WriteFile: { parameters: [{ name: "hFile", type: "wintypes.HANDLE", description: "Writable file, pipe, or device handle." }, { name: "lpBuffer", type: "wintypes.LPCVOID", description: "Caller-owned source bytes." }, { name: "nNumberOfBytesToWrite", type: "wintypes.DWORD", description: "Requested byte count." }, { name: "lpNumberOfBytesWritten", type: "ctypes.POINTER(wintypes.DWORD) | None", description: "Output byte count for synchronous I/O." }, { name: "lpOverlapped", type: "ctypes.c_void_p | None", description: "Optional OVERLAPPED pointer for asynchronous I/O." }], returns: "wintypes.BOOL", source: "https://learn.microsoft.com/windows/win32/api/fileapi/nf-fileapi-writefile" },
-    CreateNamedPipeW: { parameters: [{ name: "lpName", type: "wintypes.LPCWSTR", description: "Canonical UTF-16 pipe name." }, { name: "dwOpenMode", type: "wintypes.DWORD", description: "Direction, overlap, and first-instance flags." }, { name: "dwPipeMode", type: "wintypes.DWORD", description: "Byte/message type, read mode, and wait mode." }, { name: "nMaxInstances", type: "wintypes.DWORD", description: "Maximum simultaneous instances." }, { name: "nOutBufferSize", type: "wintypes.DWORD", description: "Advisory output buffer size." }, { name: "nInBufferSize", type: "wintypes.DWORD", description: "Advisory input buffer size." }, { name: "nDefaultTimeOut", type: "wintypes.DWORD", description: "Default client wait timeout." }, { name: "lpSecurityAttributes", type: "ctypes.POINTER(SECURITY_ATTRIBUTES) | None", description: "Optional security and inheritance attributes." }], returns: "wintypes.HANDLE", source: "https://learn.microsoft.com/windows/win32/api/winbase/nf-winbase-createnamedpipew" },
+    CreateNamedPipeW: { parameters: [{ name: "lpName", type: "wintypes.LPCWSTR", description: "Canonical UTF-16 pipe name." }, { name: "dwOpenMode", type: "wintypes.DWORD", description: "Direction, overlap, and first-instance flags." }, { name: "dwPipeMode", type: "wintypes.DWORD", description: "Byte/message type, read mode, and wait mode." }, { name: "nMaxInstances", type: "wintypes.DWORD", description: "Maximum simultaneous instances." }, { name: "nOutBufferSize", type: "wintypes.DWORD", description: "Advisory output buffer size." }, { name: "nInBufferSize", type: "wintypes.DWORD", description: "Advisory input buffer size." }, { name: "nDefaultTimeOut", type: "wintypes.DWORD", description: "Default client wait timeout." }, { name: "lpSecurityAttributes", type: "ctypes.POINTER(SECURITY_ATTRIBUTES) | None", description: "Optional security and inheritance attributes." }], returns: "wintypes.HANDLE", source: "https://learn.microsoft.com/en-us/windows/win32/api/namedpipeapi/nf-namedpipeapi-createnamedpipew" },
     OpenThread: { parameters: [{ name: "dwDesiredAccess", type: "wintypes.DWORD", description: "Minimum THREAD_* access mask." }, { name: "bInheritHandle", type: "wintypes.BOOL", description: "Whether a child may inherit the handle." }, { name: "dwThreadId", type: "wintypes.DWORD", description: "Target thread identifier." }], returns: "wintypes.HANDLE | None", source: "https://learn.microsoft.com/windows/win32/api/processthreadsapi/nf-processthreadsapi-openthread" },
     VirtualProtectEx: { parameters: [{ name: "hProcess", type: "wintypes.HANDLE", description: "Target process with PROCESS_VM_OPERATION." }, { name: "lpAddress", type: "wintypes.LPVOID", description: "Start of the committed target range." }, { name: "dwSize", type: "ctypes.c_size_t", description: "Byte count to protect." }, { name: "flNewProtect", type: "wintypes.DWORD", description: "New PAGE_* protection." }, { name: "lpflOldProtect", type: "ctypes.POINTER(wintypes.DWORD)", description: "Output receiving the prior protection." }], returns: "wintypes.BOOL", source: "https://learn.microsoft.com/windows/win32/api/memoryapi/nf-memoryapi-virtualprotectex" },
     MessageBoxA: { parameters: [{ name: "hWnd", type: "wintypes.HWND | None", description: "Optional owner window." }, { name: "lpText", type: "wintypes.LPCSTR", description: "ANSI message bytes." }, { name: "lpCaption", type: "wintypes.LPCSTR", description: "ANSI caption bytes." }, { name: "uType", type: "wintypes.UINT", description: "Buttons, icon, modality, and default-button flags." }], returns: "ctypes.c_int", source: "https://learn.microsoft.com/windows/win32/api/winuser/nf-winuser-messageboxa" },
@@ -544,6 +544,7 @@
     VirtualFreeEx: "This is the remote cleanup operation; do not release a region still used by another thread.",
     CreateFileMappingW: "Close the mapping handle with CloseHandle after every mapped view has been unmapped.",
     CreateFileMappingA: "Close the mapping handle with CloseHandle after every mapped view has been unmapped.",
+    RtlAddFunctionTable: "Call RtlDeleteFunctionTable for the registered table before its RUNTIME_FUNCTION array or referenced unwind metadata is freed or reused.",
     OpenFileMappingW: "Close the returned mapping handle with CloseHandle.",
     OpenFileMappingA: "Close the returned mapping handle with CloseHandle.",
     MapViewOfFile: "Unmap the returned view with UnmapViewOfFile.",
@@ -589,6 +590,8 @@
     WaitForSingleObject: "Branch explicitly on WAIT_OBJECT_0, WAIT_TIMEOUT, WAIT_ABANDONED, and WAIT_FAILED. Only WAIT_FAILED uses last error.",
     WaitForMultipleObjects: "Decode WAIT_OBJECT_0 plus an index, WAIT_ABANDONED plus an index, WAIT_TIMEOUT, or WAIT_FAILED. Only WAIT_FAILED uses last error.",
     VirtualQueryEx: "Returns the number of bytes written to the information buffer; zero indicates failure and makes last error available.",
+    IsWow64Process2: "Nonzero indicates success: pProcessMachine receives IMAGE_FILE_MACHINE_UNKNOWN when the target is not under WOW64, otherwise its IMAGE_FILE_MACHINE_* type; optional pNativeMachine receives the host IMAGE_FILE_MACHINE_* type. Zero indicates failure; then read last error.",
+    GetExitCodeProcess: "Nonzero indicates success and lpExitCode receives the process termination status, or STILL_ACTIVE while it is still running. Zero indicates failure; then read last error.",
     GetSystemInfo: "Returns no value and fills the supplied SYSTEM_INFO structure.",
     InterlockedExchangePointer: "Returns the previous pointer value. It is an atomic result, not a BOOL success flag.",
     CallNextHookEx: "Returns the next hook's result. Its meaning depends on the selected hook contract.",
@@ -620,6 +623,8 @@
     EnumProcessModulesEx: "Nonzero indicates success. Use lpcbNeeded to detect and resize a short module buffer; zero exposes last error.",
     GetModuleHandleW: "Returns a borrowed HMODULE. Null indicates failure; then read the last-error code.",
     GetModuleHandleA: "Returns a borrowed HMODULE. Null indicates failure; then read the last-error code.",
+    CreateFileMappingW: "Returns a mapping handle on success. If the named object already exists, this is a handle to the existing mapping with its current size and last error is ERROR_ALREADY_EXISTS. Null indicates failure; then read last error.",
+    CreateFileMappingA: "Returns a mapping handle on success. If the named object already exists, this is a handle to the existing mapping with its current size and last error is ERROR_ALREADY_EXISTS. Null indicates failure; then read last error.",
     CreateMutexW: "Returns a mutex handle on success. Null indicates failure; ERROR_ALREADY_EXISTS means the named mutex already existed.",
     CreateMutexA: "Returns a mutex handle on success. Null indicates failure; ERROR_ALREADY_EXISTS means the named mutex already existed.",
     CreateMutexExW: "Returns a mutex handle on success. Null indicates failure; ERROR_ALREADY_EXISTS means the named mutex already existed.",
@@ -803,6 +808,7 @@
     LoadLibraryA: "Windows XP and later (desktop apps)",
     LoadLibraryExW: "Windows XP and later (desktop apps)",
     CreateProcessW: "Windows XP and later (desktop apps)",
+    IsWow64Process2: "Windows 10, version 1709 / Windows Server 2016, version 1709 and later",
     CreateRemoteThread: "Windows XP and later (desktop apps)",
     DuplicateToken: "Windows XP and later (desktop apps)",
     GetNamedSecurityInfoW: "Windows 2000 and later (desktop apps)",
@@ -978,7 +984,27 @@ if copied >= capacity:
     raise BufferError(f"resize the buffer to {copied} bytes")`,
   };
 
+  const parameterExplanations = {
+    "VirtualQueryEx.hProcess": "Process handle with PROCESS_QUERY_INFORMATION access for the address space being inspected.",
+    "VirtualQueryEx.lpAddress": "Optional target address; Windows rounds it down to a page boundary before describing the containing region.",
+    "VirtualQueryEx.lpBuffer": "Output receiving MEMORY_BASIC_INFORMATION for the consecutive region beginning at the selected page.",
+    "VirtualQueryEx.dwLength": "Size in bytes of the MEMORY_BASIC_INFORMATION output buffer.",
+    "CreateProcessW.lpApplicationName": "Optional UTF-16 executable path or name; when null, the first command-line token selects the module.",
+    "CreateProcessW.lpCommandLine": "Optional writable UTF-16 command-line buffer that Windows may modify while separating the executable name from its arguments.",
+    "CreateProcessW.lpProcessAttributes": "Optional process security descriptor and inheritance setting for the returned process handle.",
+    "CreateProcessW.lpThreadAttributes": "Optional primary-thread security descriptor and inheritance setting for the returned thread handle.",
+    "CreateProcessW.bInheritHandles": "Whether eligible inheritable handles from the caller are copied into the child process.",
+    "CreateProcessW.dwCreationFlags": "CREATE_* and priority flags controlling the new process, primary thread, console, and environment interpretation.",
+    "CreateProcessW.lpEnvironment": "Optional environment block; include CREATE_UNICODE_ENVIRONMENT for UTF-16 data, or pass null to inherit the caller environment.",
+    "CreateProcessW.lpCurrentDirectory": "Optional UTF-16 initial working directory; null inherits the caller's current drive and directory.",
+    "CreateProcessW.lpStartupInfo": "Initialized STARTUPINFOW or STARTUPINFOEXW settings, including only valid standard handles when requested.",
+    "CreateProcessW.lpProcessInformation": "Output receiving the new process/thread identifiers and two owned handles that must be closed.",
+    "CreateProcessA.lpCommandLine": "Optional writable ANSI command-line buffer that may be modified while the executable name and arguments are separated.",
+  };
+
   const directionOverrides = {
+    "CreateProcessW.lpCommandLine": "in, out, optional",
+    "CreateProcessA.lpCommandLine": "in, out, optional",
     "CreateProcessW.lpProcessInformation": "out",
     "CreateProcessA.lpProcessInformation": "out",
     "CreateRemoteThread.lpThreadId": "out, optional",
@@ -1002,7 +1028,7 @@ if copied >= capacity:
     "RegOpenKeyExW.phkResult": "out",
     "RegOpenKeyExA.phkResult": "out",
     "IsWow64Process2.pProcessMachine": "out",
-    "IsWow64Process2.pNativeMachine": "out",
+    "IsWow64Process2.pNativeMachine": "out, optional",
     "GetExitCodeProcess.lpExitCode": "out",
     "GetNativeSystemInfo.lpSystemInfo": "out",
     "GetWindowsDirectoryW.lpBuffer": "out",
@@ -1323,6 +1349,10 @@ class PROCESS_INFORMATION(ctypes.Structure):
   }
 
   const familyData = window.ILOVEOS_WINDOWS_API_FAMILY_DATA;
+  const canonicalVariantSources = {
+    CreateFileMappingW: "https://learn.microsoft.com/en-us/windows/win32/api/memoryapi/nf-memoryapi-createfilemappingw",
+    CreateNamedPipeW: "https://learn.microsoft.com/en-us/windows/win32/api/namedpipeapi/nf-namedpipeapi-createnamedpipew",
+  };
   const familyDefinitionFor = (name) => familyData.familyDefinitions.find((definition) => definition.variantNames.includes(name));
   const familyPurpose = (name) => familyDefinitionFor(name)?.summary || `Perform the documented ${name} operation.`;
   function defaultUseWhen(name) {
@@ -1358,13 +1388,13 @@ class PROCESS_INFORMATION(ctypes.Structure):
         direction: direction(name, parameter),
         native: nativeType(parameter.type),
         python: usablePythonType(parameter.type),
-        explanation: parameter.description || "Use the value required by the Microsoft contract.",
+        explanation: parameterExplanations[`${name}.${parameter.name}`] || parameter.description || "Use the value required by the Microsoft contract.",
         choiceBinding: familyData.nativeBindings[`${name}.${parameter.name}`] ? `${name}.${parameter.name}` : "",
       })),
       result: resultByName[name] || defaultResult(record.signature),
       cleanup: defaultCleanup(name),
       pywin32: pywin32Names[name] || "No direct pywin32 wrapper is used by this course; use the ctypes declaration when this operation is required.",
-      sources: record.sources,
+      sources: canonicalVariantSources[name] ? [canonicalVariantSources[name]] : record.sources,
       useWhen: metadata.useWhen || defaultUseWhen(name),
       availability: metadata.availability || auditedAvailability[name] || "See the linked Microsoft Learn Requirements section.",
       keyBehaviors: metadata.keyBehaviors || [],

@@ -106,6 +106,12 @@ for (const entry of variants.values()) {
   requireCondition(Boolean(entry.result), `${prefix}: missing result and failure guidance`);
   requireCondition(Boolean(entry.cleanup), `${prefix}: missing ownership or cleanup guidance`);
   requireCondition((entry.sources || []).some((source) => source.startsWith("https://learn.microsoft.com")), `${prefix}: missing Microsoft Learn source`);
+  for (const parameter of entry.parameters || []) {
+    requireCondition(
+      parameter.explanation !== "Use the value required by the Microsoft contract.",
+      `${prefix}.${parameter.name}: retains placeholder parameter prose`,
+    );
+  }
 }
 
 const virtualAllocEx = variants.get("VirtualAllocEx");
@@ -135,6 +141,21 @@ const namedPipe = variants.get("CreateNamedPipeW");
 requireCondition(namedPipe?.result.includes("INVALID_HANDLE_VALUE"), "CreateNamedPipeW: result guidance omits its non-null failure sentinel");
 requireCondition(namedPipe?.example.includes("ctypes.c_void_p(-1).value"), "CreateNamedPipeW: checked call does not compare against INVALID_HANDLE_VALUE");
 
+for (const name of ["CreateFileMappingW", "CreateFileMappingA"]) {
+  const result = variants.get(name)?.result || "";
+  requireCondition(
+    /existing/i.test(result) && /current size/i.test(result) && result.includes("ERROR_ALREADY_EXISTS"),
+    `${name}: result must explain the existing named-mapping contract`,
+  );
+}
+
+const runtimeFunctionTable = variants.get("RtlAddFunctionTable");
+requireCondition(
+  runtimeFunctionTable?.cleanup.includes("RtlDeleteFunctionTable")
+    && /before.*(?:freed|reused)/i.test(runtimeFunctionTable.cleanup),
+  "RtlAddFunctionTable: cleanup must unregister before unwind metadata is freed or reused",
+);
+
 const localFree = variants.get("LocalFree");
 requireCondition(localFree?.example.includes("if remaining:"), "LocalFree: checked call does not treat a non-null return as failure");
 
@@ -149,6 +170,17 @@ for (const name of ["ReadFile", "WriteFile"]) {
 const createProcess = variants.get("CreateProcessW");
 requireCondition(createProcess?.python.includes("class SECURITY_ATTRIBUTES(ctypes.Structure)"), "CreateProcessW: SECURITY_ATTRIBUTES declaration is missing");
 requireCondition(createProcess?.python.includes("ctypes.POINTER(SECURITY_ATTRIBUTES)"), "CreateProcessW: SECURITY_ATTRIBUTES pointers lose type checking");
+for (const name of ["CreateProcessW", "CreateProcessA"]) {
+  const commandLine = variants.get(name)?.parameters.find((parameter) => parameter.name === "lpCommandLine");
+  requireCondition(commandLine?.direction === "in, out, optional", `${name}.lpCommandLine: must be in, out, optional`);
+  requireCondition(/writable/i.test(commandLine?.explanation || "") && /modif/i.test(commandLine?.explanation || ""), `${name}.lpCommandLine: must explain writable-buffer modification`);
+}
+
+const wow64 = variants.get("IsWow64Process2");
+requireCondition(
+  wow64?.availability.includes("Windows 10, version 1709") && wow64?.availability.includes("Windows Server 2016, version 1709"),
+  "IsWow64Process2: availability must state both version 1709 client and server minimums",
+);
 
 const requiredStructures = new Map([
   ["GetSystemInfo", ["SYSTEM_INFO"]],

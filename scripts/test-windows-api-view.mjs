@@ -110,6 +110,15 @@ const escapedChoices = view.renderParameterChoices?.({
 requireCondition(!escapedChoices.includes('<VALUE & "quote">') && escapedChoices.includes("&lt;VALUE &amp; &quot;quote&quot;&gt;"), "choice copy expression is not HTML escaped");
 requireCondition(escapedChoices.includes('data-api-value-code="&lt;VALUE &amp; &quot;quote&quot;&gt;"'), "escaped copy expression is missing from its control");
 
+const bitmaskChoices = view.renderParameterChoices?.({
+  id: "creation-flags",
+  kind: "bitmask",
+  source: "https://learn.microsoft.com/en-us/windows/win32/example",
+  values: [{ name: "CREATE_ONE", code: "CREATE_ONE", useWhen: "Select this creation behavior." }],
+}, "bitmask") || "";
+requireCondition(bitmaskChoices.includes("<strong>Common flags</strong>"), "bitmask choice heading must use neutral flag wording");
+requireCondition(!bitmaskChoices.includes("Common access values"), "bitmask choice heading incorrectly implies every flag is an access right");
+
 const html = view.render?.(guide, "CreateEventExA") || "";
 requireCondition(html.includes('id="windows-api-count">1 Family'), "family guide count does not use family terminology");
 requireCondition(!html.includes("CreateEventExA.argtypes"), "filtered family guide renders contract details inline");

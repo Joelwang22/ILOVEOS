@@ -150,7 +150,7 @@
     MessageBoxA: review("encoding", "MessageBox", "https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-messageboxa", "MessageBoxA and MessageBoxW share controls, result, and ownership; Unicode is recommended."),
     SetWindowsHookExW: review("encoding", "SetWindowsHookEx", "https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-setwindowshookexw", "The A/W declarations install the same hook object and differ in character handling for relevant hook procedures."),
     UnhookWindowsHookEx: review("single", "UnhookWindowsHookEx", "https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-unhookwindowshookex", "This suffix-free cleanup call has one handle-based contract."),
-    CreateFileMappingW: review("encoding", "CreateFileMapping", "https://learn.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-createfilemappingw", "The A/W forms differ only in an optional mapping name; NUMA creation has additional placement semantics and stays separate."),
+    CreateFileMappingW: review("encoding", "CreateFileMapping", "https://learn.microsoft.com/en-us/windows/win32/api/memoryapi/nf-memoryapi-createfilemappingw", "The A/W forms differ only in an optional mapping name; NUMA creation has additional placement semantics and stays separate."),
     GetNativeSystemInfo: review("separate", "GetNativeSystemInfo", "https://learn.microsoft.com/en-us/windows/win32/api/sysinfoapi/nf-sysinfoapi-getnativesysteminfo", "It reports the native host under WOW64, while GetSystemInfo reports the calling process view."),
     GetProcessHeap: review("single", "GetProcessHeap", "https://learn.microsoft.com/en-us/windows/win32/api/heapapi/nf-heapapi-getprocessheap", "This returns one borrowed default-heap handle and has no encoding or extended sibling."),
     GetSystemInfo: review("separate", "GetSystemInfo", "https://learn.microsoft.com/en-us/windows/win32/api/sysinfoapi/nf-sysinfoapi-getsysteminfo", "It reports the caller-visible architecture, distinct from GetNativeSystemInfo under WOW64."),
@@ -619,7 +619,7 @@
     },
     "file-mapping-backing": {
       kind: "sentinel",
-      source: "https://learn.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-createfilemappingw",
+      source: "https://learn.microsoft.com/en-us/windows/win32/api/memoryapi/nf-memoryapi-createfilemappingw",
       values: {
         PAGE_FILE_BACKING: { native: "INVALID_HANDLE_VALUE", pywin32: "win32file.INVALID_HANDLE_VALUE", useWhen: "Create a mapping backed by the system paging file instead of an existing file." },
       },
@@ -630,13 +630,6 @@
       values: {
         DEFAULT_HEAP_FLAGS: { native: "0", pywin32: "0", useWhen: "Use the heap's normal synchronization behavior." },
         HEAP_NO_SERIALIZE: { native: "HEAP_NO_SERIALIZE", pywin32: "win32con.HEAP_NO_SERIALIZE", useWhen: "Skip serialization only when the caller exclusively synchronizes every access to this heap." },
-      },
-    },
-    "process-exit-status": {
-      kind: "sentinel",
-      source: "https://learn.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-getexitcodeprocess",
-      values: {
-        STILL_ACTIVE: { native: "STILL_ACTIVE", pywin32: "win32con.STILL_ACTIVE", useWhen: "Interpret this returned value as a process that has not terminated; wait first to avoid confusing it with a real exit code." },
       },
     },
     "trust-action": {
@@ -1227,15 +1220,12 @@
     "CreateMutexExA.dwFlags": { choiceSet: "mutex-creation-flags" },
     "CreateMutexExW.dwDesiredAccess": { choiceSet: "mutex-access" },
     "CreateMutexExA.dwDesiredAccess": { choiceSet: "mutex-access" },
-    "IsWow64Process2.pProcessMachine": { choiceSet: "machine-type" },
-    "IsWow64Process2.pNativeMachine": { choiceSet: "machine-type", choices: ["IMAGE_FILE_MACHINE_I386", "IMAGE_FILE_MACHINE_AMD64", "IMAGE_FILE_MACHINE_ARM64", "IMAGE_FILE_MACHINE_ARM64EC"] },
     "EnumProcessModulesEx.dwFilterFlag": { choiceSet: "module-filter" },
     "MessageBoxW.uType": { choiceSet: "message-box-options" },
     "MessageBoxA.uType": { choiceSet: "message-box-options" },
     "HeapAlloc.dwFlags": { choiceSet: "heap-allocation-flags" },
     "HeapFree.dwFlags": { choiceSet: "heap-operation-flags" },
     "HeapSize.dwFlags": { choiceSet: "heap-operation-flags" },
-    "GetExitCodeProcess.lpExitCode": { choiceSet: "process-exit-status" },
     "MapGenericMask.AccessMask": { choiceSet: "generic-access" },
     "WinVerifyTrust.pgActionID": { choiceSet: "trust-action" },
   };

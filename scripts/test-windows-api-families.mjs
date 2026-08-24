@@ -92,6 +92,19 @@ assert.deepEqual(
   "source-audit rows must preserve the complete baseline ledger order",
 );
 
+for (const [name, canonicalSource] of [
+  ["CreateFileMappingW", "https://learn.microsoft.com/en-us/windows/win32/api/memoryapi/nf-memoryapi-createfilemappingw"],
+  ["CreateNamedPipeW", "https://learn.microsoft.com/en-us/windows/win32/api/namedpipeapi/nf-namedpipeapi-createnamedpipew"],
+]) {
+  const variant = window.ILOVEOS_WINDOWS_API_GUIDE.families
+    .flatMap((family) => family.variants)
+    .find((item) => item.name === name);
+  const auditRow = sourceAuditRows.find((line) => line.startsWith(`| \`${name}\` |`));
+  assert.equal(familyData.familyReview[name]?.source, canonicalSource, `${name} family review must use its canonical Learn page`);
+  assert.ok(variant?.sources.includes(canonicalSource), `${name} callable contract must use its canonical Learn page`);
+  assert.ok(auditRow?.includes(`](${canonicalSource})`), `${name} source-audit row must use its canonical Learn page`);
+}
+
 // Completeness gate: deleting one editorial decision, pointing it at an
 // unrelated family, or adding an incomplete sibling must fail before release.
 const completenessErrors = [];
@@ -248,7 +261,6 @@ const requiredAuditBindings = [
   ["native", "LoadLibraryExW.dwFlags", "module-loading-flags"],
   ["native", "CreateEventExW.dwFlags", "event-creation-flags"],
   ["native", "CreateMutexExW.dwFlags", "mutex-creation-flags"],
-  ["native", "IsWow64Process2.pProcessMachine", "machine-type"],
   ["pywin32", "win32file::CreateFile#0.desiredAccess", "file-access"],
   ["pywin32", "win32file::CreateFile#0.shareMode", "file-share-mode"],
   ["pywin32", "win32file::CreateFile#0.CreationDisposition", "file-creation-disposition"],
@@ -258,6 +270,25 @@ for (const [surface, key, expectedId] of requiredAuditBindings) {
   assert.equal(familyData.resolveParameterChoices(key, surface)?.id, expectedId, `${surface} ${key} must resolve ${expectedId}`);
 }
 
+// Output values are interpreted after a successful call. Rendering them as
+// selectable inputs teaches the opposite data flow and invites a bogus choice.
+const pureOutputChoiceErrors = [];
+for (const [variantName, parameterName, expectedDirection, returnedConstant] of [
+  ["IsWow64Process2", "pProcessMachine", "out", "IMAGE_FILE_MACHINE_UNKNOWN"],
+  ["IsWow64Process2", "pNativeMachine", "out, optional", "IMAGE_FILE_MACHINE_*"],
+  ["GetExitCodeProcess", "lpExitCode", "out", "STILL_ACTIVE"],
+]) {
+  const bindingKey = `${variantName}.${parameterName}`;
+  const variant = liveVariants.find((item) => item.name === variantName);
+  const parameter = variant?.parameters.find((item) => item.name === parameterName);
+  if (familyData.resolveParameterChoices(bindingKey, "native")) pureOutputChoiceErrors.push(`${bindingKey} resolves input choices`);
+  if (parameter?.choiceBinding) pureOutputChoiceErrors.push(`${bindingKey} renders input choices`);
+  if (parameter?.direction !== expectedDirection) pureOutputChoiceErrors.push(`${bindingKey} direction is ${parameter?.direction || "missing"}`);
+  const outcomeText = `${variant?.result || ""} ${(variant?.keyBehaviors || []).join(" ")}`;
+  if (!outcomeText.includes(returnedConstant)) pureOutputChoiceErrors.push(`${variantName} outcome omits ${returnedConstant}`);
+}
+assert.deepEqual(pureOutputChoiceErrors, [], "pure-output parameters must describe returned constants without input-choice controls");
+
 // Self-review expansion: these are the correctness-bearing named-choice
 // candidates found by walking every represented native and Python signature.
 // Keep this as one completeness assertion so RED reports the entire omission
@@ -265,7 +296,6 @@ for (const [surface, key, expectedId] of requiredAuditBindings) {
 const expandedAuditBindings = [
   ["native", "CreateFileMappingW.hFile", "file-mapping-backing"],
   ["native", "HeapFree.dwFlags", "heap-operation-flags"],
-  ["native", "GetExitCodeProcess.lpExitCode", "process-exit-status"],
   ["native", "MapGenericMask.AccessMask", "generic-access"],
   ["native", "WinVerifyTrust.pgActionID", "trust-action"],
   ["pywin32", "win32api::DuplicateHandle#0.options", "duplicate-handle-options"],
@@ -346,6 +376,15 @@ for (const [id, choiceSet] of Object.entries(familyData.choiceSets)) {
     assert.ok(value.useWhen?.trim(), `${id}/${name} missing concise use case`);
   }
 }
+const referencedChoiceSets = new Set([
+  ...Object.values(familyData.nativeBindings),
+  ...Object.values(familyData.pywin32Bindings),
+].map((binding) => binding.choiceSet));
+assert.deepEqual(
+  Object.keys(familyData.choiceSets).filter((id) => !referencedChoiceSets.has(id)),
+  [],
+  "choice catalogues must not survive after their last contextual binding is removed",
+);
 
 const nativeAccess = familyData.resolveParameterChoices("OpenProcessToken.DesiredAccess", "native");
 assert.deepEqual(nativeAccess?.values.map((value) => value.name), ["TOKEN_QUERY", "TOKEN_DUPLICATE", "TOKEN_ADJUST_PRIVILEGES"]);

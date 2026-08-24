@@ -714,10 +714,10 @@ Windows API family and contextual-parameter audit, 24 August 2026:
 
 - Status: completed on the `feature/windows-api-families` worktree and ready for controller review.
 - The guide contains 67 represented-operation families and 96 complete callable variants while preserving all 69 baseline contracts exactly once. All 69 baseline contracts have an explicit official-source family decision.
-- The contextual parameter catalogue contains 97 reusable choice sets with 357 documented values and 241 exact-key bindings: 73 native bindings and 168 Python/reference bindings. Another 46 correctness-bearing candidates have explicit `plain` decisions, for 287 exact parameter reviews overall. Large masks stay course-focused and link to Microsoft's full authoritative lists.
+- The contextual parameter catalogue contains 96 reusable choice sets with 356 documented values and 238 exact-key bindings: 70 native bindings and 168 Python/reference bindings. Another 46 correctness-bearing candidates have explicit `plain` decisions, for 284 exact parameter reviews overall. Large masks stay course-focused and link to Microsoft's full authoritative lists; output-only native parameters explain returned constants without input-choice controls.
 - `docs/windows-api-source-audit.md` records the official Microsoft Learn review for every baseline contract, including included siblings and similar operations deliberately kept separate.
 - The completion gate covers `test-windows-api-families.mjs`, `test-windows-api-guide.mjs`, `test-windows-api-view.mjs`, `test-api-parameter-choices.mjs`, `test-windows-api-family-layout.mjs`, `test-api-dialog-scroll.mjs`, the complete sorted `test-*.mjs` suite, the course audit, JavaScript syntax, Python download parsing, and whitespace validation.
-- Final feature commit: `feat: complete Windows API family guide` (the controller records the immutable SHA after review). GitHub Pages run: intentionally not started from this isolated task worktree. Public verification outcome: pending the controller-owned publish and exact-workflow check required after task and final reviews.
+- Feature history: `feat: complete Windows API family guide`, followed by `fix: correct Windows API audit details` for reviewer round 1 (the controller records immutable SHAs after review). GitHub Pages run: intentionally not started from this isolated task worktree. Public verification outcome: pending the controller-owned publish and exact-workflow check required after task and final reviews.
 
 ### Stage 8: Supporting study pages
 
