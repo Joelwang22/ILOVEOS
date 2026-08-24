@@ -113,5 +113,38 @@ assert.deepEqual(builtFamilies.map((item) => item.id), ["create-event", "single-
 assert.equal(builtFamilies.find((item) => item.id === "single-contract")?.variants[0], ungrouped, "singleton should preserve its contract object");
 assert.deepEqual(builtFamilies.find((item) => item.id === "create-event")?.variants.map((item) => item.name), ["CreateEventW", "CreateEventA", "CreateEventExW", "CreateEventExA"]);
 
+// These bindings protect parameter context: changing a token choice set or reusing
+// a binding for a different overload must make this test fail.
+const requiredBindings = [
+  ["native", "OpenProcessToken.DesiredAccess", "token-access"],
+  ["native", "DuplicateToken.ImpersonationLevel", "security-impersonation-level"],
+  ["pywin32", "win32security::OpenProcessToken#0.DesiredAccess", "token-access"],
+  ["pywin32", "win32security::DuplicateTokenEx#0.ImpersonationLevel", "security-impersonation-level"],
+  ["pywin32", "win32security::DuplicateTokenEx#0.TokenType", "token-type"],
+  ["pywin32", "win32security::DuplicateTokenEx#0.DesiredAccess", "token-access"],
+];
+for (const [surface, key, expectedId] of requiredBindings) {
+  const resolved = familyData.resolveParameterChoices(key, surface);
+  assert.equal(resolved?.id, expectedId, `${surface} ${key} must resolve its contextual choice set`);
+}
+
+const nativeAccess = familyData.resolveParameterChoices("OpenProcessToken.DesiredAccess", "native");
+assert.deepEqual(nativeAccess?.values.map((value) => value.name), ["TOKEN_QUERY", "TOKEN_DUPLICATE", "TOKEN_ADJUST_PRIVILEGES"]);
+const pywin32Access = familyData.resolveParameterChoices("win32security::OpenProcessToken#0.DesiredAccess", "pywin32");
+assert.deepEqual(pywin32Access?.values.map((value) => value.code), [
+  "win32security.TOKEN_QUERY",
+  "win32security.TOKEN_DUPLICATE",
+  "win32security.TOKEN_ADJUST_PRIVILEGES",
+]);
+assert.equal(pywin32Access?.example?.code, "win32security.TOKEN_QUERY | win32security.TOKEN_DUPLICATE");
+assert.deepEqual(
+  familyData.resolveParameterChoices("DuplicateToken.ImpersonationLevel", "native")?.values.map((value) => value.name),
+  ["SecurityAnonymous", "SecurityIdentification", "SecurityImpersonation", "SecurityDelegation"],
+);
+assert.deepEqual(
+  familyData.resolveParameterChoices("win32security::DuplicateTokenEx#0.TokenType", "pywin32")?.values.map((value) => value.name),
+  ["TokenPrimary", "TokenImpersonation"],
+);
+
 console.log(`legacy contracts covered: ${familyData.legacyApiNames.length}`);
 console.log("errors: 0");

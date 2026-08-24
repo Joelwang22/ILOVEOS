@@ -782,6 +782,7 @@ class PROCESS_INFORMATION(ctypes.Structure):
     nativeRecords.set(name, { signature: { name, parameters: value.parameters, returns: value.returns }, sources: [value.source] });
   }
 
+  const familyData = window.ILOVEOS_WINDOWS_API_FAMILY_DATA;
   const entries = [...nativeRecords.entries()].map(([name, record]) => {
     const dll = dllFor(name);
     const feature = featureIndex.get(name)?.[0];
@@ -800,6 +801,7 @@ class PROCESS_INFORMATION(ctypes.Structure):
         native: nativeType(parameter.type),
         python: usablePythonType(parameter.type),
         explanation: parameter.description || "Use the value required by the Microsoft contract.",
+        choiceBinding: familyData.nativeBindings[`${name}.${parameter.name}`] ? `${name}.${parameter.name}` : "",
       })),
       result: resultByName[name] || defaultResult(record.signature),
       cleanup: defaultCleanup(name),
@@ -811,7 +813,6 @@ class PROCESS_INFORMATION(ctypes.Structure):
     };
   }).sort((left, right) => left.category.localeCompare(right.category) || left.name.localeCompare(right.name));
 
-  const familyData = window.ILOVEOS_WINDOWS_API_FAMILY_DATA;
   const families = familyData.buildFamilies(entries);
 
   window.ILOVEOS_WINDOWS_API_GUIDE = {

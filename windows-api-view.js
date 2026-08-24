@@ -52,12 +52,32 @@
   function renderParameterList(variant) {
     if (!variant.parameters.length) return '<p class="no-parameters">This function takes no parameters.</p>';
     return `<div class="parameter-list" aria-label="${escapeHtml(variant.name)} parameter translations">
-      ${variant.parameters.map((parameter) => `<div>
+      ${variant.parameters.map((parameter, index) => `<div>
         <code>${escapeHtml(parameter.name)}</code>
         <span class="parameter-type">${escapeHtml(parameter.direction)} · ${escapeHtml(parameter.native)} → ${escapeHtml(parameter.python)}</span>
-        <span>${escapeHtml(parameter.explanation)}</span>
+        <div class="parameter-description">${escapeHtml(parameter.explanation)}${renderParameterChoices(familyData.resolveParameterChoices(parameter.choiceBinding, "native"), `${variant.name}-${index}`)}</div>
       </div>`).join("")}
     </div>`;
+  }
+
+  function renderParameterChoices(resolved, copyIdPrefix) {
+    if (!resolved) return "";
+    const prefix = String(copyIdPrefix || "api-choice").replace(/[^A-Za-z0-9_-]+/g, "-");
+    const renderRow = (value, index, example = false) => {
+      const statusId = `${prefix}-${example ? "example" : `value-${index}`}-status`;
+      return `<div class="api-choice-row${example ? " api-choice-example" : ""}">
+        <code data-api-value-code>${escapeHtml(value.code)}</code>
+        <span>${escapeHtml(value.useWhen)}</span>
+        <button class="api-choice-copy" type="button" data-copy-api-value data-api-value-code="${escapeHtml(value.code)}" aria-describedby="${escapeHtml(statusId)}">Copy</button>
+        <span class="api-choice-status" id="${escapeHtml(statusId)}" data-api-value-status role="status" aria-live="polite"></span>
+      </div>`;
+    };
+    return `<section class="api-parameter-choices" aria-label="${escapeHtml(resolved.id)} choices">
+      <strong>Common ${escapeHtml(resolved.kind === "bitmask" ? "access values" : "values")}</strong>
+      ${resolved.values.map((value, index) => renderRow(value, index)).join("")}
+      ${resolved.example ? renderRow(resolved.example, 0, true) : ""}
+      <a href="${escapeHtml(resolved.source)}" target="_blank" rel="noreferrer">Full list on Microsoft Learn &#8599;</a>
+    </section>`;
   }
 
   function selectedVariant(match) {
@@ -170,5 +190,5 @@
     </div>`;
   }
 
-  window.ILOVEOS_WINDOWS_API_VIEW = { filterFamilies, render, renderDialog, renderEntries };
+  window.ILOVEOS_WINDOWS_API_VIEW = { filterFamilies, render, renderDialog, renderEntries, renderParameterChoices };
 })();

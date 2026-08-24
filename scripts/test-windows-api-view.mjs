@@ -86,7 +86,7 @@ for (const selector of [".api-family-variants", ".api-variant-tab", ".api-varian
 }
 
 const versions = [...indexHtml.matchAll(/(?:href|src)="[^"]+\?v=([^"]+)"/g)];
-requireCondition(versions.length > 0 && versions.every((match) => match[1] === "windows-api-families-2"), "every tied asset must use the windows-api-families-2 release key");
+requireCondition(versions.length > 0 && versions.every((match) => match[1] === "windows-api-families-3"), "every tied asset must use the windows-api-families-3 release key");
 
 console.log(`family matches: ${exaMatches.length}`);
 console.log(`errors: ${errors.length}`);

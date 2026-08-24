@@ -1280,6 +1280,12 @@ except pywintypes.error as error:
     if (resetScroll) apiDialog.scrollTop = 0;
   }
 
+  function renderPywin32ParameterChoices(moduleName, signature, signatureIndex, parameter, parameterIndex) {
+    const bindingKey = `${moduleName}::${signature.name}#${signatureIndex}.${parameter.name}`;
+    const resolved = window.ILOVEOS_WINDOWS_API_FAMILY_DATA.resolveParameterChoices(bindingKey, "pywin32");
+    return windowsApiView.renderParameterChoices(resolved, `pywin32-${moduleName}-${signature.name}-${signatureIndex}-${parameterIndex}`);
+  }
+
   function openApiDetails(moduleName, featureName) {
     const module = referenceData.pywin32Modules.find((item) => item.name === moduleName);
     const feature = module?.features.find((item) => item.name === featureName);
@@ -1298,7 +1304,7 @@ except pywintypes.error as error:
             ${signatures.length > 1 ? `<h3>${escapeHtml(signature.name)}${index > 0 && signature.name === signatures[index - 1]?.name ? `, overload ${index + 1}` : ""}</h3>` : ""}
             <pre><code>${escapeHtml(displaySignature(signature))}</code></pre>
             <h3>Parameters</h3>
-            ${signature.parameters.length ? `<div class="parameter-list">${signature.parameters.map((parameter) => `<div><code>${escapeHtml(parameter.name)}</code><span class="parameter-type">${escapeHtml(parameter.type)}</span><span>${parameter.optional ? "Optional. " : "Required. "}${escapeHtml(parameter.description || parameterRole(parameter.name, parameter.type))}</span></div>`).join("")}</div>` : '<p class="no-parameters">This function takes no parameters.</p>'}
+            ${signature.parameters.length ? `<div class="parameter-list">${signature.parameters.map((parameter, parameterIndex) => `<div><code>${escapeHtml(parameter.name)}</code><span class="parameter-type">${escapeHtml(parameter.type)}</span><div class="parameter-description">${parameter.optional ? "Optional. " : "Required. "}${escapeHtml(parameter.description || parameterRole(parameter.name, parameter.type))}${renderPywin32ParameterChoices(module.name, signature, index, parameter, parameterIndex)}</div></div>`).join("")}</div>` : '<p class="no-parameters">This function takes no parameters.</p>'}
             <h3>Output</h3>
             <div class="return-card"><code>${escapeHtml(signature.returns)}</code><span>${escapeHtml(returnMeaning(signature.returns))}</span></div>
           </section>`).join("") : `
@@ -1498,8 +1504,32 @@ except pywintypes.error as error:
     if (trigger.dataset.windowsApiFamily) openWindowsApiDetails(trigger.dataset.windowsApiFamily, trigger.dataset.windowsApiVariant);
     else openApiDetails(trigger.dataset.apiModule, trigger.dataset.apiFeature);
   });
+  async function copyApiValue(button) {
+    const row = button.closest(".api-choice-row");
+    const status = row?.querySelector("[data-api-value-status]");
+    const code = row?.querySelector("[data-api-value-code]");
+    if (!status || !code) return;
+    status.textContent = "";
+    try {
+      if (!navigator.clipboard?.writeText) throw new Error("clipboard unavailable");
+      await navigator.clipboard.writeText(button.dataset.apiValueCode);
+      status.textContent = "Copied";
+    } catch (_) {
+      const range = document.createRange();
+      range.selectNodeContents(code);
+      const selection = window.getSelection();
+      selection.removeAllRanges();
+      selection.addRange(range);
+      status.textContent = "Value selected. Press Ctrl+C to copy.";
+    }
+  }
   apiDialog.addEventListener("click", (event) => {
     if (event.target === apiDialog) apiDialog.close();
+    const copyControl = event.target.closest("[data-copy-api-value]");
+    if (copyControl) {
+      copyApiValue(copyControl);
+      return;
+    }
     const variant = event.target.closest("[data-api-variant]");
     if (!variant) return;
     const family = windowsApiGuide.families.find((item) => item.id === openWindowsApiFamilyId);

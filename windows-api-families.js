@@ -35,9 +35,71 @@
     },
   ];
 
-  const choiceSets = {};
-  const nativeBindings = {};
-  const pywin32Bindings = {};
+  const choiceSets = {
+    "token-access": {
+      kind: "bitmask",
+      source: "https://learn.microsoft.com/en-us/windows/win32/secauthz/access-rights-for-access-token-objects",
+      values: {
+        TOKEN_QUERY: { native: "TOKEN_QUERY", pywin32: "win32security.TOKEN_QUERY", useWhen: "Read token identity, groups, privileges, and token information." },
+        TOKEN_DUPLICATE: { native: "TOKEN_DUPLICATE", pywin32: "win32security.TOKEN_DUPLICATE", useWhen: "Pass the token to DuplicateToken or DuplicateTokenEx." },
+        TOKEN_ADJUST_PRIVILEGES: { native: "TOKEN_ADJUST_PRIVILEGES", pywin32: "win32security.TOKEN_ADJUST_PRIVILEGES", useWhen: "Enable or disable privileges already present in the token." },
+      },
+    },
+    "security-impersonation-level": {
+      kind: "enum",
+      source: "https://learn.microsoft.com/en-us/windows/win32/api/winnt/ne-winnt-security_impersonation_level",
+      values: {
+        SecurityAnonymous: { native: "SecurityAnonymous", pywin32: "win32security.SecurityAnonymous", useWhen: "Expose neither usable identity nor impersonation authority." },
+        SecurityIdentification: { native: "SecurityIdentification", pywin32: "win32security.SecurityIdentification", useWhen: "Inspect client identity without acting as that client." },
+        SecurityImpersonation: { native: "SecurityImpersonation", pywin32: "win32security.SecurityImpersonation", useWhen: "Act as the client locally; this is the normal local impersonation choice." },
+        SecurityDelegation: { native: "SecurityDelegation", pywin32: "win32security.SecurityDelegation", useWhen: "Act as the client remotely when wider security configuration permits delegation." },
+      },
+    },
+    "token-type": {
+      kind: "enum",
+      source: "https://learn.microsoft.com/en-us/windows/win32/api/winnt/ne-winnt-token_type",
+      values: {
+        TokenPrimary: { native: "TokenPrimary", pywin32: "win32security.TokenPrimary", useWhen: "Create a token suitable for process assignment when the destination API accepts a primary token." },
+        TokenImpersonation: { native: "TokenImpersonation", pywin32: "win32security.TokenImpersonation", useWhen: "Create a token intended for a thread impersonation context." },
+      },
+    },
+  };
+  const nativeBindings = {
+    "OpenProcessToken.DesiredAccess": {
+      choiceSet: "token-access",
+      choices: ["TOKEN_QUERY", "TOKEN_DUPLICATE", "TOKEN_ADJUST_PRIVILEGES"],
+      example: { code: "TOKEN_QUERY | TOKEN_DUPLICATE", useWhen: "Query a token before duplicating it." },
+    },
+    "DuplicateToken.ImpersonationLevel": {
+      choiceSet: "security-impersonation-level",
+      choices: ["SecurityAnonymous", "SecurityIdentification", "SecurityImpersonation", "SecurityDelegation"],
+    },
+  };
+  const pywin32Bindings = {
+    "win32security::OpenProcessToken#0.DesiredAccess": {
+      choiceSet: "token-access",
+      choices: ["TOKEN_QUERY", "TOKEN_DUPLICATE", "TOKEN_ADJUST_PRIVILEGES"],
+      example: { code: "win32security.TOKEN_QUERY | win32security.TOKEN_DUPLICATE", useWhen: "Query a token before duplicating it." },
+    },
+    "win32security::OpenProcessToken#0.desiredAccess": {
+      choiceSet: "token-access",
+      choices: ["TOKEN_QUERY", "TOKEN_DUPLICATE", "TOKEN_ADJUST_PRIVILEGES"],
+      example: { code: "win32security.TOKEN_QUERY | win32security.TOKEN_DUPLICATE", useWhen: "Query a token before duplicating it." },
+    },
+    "win32security::DuplicateTokenEx#0.ImpersonationLevel": {
+      choiceSet: "security-impersonation-level",
+      choices: ["SecurityAnonymous", "SecurityIdentification", "SecurityImpersonation", "SecurityDelegation"],
+    },
+    "win32security::DuplicateTokenEx#0.TokenType": {
+      choiceSet: "token-type",
+      choices: ["TokenPrimary", "TokenImpersonation"],
+    },
+    "win32security::DuplicateTokenEx#0.DesiredAccess": {
+      choiceSet: "token-access",
+      choices: ["TOKEN_QUERY", "TOKEN_DUPLICATE", "TOKEN_ADJUST_PRIVILEGES"],
+      example: { code: "win32security.TOKEN_QUERY | win32security.TOKEN_DUPLICATE", useWhen: "Query a token before duplicating it." },
+    },
+  };
 
   function singletonId(name) {
     return String(name || "api")
@@ -104,12 +166,19 @@
     const choiceSet = binding && choiceSets[binding.choiceSet];
     if (!choiceSet) return null;
     const names = Array.isArray(binding.choices) ? binding.choices : Object.keys(choiceSet.values || {});
+    const example = binding.example && typeof binding.example.code === "string" && binding.example.code.trim()
+      ? { code: binding.example.code, useWhen: binding.example.useWhen || "" }
+      : null;
     return {
       id: binding.choiceSet,
       kind: choiceSet.kind,
       source: choiceSet.source,
-      values: names.filter((name) => choiceSet.values?.[name]).map((name) => ({ name, ...choiceSet.values[name] })),
-      example: binding.example || null,
+      values: names.filter((name) => choiceSet.values?.[name]).map((name) => ({
+        name,
+        code: choiceSet.values[name][surface === "pywin32" ? "pywin32" : "native"],
+        useWhen: choiceSet.values[name].useWhen,
+      })),
+      example,
     };
   }
 
