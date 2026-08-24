@@ -165,7 +165,8 @@
     const binding = bindings?.[bindingKey];
     const choiceSet = binding && choiceSets[binding.choiceSet];
     if (!choiceSet) return null;
-    const names = Array.isArray(binding.choices) ? binding.choices : Object.keys(choiceSet.values || {});
+    const allowedNames = new Set(Array.isArray(binding.choices) ? binding.choices : Object.keys(choiceSet.values || {}));
+    const names = Object.keys(choiceSet.values || {}).filter((name) => allowedNames.has(name));
     const example = binding.example && typeof binding.example.code === "string" && binding.example.code.trim()
       ? { code: binding.example.code, useWhen: binding.example.useWhen || "" }
       : null;

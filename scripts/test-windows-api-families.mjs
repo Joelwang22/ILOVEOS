@@ -146,5 +146,25 @@ assert.deepEqual(
   ["TokenPrimary", "TokenImpersonation"],
 );
 
+// A binding may permit a subset in any order, but the displayed catalogue must
+// retain its documented order. Reverting to binding.choices order breaks this.
+familyData.nativeBindings["Sample.DesiredAccess"] = {
+  choiceSet: "token-access",
+  choices: ["TOKEN_ADJUST_PRIVILEGES", "TOKEN_QUERY"],
+};
+assert.deepEqual(
+  familyData.resolveParameterChoices("Sample.DesiredAccess", "native")?.values.map((value) => value.name),
+  ["TOKEN_QUERY", "TOKEN_ADJUST_PRIVILEGES"],
+  "a filtered binding must preserve catalogue order",
+);
+
+const firstResolved = familyData.resolveParameterChoices("OpenProcessToken.DesiredAccess", "native");
+firstResolved.values[0].code = "MUTATED_VALUE";
+firstResolved.example.code = "MUTATED_EXAMPLE";
+const secondResolved = familyData.resolveParameterChoices("OpenProcessToken.DesiredAccess", "native");
+assert.equal(secondResolved.values[0].code, "TOKEN_QUERY", "a resolved value mutation must not affect a later resolve");
+assert.equal(secondResolved.example.code, "TOKEN_QUERY | TOKEN_DUPLICATE", "a resolved example mutation must not affect a later resolve");
+assert.equal(familyData.choiceSets["token-access"].values.TOKEN_QUERY.native, "TOKEN_QUERY", "a resolved value mutation must not affect the catalogue");
+
 console.log(`legacy contracts covered: ${familyData.legacyApiNames.length}`);
 console.log("errors: 0");
