@@ -68,6 +68,25 @@ Every required input comes from the webpage, a supplied download, or an immediat
 
 Conceptual material removed from a practice step returns to the lesson explanation or, only when it merits a decision, to a webpage-verified checkpoint or existing review question. Most removed writing tasks receive no replacement.
 
+## Investigation Formats
+
+The course keeps multiple guided-investigation formats. A case study is one optional format, not a replacement for executable work.
+
+- **Executable script lab:** the learner runs complete supplied commands or downloadable programs and observes their output.
+- **External-tool inspection:** the learner opens an exact process, artifact, pane, tab, column, or filter and observes named evidence.
+- **Controlled state transition:** a supplied program pauses while the learner inspects state, advances one named transition, inspects again, and cleans up.
+- **Case study:** several steps analyse one fixed contract, transcript, structure, or scenario supplied inside that investigation.
+
+An investigation uses the format that matches its evidence. Script, download, external-tool, and state-transition investigations do not receive a case-study box merely for visual consistency.
+
+### Case-study rule
+
+A practice may contain at most one always-visible case-study box, placed after the investigation introduction and before its steps. Add it only when two or more steps depend on the same fixed example. The box contains every fact, excerpt, code fragment, or output excerpt required by those steps, so the learner never has to return to an example, walkthrough, stage, card, or section elsewhere in the lesson.
+
+The box is divided into uniquely titled sections. A step that consumes the case study identifies the exact section by metadata and by its displayed section label. References such as "the example above", "the same walkthrough", or "open the earlier stage" are forbidden. A named output from an earlier step in the same investigation remains valid because it belongs to the same controlled flow.
+
+Case-study sections use ordinary structured facts for contracts and scenarios. Terminal or code styling appears only when the supplied material is genuinely code, a command, or captured terminal output. The case study is never a dropdown or popup and does not acquire a Copy button unless its content is also an executable command owned by the step.
+
 ## Executable and Tool-Based Tasks
 
 ### Direct PowerShell commands
@@ -148,6 +167,40 @@ A practice step may include a `commands` array:
 
 Command blocks are optional. Their absence keeps GUI and observation-only steps visually simple.
 
+## Practice Case-Study Data
+
+A practice that genuinely shares one fixed example across multiple steps may include one `caseStudy` object:
+
+```js
+{
+  label: "API contract case study",
+  title: "Opening an existing file with CreateFileW",
+  summary: "Use this supplied contract throughout the investigation.",
+  sections: [
+    {
+      title: "Call choices",
+      facts: [
+        ["Desired access", "GENERIC_READ"],
+        ["Share mode", "FILE_SHARE_READ | FILE_SHARE_WRITE"],
+        ["Creation disposition", "OPEN_EXISTING"]
+      ]
+    },
+    {
+      title: "Result and ownership",
+      body: "Failure returns INVALID_HANDLE_VALUE. On success, release the owned handle with CloseHandle."
+    }
+  ]
+}
+```
+
+`label`, `title`, `summary`, and `sections` are required. Section titles are unique within the box. Each section has exactly `title` and one or more of:
+
+- `body`: explanatory text;
+- `facts`: ordered `[label, value]` pairs rendered as semantic terms and descriptions;
+- `code`: genuine source code, a command, or captured terminal output rendered in a contained preformatted region.
+
+A consuming practice step adds `caseStudySections: ["Call choices"]`. Every named section must exist in that practice's `caseStudy`, and at least two distinct steps must consume the box. A practice without a shared fixed example has neither field.
+
 ## Practice Checkpoint Data
 
 A practice may include a `checkpoints` array. Checkpoints appear immediately after the step whose evidence they verify.
@@ -209,7 +262,9 @@ Every lesson receives a manual step-by-step review. The review is not limited to
 9. Remove extension assignments and every request for an off-page written, calculated, classified, designed, researched, or reconstructed deliverable.
 10. Decide whether the controlled showcase exposes a worthwhile invariant fact. Add no checkpoint by default; add a short-answer checkpoint only for exact evidence, or an occasional choice checkpoint only for a meaningful distinction.
 11. Confirm that any checkpoint answer is predetermined by the supplied artifact or webpage fallback, not by the learner's machine or a live runtime value.
-12. Read the complete investigation as a learner and confirm no outside repository knowledge, excessive external work, or unverified decision is assumed.
+12. Identify every dependency on a lesson example, walkthrough, stage, card, or section outside the practice. If two or more steps share one fixed source, move the complete required source into one practice case study; otherwise place the required fact directly in the consuming step.
+13. Confirm that case-study metadata names real local sections and that executable, download, external-tool, and controlled-transition practices have not received decorative case-study boxes.
+14. Read the complete investigation as a learner and confirm no outside repository knowledge, cross-lesson navigation, excessive external work, or unverified decision is assumed.
 
 The audit proceeds in two content batches so each can be reviewed and published independently:
 
@@ -232,6 +287,9 @@ It will:
 - reject paste-hostile angle-bracket placeholders in PowerShell blocks;
 - require each step to retain a concrete action and observation;
 - reject extension fields and off-page task verbs in actions, observations, hints, expected outcomes, and cleanup text;
+- reject practice steps that direct the learner to an example, walkthrough, stage, card, or section elsewhere in the lesson;
+- validate the exact case-study and section shapes, unique section titles, at least two consuming steps, and every `caseStudySections` reference;
+- reject case studies without multiple shared consumers and step references when no case study exists;
 - validate every checkpoint's exact fields, type, step placement, non-empty prompt and feedback, fixed answer, accepted-answer values, option count, and answer-index bounds;
 - reject more than two checkpoints per investigation or more than one choice checkpoint;
 - reject checkpoint answers and prompts that solicit live PIDs, addresses, timings, paths, inventories, or machine-specific results;
@@ -246,6 +304,7 @@ Heuristic searches for terminal verbs without command blocks may produce warning
 - Renders optional practice command blocks.
 - Wires copy behavior after each lesson render.
 - Provides clipboard success and fallback behavior.
+- Renders an optional always-visible case study before the practice steps, including semantic fact rows and contained genuine code/output blocks.
 - Renders short-answer and choice checkpoints immediately after their associated steps.
 - Checks answers locally, shows accessible corrective feedback, and permits another attempt without storing a response.
 - Does not own course content or infer commands from prose.
@@ -253,6 +312,7 @@ Heuristic searches for terminal verbs without command blocks may produce warning
 ### `styles.css`
 
 - Styles command blocks consistently with existing lesson code and practice cards.
+- Styles the single optional case-study box and section references without making it resemble an executable terminal unless it contains genuine code or output.
 - Styles checkpoint fields, option groups, feedback, and focus states consistently with existing practice cards.
 - Preserves focus visibility, text-size controls, compact wrapping, and horizontal containment.
 
@@ -261,6 +321,7 @@ Heuristic searches for terminal verbs without command blocks may produce warning
 - Own the rewritten investigation instructions and command metadata for their modules.
 - Name downloads and cross-step values explicitly.
 - Own only deterministic checkpoint data justified by their supplied artifacts.
+- Own case-study data only where multiple steps consume the same fixed source, and contain every required source fact inside the practice.
 - Contain no extension assignment or off-page learner deliverable.
 
 ### `downloads/*.py`
@@ -271,11 +332,12 @@ Heuristic searches for terminal verbs without command blocks may produce warning
 ### `scripts/audit-course.mjs`
 
 - Enforces artifact, command, and ambiguity rules across all 62 investigations.
-- Enforces the closed-loop, checkpoint-shape, sparsity, and invariant-answer rules.
+- Enforces the closed-loop, local-reference, case-study-shape, checkpoint-shape, sparsity, and invariant-answer rules.
 
 ### New browser and content tests
 
 - Test command rendering and copy interaction in a real browser.
+- Test case-study rendering, semantic fact rows, exact section references, absence from non-case-study formats, and containment at supported widths.
 - Test short-answer and choice verification, retry behavior, feedback announcements, and non-persistence.
 - Test compact and content-size layout behavior.
 - Test deliberately malformed fixture data against the audit rules or shared validation helpers.
@@ -287,6 +349,8 @@ Heuristic searches for terminal verbs without command blocks may produce warning
 - Clipboard rejection does not erase or hide the command.
 - The fallback selects only the requested command block.
 - Commands remain readable without color and are not identified only by syntax coloring.
+- Case-study sections use semantic headings; fact labels and values remain associated to screen readers; genuine code/output scrolls inside the box at narrow widths.
+- A case-study section reference names the section in visible text and never depends on position alone, such as "above".
 - Every checkpoint control has a visible label or group prompt, and feedback is announced without moving focus.
 - Choice state and correctness are not communicated by color alone.
 - An incorrect response remains editable, and checking or resetting a checkpoint never stores the response.
@@ -303,20 +367,23 @@ The release gate includes:
 2. Failing renderer tests for absent command markup and copy wiring before implementation.
 3. Audit tests for singular and plural downloads, malformed commands, unnamed artifacts, vague references, and placeholders.
 4. Audit fixtures proving that the rejected five-part writing task, extension assignments, excessive checkpoints, excessive multiple choice, and dynamic-answer prompts fail.
-5. Browser tests for successful copy, rejected Clipboard API fallback, keyboard focus, independent multiple blocks, checkpoint verification and retry, and live-region feedback.
-6. Content tests confirming the exact Process Explorer DLL lower-pane workflow and the distinct `Properties > Threads` thread-start workflow.
-7. Layout tests at desktop, compact, Edge minimum, and true 390-pixel emulation with all content-size settings.
-8. The complete existing course, reference, assessment, dialog, and JavaScript syntax gates.
-9. `git diff --check` and a clean-file review excluding the owner's `stuff_to_add.txt`.
+5. Audit fixtures rejecting cross-lesson example/stage references, malformed or decorative case studies, nonexistent section references, and a case study consumed by fewer than two steps.
+6. Browser tests for case-study placement and semantics, successful copy, rejected Clipboard API fallback, keyboard focus, independent multiple blocks, checkpoint verification and retry, and live-region feedback.
+7. Content tests proving that the CreateFileW contract and wait/ctypes examples are supplied inside their investigations rather than referenced elsewhere in the lesson.
+8. Content tests confirming the exact Process Explorer DLL lower-pane workflow and the distinct `Properties > Threads` thread-start workflow.
+9. Layout tests at desktop, compact, Edge minimum, and true 390-pixel emulation with all content-size settings, including a real case-study investigation.
+10. The complete existing course, reference, assessment, dialog, and JavaScript syntax gates.
+11. `git diff --check` and a clean-file review excluding the owner's `stuff_to_add.txt`.
 
 ## Publication Workflow
 
-Work is divided into four independently reviewable tasks:
+Work is divided into five independently reviewable tasks:
 
 1. Command-block renderer, copy interaction, styles, and strengthened audit infrastructure.
 2. Modules 1–5 investigation rewrite and any required artifacts.
 3. Checkpoint renderer and audit rules, plus the Modules 6–10 closed-loop rewrite and required artifacts.
 4. Modules 1–5 closed-loop retrofit, full-course strict review, final audit record, cache-key update, and release verification.
+5. Optional case-study rendering and schema, site-wide cross-lesson-reference audit, affected practice rewrites, final-review corrections, a fresh cache key, and release verification.
 
 After each task:
 
@@ -338,6 +405,9 @@ The guided-investigation audit is complete only when:
 - every GUI/tool step identifies its target, interface path or filter, timing, and evidence where applicable;
 - Process Explorer instructions use the exact pane, tab, and column path for the evidence being inspected;
 - every later step names the earlier output it consumes;
+- no step sends the learner to an example, walkthrough, stage, card, or section elsewhere in the lesson;
+- every case study is singular, always visible, complete inside its practice, consumed by at least two steps, and absent from investigations that do not share a fixed example;
+- all executable script, downloadable artifact, external-tool, and controlled-transition formats remain available and use case studies only when independently justified;
 - no guided investigation contains an extension assignment or asks for an off-page written, calculated, classified, designed, researched, or reconstructed deliverable;
 - every learner decision is checked on the webpage against an invariant answer supplied by the course;
 - checkpoints remain sparse: zero by default, no more than two per investigation, and no more than one choice checkpoint;
@@ -347,4 +417,4 @@ The guided-investigation audit is complete only when:
 - checkpoint labels, retry behavior, and feedback are keyboard and screen-reader accessible and non-persistent;
 - command blocks do not overflow at supported widths or content sizes;
 - the full course audit and all existing test suites pass with zero errors and zero warnings;
-- each of the four tasks has been deployed and visually verified on GitHub Pages.
+- each of the five tasks has been deployed and visually verified on GitHub Pages.
