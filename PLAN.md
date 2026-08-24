@@ -712,12 +712,12 @@ Guided-investigation clarity audit, 24 August 2026:
 
 Windows API family and contextual-parameter audit, 24 August 2026:
 
-- Status: completed on the `feature/windows-api-families` worktree and ready for controller review.
+- Status: completed, reviewed, merged to `main`, deployed, and publicly verified.
 - The guide contains 67 represented-operation families and 96 complete callable variants while preserving all 69 baseline contracts exactly once. All 69 baseline contracts have an explicit official-source family decision.
 - The contextual parameter catalogue contains 95 reusable choice sets with 351 documented values and 236 exact-key bindings: 70 native bindings and 166 Python/reference bindings. Another 46 correctness-bearing candidates have explicit `plain` decisions, for 282 exact parameter reviews overall. Large masks stay course-focused and link to Microsoft's full authoritative lists; output-only parameters explain returned constants without input-choice controls on either the native or Python/reference surface.
 - `docs/windows-api-source-audit.md` records the official Microsoft Learn review for every baseline contract, including included siblings and similar operations deliberately kept separate.
 - The completion gate covers `test-windows-api-families.mjs`, `test-windows-api-guide.mjs`, `test-windows-api-view.mjs`, `test-api-parameter-choices.mjs`, `test-windows-api-family-layout.mjs`, `test-api-dialog-scroll.mjs`, the complete sorted `test-*.mjs` suite, the course audit, JavaScript syntax, Python download parsing, and whitespace validation.
-- Feature history: `feat: complete Windows API family guide`, followed by `fix: correct Windows API audit details` for reviewer round 1 (the controller records immutable SHAs after review). GitHub Pages run: intentionally not started from this isolated task worktree. Public verification outcome: pending the controller-owned publish and exact-workflow check required after task and final reviews.
+- Final reviewed feature head: `a19b55b47c4b85d3ba801b4d788fce5b9254c7e9`, including both review-fix rounds. GitHub Pages run `32753694224` completed successfully for that exact SHA. The public site served the `windows-api-families-4` asset key, the 69-record family review, audited sibling variants, removed output-only `IsWow64Process2` choice bindings, and the canonical `CreateFileMappingW` source.
 
 ### Stage 8: Supporting study pages
 
