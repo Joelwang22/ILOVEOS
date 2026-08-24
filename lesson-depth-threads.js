@@ -81,25 +81,22 @@ window.ILOVEOS_LESSON_DEPTH = {
     practice: {
       title: "See one process, many workers",
       time: "25 min",
-      intro: "Use a supplied script to connect Python worker names to native TIDs, shared resources, and file events.",
+      intro: "Use thread_observer_lab.py to connect Python worker names to native TIDs and file events.",
       download: ["downloads/thread_observer_lab.py", "thread_observer_lab.py"],
-      expectedOutcome: "The process should contain the main thread plus three named workers. Each worker prints a distinct native TID, waits at a shared start gate, reads a different temporary file, and records a result in process memory. Process Explorer should match the TIDs while they are alive, and Process Monitor should attribute each file sequence to the responsible worker TID.",
-      predictionPrompt: "Predict which values every worker shares and which values must differ before starting the script.",
+      expectedOutcome: "The process contains the main thread plus three named workers. Each worker prints a distinct native TID, waits at a shared start gate, reads a different temporary file, and stores a result in process memory. Process Explorer matches the selected TIDs while they are alive, and Process Monitor attributes each file sequence to its worker TID.",
       steps: [
         {
           action: "Download thread_observer_lab.py, open PowerShell in its folder, run this command, and leave it at 'Inspect the waiting workers'.",
           commands: [{ label: "PowerShell", code: "py .\\thread_observer_lab.py" }],
           why: "The start gate keeps all three ILOVEOS-worker threads alive long enough for a reliable snapshot.",
-          observe: "Record the process PID, main native TID, worker-0 through worker-2 native TIDs, and all three controlled file paths. If py is unavailable, record that dependency failure and stop."
+          observe: "thread_observer_lab.py prints the process PID, main native TID, worker-0 through worker-2 native TIDs, and three controlled file paths. If py is unavailable, the dependency message is the setup-failure branch."
         },
-        { action: "Select the recorded PID in Process Explorer, open Properties > Threads, and match every printed native TID while thread_observer_lab.py remains at its first prompt.", why: "The match joins the runtime's internal naming with Windows scheduling identity.", observe: "For each matched TID record Start Address, CPU, Cycles Delta or Context Switch Delta when available, and Stack. If symbols do not resolve, keep the raw module or address and do not invent Python function names." },
-        { action: "In Process Monitor add PID is the recorded PID Include, show the TID column through Options > Select Columns, clear the display, and resume capture. Press Enter once in thread_observer_lab.py to release the workers; pause capture immediately after 'joined results' prints.", why: "A narrow interval connects each known worker with its file operations.", observe: "For each of the three recorded paths, correlate the printed worker TID with CreateFile, ReadFile, and CloseFile when present. Record a missing operation rather than assigning it to another TID." },
-        { action: "After thread_observer_lab.py prints the joined results dictionary and exits, compare shared process state with per-thread state.", why: "Completion makes the ownership boundary concrete.", observe: "Classify the one address space and results dictionary as shared, and each native TID, stack, and scheduling state as per-thread; confirm the temporary paths were removed when the TemporaryDirectory closed." },
-        { action: "Write a concurrency conclusion with one explicit limitation.", why: "Several TIDs and interleaved events are not sufficient proof of simultaneous physical execution.", observe: "State what the trace proves and what CPU or storage evidence would be needed for a parallelism claim." }
+        { action: "Select the PID printed by thread_observer_lab.py in Process Explorer, open Properties > Threads, select each printed worker TID in turn, and inspect Start Address and Stack while the first prompt remains active.", why: "Selecting the exact TID joins the runtime worker name with Windows scheduling identity.", observe: "Each printed worker TID appears in Properties > Threads. Start Address can show a runtime helper and Stack can show resolved modules, raw addresses, or an unavailable-symbol branch." },
+        { action: "In Process Monitor add PID is the printed PID Include, show TID through Options > Select Columns, clear the display, and resume capture. Press Enter once in thread_observer_lab.py; pause capture immediately after joined results prints.", why: "A narrow interval connects each known worker with its file operations.", observe: "CreateFile, ReadFile, and CloseFile rows for each controlled path carry one of the printed worker TIDs when captured. A missing row remains a capture limitation rather than being assigned to another TID." },
+        { action: "After thread_observer_lab.py prints the joined results dictionary and exits, refresh Process Explorer and check the three controlled paths.", why: "Completion exposes both thread lifetime and TemporaryDirectory cleanup.", observe: "The printed PID and worker TIDs are no longer live, and the three temporary paths are removed when the supplied TemporaryDirectory closes." }
       ],
-      hints: [{ title: "A worker is missing from Process Explorer", body: "Restart the script and keep it at the first prompt. The worker must still be alive when Process Explorer refreshes." }],
-      cleanup: ["Allow the script to join all workers and remove its temporary files.", "Stop and clear the Process Monitor capture."],
-      extension: { title: "Optional extension", prompt: "Add one CPU-bound worker and compare its CPU sample and event history with the I/O workers. Explain how the GIL affects the prediction." }
+      hints: [{ title: "A worker is missing from Process Explorer", body: "Restart thread_observer_lab.py and keep it at the first prompt. The worker must still be alive when Process Explorer refreshes." }],
+      cleanup: ["If thread_observer_lab.py is still waiting, press Enter once so it joins all workers and removes its temporary files.", "Leave Process Monitor capture stopped and clear only the showcase display."]
     },
     checks: [
       ["Which state is normally shared by threads in one process?", ["Register context", "User stack", "Virtual address space", "Native TID"], 2, "Sibling threads share the process address space while keeping independent contexts, stacks, and IDs."],
@@ -184,28 +181,26 @@ window.ILOVEOS_LESSON_DEPTH = {
       }
     ],
     practice: {
-      title: "Classify live thread states",
+      title: "Observe live thread states",
       time: "25 min",
-      intro: "Use a supplied script with busy, delay, and event-wait workers so each observation has a known cause.",
+      intro: "Use thread_states_lab.py with busy, delay, and event-wait workers so each observed phase has a known cause.",
       download: ["downloads/thread_states_lab.py", "thread_states_lab.py"],
       expectedOutcome: "The busy worker should accumulate CPU and alternate between running and ready. The sleep worker should consume little CPU while waiting for its timer. The event worker should consume little CPU until the main thread signals it, then become ready, run briefly, and terminate. Exact displayed wait reasons and stacks vary by symbols and timing.",
-      predictionPrompt: "Predict the likely CPU and wait behavior for each named worker before starting Process Explorer.",
       steps: [
         {
           action: "Download thread_states_lab.py, open PowerShell in its folder, run this command, and leave all three workers in the first controlled phase.",
           commands: [{ label: "PowerShell", code: "py .\\thread_states_lab.py" }],
           why: "Named workers and printed native TIDs create a ground-truth map for live inspection.",
-          observe: "Record PID, main native TID, and the TIDs labeled busy, delay, and event. If py is unavailable, record that dependency failure and stop."
+          observe: "thread_states_lab.py prints PID, main native TID, and the TIDs labelled busy, delay, and event. If py is unavailable, the dependency message is the setup-failure branch."
         },
-        { action: "Select the recorded PID in Process Explorer, open Properties > Threads, and sample the busy, delay, and event TIDs several times without suspending them.", why: "Thread state is dynamic, so repeated observations are more reliable than one refresh.", observe: "Compare CPU, Cycles Delta or Context Switch Delta, Start Address, and Stack. The busy worker is CPU-bound; delay and event workers are waiting. If state or symbols are unavailable, record that branch." },
-        { action: "Press Enter once at thread_states_lab.py's 'signal the event worker' prompt, then refresh Process Explorer Properties > Threads.", why: "The explicit trigger demonstrates waiting to ready to running to terminated transitions.", observe: "Record that the event TID prints 'event worker observed its signal' and disappears; a short ready or running transition may be too quick for the refresh interval." },
+        { action: "Select the PID printed by thread_states_lab.py in Process Explorer, open Properties > Threads, select the busy, delay, and event TIDs in turn, and refresh several times without suspending them.", why: "Thread state is dynamic, so repeated snapshots are more reliable than one refresh.", observe: "The busy TID accumulates CPU while delay and event TIDs wait. Each selected TID exposes Start Address and Stack; state or symbols can remain unavailable." },
+        { action: "Press Enter once at thread_states_lab.py's signal the event worker prompt, then refresh Process Explorer Properties > Threads.", why: "The explicit trigger demonstrates waiting to ready to running to terminated transitions.", observe: "thread_states_lab.py prints event worker observed its signal and the printed event TID disappears; a short ready or running transition can occur between refreshes." },
         { action: "At the second thread_states_lab.py prompt, press Enter to set both the delay-stop and busy-stop events; this does not wait for the delay worker's 30-second timeout.", why: "Two cooperative stop events demonstrate that waiting and cancellation are designed conditions.", observe: "Confirm 'delay worker finished', 'busy worker stopped', and 'all explicit workers joined', then verify both recorded TIDs disappear." },
-        { action: "Draw a state path for each worker using only supported observations.", why: "The exercise should preserve uncertainty when refresh timing misses a short transition.", observe: "Label direct observations, inferred transitions, and any missing evidence separately." }
+        { action: "Refresh Process Explorer after thread_states_lab.py exits.", why: "The final refresh confirms that all controlled worker and process objects ended.", observe: "The printed PID and all three worker TIDs are absent. If the process remains, return to the second prompt and press Enter once." }
       ],
       safety: "Inspect only the supplied process. Do not suspend or change the context of arbitrary application or system threads.",
-      hints: [{ title: "The wait reason is not visible", body: "Use CPU behavior, the known script phase, and any available stack frames. Record that the exact wait reason was unavailable rather than inventing it." }],
-      cleanup: ["Use the script prompts to signal and stop every worker, then allow all joins to complete.", "Close Process Explorer thread property windows."],
-      extension: { title: "Optional extension", prompt: "Add a queue.get worker and compare its wait and wake behavior with the event worker." }
+      hints: [{ title: "The wait reason is not visible", body: "Use CPU behavior, the named thread_states_lab.py phase, and available stack frames without guessing an unavailable wait reason." }],
+      cleanup: ["If thread_states_lab.py is still waiting, use its two supplied prompts to release every worker.", "Close Process Explorer thread property windows."]
     },
     checks: [
       ["What does ready mean?", ["The thread currently owns a processor", "The thread can run when selected", "The thread has terminated", "The thread is permanently suspended"], 1, "A ready thread is eligible but not currently executing."],
@@ -309,32 +304,39 @@ window.ILOVEOS_LESSON_DEPTH = {
       }
     ],
     practice: {
-      title: "Design and test a clean worker shutdown",
-      time: "30 min",
-      intro: "Use thread_shutdown_lab.py to expose normal completion, cancellation, and injected failure without repeated answer fields.",
+      title: "Observe clean worker shutdown",
+      time: "20 min",
+      intro: "Use thread_shutdown_lab.py to expose normal completion, cancellation, and injected failure with fixed output paths.",
       download: ["downloads/thread_shutdown_lab.py", "thread_shutdown_lab.py"],
       expectedOutcome: "Three non-daemon workers should perform bounded units, respond to one stop event, run their finally cleanup, and be joined before main closes the shared report. In failure mode, one worker should report an injected exception, request sibling cancellation, and cause the program to finish with a visible failure after every worker is joined.",
-      predictionPrompt: "Predict what could go wrong if main closes the shared report before join or if a blocked worker never checks the stop event.",
       steps: [
         {
           action: "Download thread_shutdown_lab.py, open PowerShell in its folder, and run the normal mode with an explicit report path.",
-          commands: [{ label: "PowerShell", code: "py .\\thread_shutdown_lab.py normal --output .\\thread_shutdown_normal.log" }],
+          commands: [{ label: "PowerShell", code: "$normalLog = Join-Path $PWD 'thread_shutdown_normal.log'\n$failLog = Join-Path $PWD 'thread_shutdown_fail.log'\nforeach ($ownedLog in @($normalLog, $failLog)) { if (Test-Path -LiteralPath $ownedLog) { throw \"Remove or rename the existing lab file first: $ownedLog\" } }\npy .\\thread_shutdown_lab.py normal --output .\\thread_shutdown_normal.log" }],
           why: "The successful path establishes start, bounded work, cooperative stop, finally, and join ordering.",
-          observe: "The run is bounded and has no pause. Record PID, three worker native TIDs, 'main requests cooperative stop', three cleanup messages, 'all workers joined', and 'normal completion'; confirm thread_shutdown_normal.log is closed only after all joins."
+          observe: "The bounded run prints one PID, three worker native TIDs, main requests cooperative stop, three cleanup messages, all workers joined, and normal completion. A collision error protects pre-existing logs."
         },
-        { action: "If Process Explorer was already open, select the printed PID immediately and inspect Properties > Threads while the bounded normal-mode process remains active; refresh after that process exits.", why: "The optional external sample tests the runtime messages against Windows state without changing the workload.", observe: "Match any native TIDs visible during the short execution and verify the PID is gone afterward. If the workers finish before the snapshot, record the timing limitation rather than adding an unsupported pause flag." },
         {
           action: "Run failure mode with a separate explicit report path; preserve the nonzero command result as expected evidence.",
           commands: [{ label: "PowerShell", code: "py .\\thread_shutdown_lab.py fail --output .\\thread_shutdown_fail.log" }],
           why: "Failure handling is part of lifecycle ownership, not only an exceptional afterthought.",
-          observe: "Record the injected worker-1 failure, sibling cleanup messages, 'all workers joined', and 'worker failure propagated to main'. Confirm thread_shutdown_fail.log includes cleanup rows despite the exit code 1."
+          observe: "The command prints the injected worker-1 failure, sibling cleanup messages, all workers joined, and worker failure propagated to main, then returns exit code 1 as the expected non-success branch."
         },
-        { action: "Verify sibling cancellation and final process result.", why: "The group should not silently return success with incomplete work.", observe: "All workers join, the shared report closes once, and main reports the original worker failure." },
-        { action: "Temporarily reason through, but do not implement, a TerminateThread replacement.", why: "A counterfactual makes the lost guarantees explicit without performing an unsafe call.", observe: "List which finally blocks, locks, buffered writes, and runtime invariants could be stranded." }
+        {
+          action: "Run this PowerShell block to display both complete owned logs after normal and failure modes finish.",
+          commands: [{ label: "PowerShell", code: "Get-Content -LiteralPath .\\thread_shutdown_normal.log\nGet-Content -LiteralPath .\\thread_shutdown_fail.log" }],
+          why: "The file output confirms that worker cleanup occurred before the shared report closed in both modes.",
+          observe: "Both logs contain worker cleanup rows. The failure log retains cleanup rows even though failure mode returned exit code 1."
+        },
+        {
+          action: "Run this PowerShell cleanup block for the two explicit log paths.",
+          commands: [{ label: "PowerShell", code: "$ownedLogs = @('.\\thread_shutdown_normal.log', '.\\thread_shutdown_fail.log')\nforeach ($ownedLog in $ownedLogs) { if (Test-Path -LiteralPath $ownedLog) { Remove-Item -LiteralPath $ownedLog } }\n$ownedLogs | ForEach-Object { Test-Path -LiteralPath $_ }" }],
+          why: "Cleanup is limited to the two files created by steps 1 and 2.",
+          observe: "PowerShell prints False twice. Any True result identifies an owned log that remains."
+        }
       ],
       hints: [{ title: "The program waits briefly after cancellation", body: "Workers check the event around bounded units. Shutdown latency is bounded by the longest unit or wait timeout, not necessarily instantaneous." }],
-      cleanup: ["Allow every worker to join; do not close the terminal during the cleanup messages.", "Delete only .\\thread_shutdown_normal.log and .\\thread_shutdown_fail.log after your comparison."],
-      extension: { title: "Optional extension", prompt: "Replace periodic Event checks with a queue sentinel protocol and compare ownership, shutdown latency, and how many sentinels are required." }
+      cleanup: ["Allow every worker to join; do not close the terminal during the cleanup messages.", "The final PowerShell block removes only thread_shutdown_normal.log and thread_shutdown_fail.log."]
     },
     checks: [
       ["What does join request?", ["Immediate worker termination", "A wait for worker completion", "A new TID", "A priority boost"], 1, "join waits. Cancellation or completion must be caused through the worker's normal protocol."],
@@ -438,39 +440,40 @@ window.ILOVEOS_LESSON_DEPTH = {
       }
     ],
     practice: {
-      title: "Find the workload's useful thread region",
-      time: "40 min",
-      intro: "Extend the controlled directory-reader experiment into a repeated worker-count curve without treating the supplied result as universal.",
+      title: "Compare controlled I/O and CPU thread counts",
+      time: "25 min",
+      intro: "Run fixed one-worker and five-worker modes for supplied I/O-bound and CPU-bound artifacts.",
       downloads: [["downloads/thread_io_lab.py", "thread_io_lab.py", "I/O workload"], ["downloads/prime_threads_lab.py", "prime_threads_lab.py", "Prime workload"]],
-      expectedOutcome: "Elapsed time should change nonlinearly as workers increase. A small workload may regress immediately. A larger file set may improve, flatten, and eventually regress as startup, scheduling, memory, cache, and contention costs grow. The exact knee can differ from the supplied 100-thread observation and can move between cold and warm runs.",
-      predictionPrompt: "Choose worker counts appropriate for your controlled file set and predict the useful region before measuring.",
+      expectedOutcome: "thread_io_lab.py reads the same 200 controlled files with one and five workers, while prime_threads_lab.py checks the same range with one and five workers. File counts, bytes, and prime counts stay fixed; elapsed values vary by machine, and the CPU-bound Python workload is not promised to improve with more threads.",
       steps: [
         {
           action: "Download thread_io_lab.py and prime_threads_lab.py, open PowerShell in their folder, and create the owned .\\iloveos-scheduler-files workload.",
           commands: [{ label: "PowerShell", code: "$root = Join-Path $PWD 'iloveos-scheduler-files'\nif (Test-Path -LiteralPath $root) { throw \"Remove or rename the existing lab folder first: $root\" }\nNew-Item -ItemType Directory -Path $root | Out-Null\n1..200 | ForEach-Object { Set-Content -LiteralPath (Join-Path $root \"input-$_.txt\") -Value ('S' * 65536) -Encoding ascii }\n\"Logical processors: $([Environment]::ProcessorCount)\"\nGet-ChildItem -File $root | Measure-Object Length -Sum" }],
-          why: "A fixed controlled file set and planned worker range make repeated runs comparable.",
-          observe: "Record the full directory path, 200-file count, total bytes, logical processors, Python version, and storage location."
+          why: "A fixed controlled file set keeps input inventory identical between the two I/O modes.",
+          observe: "PowerShell prints 200 files, their fixed total bytes, and the machine's logical-processor count. A collision error protects a pre-existing folder."
         },
         {
-          action: "Measure the I/O-bound directory reader at every shown worker count. Repeat this entire block at least three times; each invocation names thread_io_lab.py, the same .\\iloveos-scheduler-files path, and the only changed argument is workers.",
-          commands: [{ label: "PowerShell", code: "py .\\thread_io_lab.py .\\iloveos-scheduler-files 1\npy .\\thread_io_lab.py .\\iloveos-scheduler-files 2\npy .\\thread_io_lab.py .\\iloveos-scheduler-files 5\npy .\\thread_io_lab.py .\\iloveos-scheduler-files 10\npy .\\thread_io_lab.py .\\iloveos-scheduler-files 25\npy .\\thread_io_lab.py .\\iloveos-scheduler-files 50\npy .\\thread_io_lab.py .\\iloveos-scheduler-files 100" }],
-          why: "The final argument selects worker count, and medians reduce sensitivity to one background interruption or cache transition.",
-          observe: "For each invocation record workers, identical file count and bytes read, and elapsed milliseconds measured from immediately before ThreadPoolExecutor construction through all worker joins."
+          action: "Run thread_io_lab.py against the same .\\iloveos-scheduler-files input with one worker and five workers.",
+          commands: [{ label: "PowerShell", code: "py .\\thread_io_lab.py .\\iloveos-scheduler-files 1\npy .\\thread_io_lab.py .\\iloveos-scheduler-files 5" }],
+          why: "Only the worker-count argument changes between the supplied I/O modes.",
+          observe: "Both invocations print files: 200 and the same bytes read. Worker counts are 1 and 5; elapsed values are machine-dependent."
         },
         {
-          action: "Measure the CPU-bound pure-Python prime workload at every shown worker count. Repeat this block at least three times; each invocation names prime_threads_lab.py, the same limit 200000, and the only changed argument is workers.",
-          commands: [{ label: "PowerShell", code: "py .\\prime_threads_lab.py 200000 1\npy .\\prime_threads_lab.py 200000 2\npy .\\prime_threads_lab.py 200000 5\npy .\\prime_threads_lab.py 200000 10\npy .\\prime_threads_lab.py 200000 25\npy .\\prime_threads_lab.py 200000 50\npy .\\prime_threads_lab.py 200000 100" }],
-          why: "The same CPU-bound algorithm exposes Python-thread scheduling and GIL overhead without mixing in file waits.",
-          observe: "For each invocation record worker native TIDs, identical prime count, and elapsed milliseconds measured from before thread creation through all joins; prime printing is excluded unless --show is explicitly added."
+          action: "Run prime_threads_lab.py with the same limit 200000 and worker counts one and five.",
+          commands: [{ label: "PowerShell", code: "py .\\prime_threads_lab.py 200000 1\npy .\\prime_threads_lab.py 200000 5" }],
+          why: "The fixed pure-Python CPU workload exposes thread overhead and GIL constraints without file waits.",
+          observe: "Both invocations print the same prime count and different worker TID sets. Elapsed values vary, and the five-worker mode is not guaranteed to be faster."
         },
-        { action: "During one low-count, one best-so-far, and one high-count run, select the printed PID in Process Explorer and open Properties > Threads and Properties > Performance.", why: "Thread count, CPU, memory, and context-switch observations help explain the curve.", observe: "Record live worker count, process CPU, Context Switch Delta or Cycles Delta, Private Bytes, Working Set, and I/O Bytes for the same PID. If a run completes before inspection, record the timing limitation; do not add an unsupported pause flag." },
-        { action: "Plot or tabulate workers against median time and mark the useful region.", why: "The shape communicates improvement, plateau, and regression more clearly than one fastest row.", observe: "Calculate speedup relative to one worker and percentage regression after the best measured point." },
-        { action: "Compare your result with better_together and thread_overdose.", why: "Transfer means explaining why the qualitative lesson can match while the numerical optimum differs.", observe: "Name workload, GIL, storage, cache, scheduling, and measurement factors that can move the knee." }
+        {
+          action: "After both supplied programs exit, run this PowerShell cleanup block for the owned input directory.",
+          commands: [{ label: "PowerShell", code: "$root = Join-Path $PWD 'iloveos-scheduler-files'\nif (Test-Path -LiteralPath $root) { Remove-Item -LiteralPath $root -Recurse }\nTest-Path -LiteralPath $root" }],
+          why: "The showcase removes only the controlled directory created in step 1.",
+          observe: "PowerShell prints False. A True result means the owned directory remains."
+        }
       ],
       safety: "Use only controlled files and reasonable worker counts. Do not launch hundreds of workers on a memory-constrained machine merely to match the supplied exercise; stop if the system becomes unresponsive.",
-      hints: [{ title: "The curve is noisy", body: "Increase controlled work per run, close unrelated heavy applications, keep power conditions consistent, use medians, and separate cold from warm cache questions." }],
-      cleanup: ["Allow thread_io_lab.py and prime_threads_lab.py to join all workers before closing the terminal.", "Delete only .\\iloveos-scheduler-files after all runs finish."],
-      extension: { title: "Optional extension", prompt: "Run the supplied prime calculation with several Python thread counts and compare it with a ProcessPoolExecutor version. Exclude printing from timing and explain the GIL-related difference." }
+      hints: [{ title: "Elapsed values differ between runs", body: "That is expected. The fixed evidence is input and result consistency; timing remains an observation only." }],
+      cleanup: ["Allow thread_io_lab.py and prime_threads_lab.py to join all workers before cleanup.", "The final PowerShell block removes only .\\iloveos-scheduler-files."]
     },
     checks: [
       ["What is the scheduler's direct unit of dispatch?", ["Executable file", "Thread", "Handle table", "DLL"], 1, "Ready threads are selected for logical processors."],
@@ -561,28 +564,20 @@ window.ILOVEOS_LESSON_DEPTH = {
       intro: "Use two disposable CPU workers and a reversible Process Explorer change below normal priority ranges.",
       download: ["downloads/cpu_priority_lab.py", "cpu_priority_lab.py"],
       expectedOutcome: "With enough competing ready work, the worker left at Normal may accumulate CPU faster than the worker changed to Below Normal. On a machine with spare logical processors, both may run almost equally. Restoring the original class should return the scheduling policy to baseline. The result changes ordering under contention, not total hardware capacity.",
-      predictionPrompt: "Check the number of logical processors and predict how many competing workers are needed before priority differences become visible.",
       steps: [
         {
           action: "Download cpu_priority_lab.py and open two PowerShell windows in its folder. Start the first and second CPU-bound workers with these identical 60-second commands.",
           commands: [{ label: "First PowerShell", code: "py .\\cpu_priority_lab.py --seconds 60" }, { label: "Second PowerShell", code: "py .\\cpu_priority_lab.py --seconds 60" }],
           why: "Owned disposable targets make the policy change safe and reversible.",
-          observe: "Record both printed PIDs and native TIDs. In Process Explorer confirm both Priority Class values begin at Normal and compare completed_units at the same elapsed seconds."
+          observe: "Each cpu_priority_lab.py process prints its PID, native TID, elapsed values, and completed_units. Process Explorer shows both exact PIDs beginning at Normal priority."
         },
-        {
-          action: "Only if the two workers have spare processors, use a third PowerShell window in the same folder to start enough additional owned 60-second Normal-class helpers to match the logical-processor count.",
-          commands: [{ label: "Helper PowerShell", code: "$helperCount = [Math]::Max(0, [Environment]::ProcessorCount - 2)\n$helpers = @()\nif ($helperCount -eq 0) {\n  'No helper workers needed.'\n} else {\n  $helpers = 1..$helperCount | ForEach-Object {\n    Start-Process -FilePath py -ArgumentList '.\\cpu_priority_lab.py','--seconds','60' -WindowStyle Hidden -PassThru\n  }\n  $helpers | Select-Object Id,StartTime\n}\n\"Logical processors: $([Environment]::ProcessorCount); helper workers started: $helperCount\"" }],
-          why: "Priority has little visible effect when every ready thread has an idle processor.",
-          observe: "Record every helper PID and start time printed by PowerShell. Each helper is bounded to 60 seconds; if responsiveness degrades, wait for those recorded PIDs to exit before continuing."
-        },
-        { action: "In Process Explorer right-click only one of the two recorded primary PIDs, choose Set Priority > Below Normal, and confirm the warning. Leave the other recorded PID at Normal.", why: "A modest class difference demonstrates relative selection without using dangerous High or Real Time ranges.", observe: "At the same elapsed= lines, record completed_units for both PIDs across several equal one-second intervals, plus each process's CPU and Priority Class columns." },
-        { action: "Before the 60-second workers exit, right-click the changed recorded PID in Process Explorer and choose Set Priority > Normal.", why: "Restoration is part of every configuration-changing experiment.", observe: "Verify Process Explorer reports Normal for that PID. If it exited first, record that the process ended and no persistent process priority remained; do not change a reused PID." },
-        { action: "Explain the result using readiness and capacity.", why: "The conclusion must account for idle cores, affinity, boosts, and sampling noise.", observe: "State whether contention existed and why priority did or did not change observed progress." }
+        { action: "In Process Explorer right-click only the first PID printed in step 1, choose Set Priority > Below Normal, and confirm the warning. Leave the second printed PID at Normal.", why: "A modest class difference demonstrates relative selection without using dangerous High or Real Time ranges.", observe: "Process Explorer shows Below Normal for the first exact PID and Normal for the second. completed_units may diverge under contention or remain similar when processors are idle." },
+        { action: "Before the 60-second workers exit, right-click the changed first PID in Process Explorer and choose Set Priority > Normal.", why: "Restoration is part of every configuration-changing showcase.", observe: "Process Explorer shows Normal again for that exact PID. If it already exited, no persistent process priority remains; do not act on a reused PID." },
+        { action: "Allow both cpu_priority_lab.py commands to reach their 60-second bound, or press Ctrl+C once in each visible window after priority is restored.", why: "The supplied workers are bounded and owned by the showcase.", observe: "Each completed worker prints final units and checksum, or prints stop requested after Ctrl+C, then its PID disappears from Process Explorer." }
       ],
       safety: "Change only the supplied disposable workers. Do not select High or Real Time, and do not alter system, security, service, or unrelated application processes.",
-      hints: [{ title: "Both workers progress equally", body: "That can be correct when the machine has idle logical processors. Add only enough owned normal-priority workers to create mild contention, or constrain the test in a disposable VM." }],
-      cleanup: ["Restore the changed primary PID to Normal if it is still live; an exited cpu_priority_lab.py process leaves no persistent priority setting.", "Let every cpu_priority_lab.py process reach its bounded 60-second completion. If stopping early, press Ctrl+C only in the two visible PowerShell windows; the hidden helper PIDs have no prompt and exit after their 60-second bounds."],
-      extension: { title: "Optional extension", prompt: "Constrain both owned workers to one logical processor after saving the original affinity, repeat briefly, then restore affinity and priority in finally." }
+      hints: [{ title: "Both workers progress equally", body: "That can be correct when the machine has idle logical processors. Priority changes selection order among ready threads; it does not add contention or capacity." }],
+      cleanup: ["Restore the changed first PID to Normal if it is still live.", "Let both cpu_priority_lab.py processes finish, or stop only those two visible owned workers with Ctrl+C after restoration."]
     },
     checks: [
       ["What does higher priority directly change?", ["Processor capacity", "Selection order among ready work", "Virtual address width", "Handle ownership"], 1, "Priority ranks ready candidates. It does not add processors or reduce the work."],

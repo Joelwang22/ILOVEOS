@@ -80,28 +80,25 @@ window.ILOVEOS_LESSON_DEPTH = {
     practice: {
       title: "Separate image from instance",
       time: "20 min",
-      intro: "Use two Notepad processes to classify shared program properties and per-process state.",
+      intro: "Use two live instances to observe shared image identity and independent process state.",
       expectedOutcome: "Both processes should report the same executable path and similar module sets, but different PIDs, creation times, thread objects, handle tables, private memory, and lifetimes. Closing one process should leave the executable file and the other process intact.",
-      predictionPrompt: "Before opening Process Explorer, list two values you expect to match and four you expect to differ.",
       steps: [
         {
-          action: "In PowerShell, launch two Notepad requests and print the launcher-returned process IDs. Record which request was issued first.",
+          action: "In PowerShell, launch two Notepad requests and print the launcher-returned process IDs.",
           commands: [
             { label: "PowerShell", code: "$first = Start-Process -FilePath notepad.exe -PassThru\nStart-Sleep -Milliseconds 500\n$second = Start-Process -FilePath notepad.exe -PassThru\n\"First returned PID: $($first.Id)\"\n\"Second returned PID: $($second.Id)\"" },
             { label: "Fallback: first PowerShell", code: "py -c \"import os; print(f'First Python PID: {os.getpid()}'); input('Press Enter after inspection...')\"" },
             { label: "Fallback: second PowerShell", code: "py -c \"import os; print(f'Second Python PID: {os.getpid()}'); input('Press Enter after inspection...')\"" }
           ],
           why: "A controlled creation order gives the two otherwise similar launch requests a known distinguishing fact.",
-          observe: "Confirm two live Notepad rows with different PIDs and creation times. If this Windows build redirects both requests into one host, record that branch and use the two labeled fallback commands from separate PowerShell windows."
+          observe: "Two live Notepad rows normally appear with different PIDs and creation times. If this Windows build redirects both requests into one host, use the two labelled fallback commands from separate PowerShell windows and keep both waiting."
         },
-        { action: "For each live PID, open Process Explorer Properties > Image and Properties > Performance.", why: "These views separate file identity from runtime accounting and private state.", observe: "Compare exact path, command line, parent, start time, private bytes, working set, handle count, and thread count for the two recorded PIDs." },
-        { action: "Select each recorded PID in Process Explorer, choose View > Show Lower Pane, and switch View > Lower Pane View between DLLs and Handles.", why: "Modules are mapped code images, while handles are checked references to objects. Similar-looking rows answer different questions.", observe: "Find several shared module paths and at least one handle or object unique to each process. Record access denied separately from a process that exited." },
-        { action: "Close the first process and refresh the second process's properties.", why: "Independent lifetime is a direct test of the process-container model.", observe: "The second process and notepad.exe file remain, while the first PID is no longer live." },
-        { action: "Write one observation, interpretation, and limitation.", why: "Separating evidence from inference prevents a shared module list from being mistaken for shared process state.", observe: "Include why a PID without creation time is not a durable historical identity." }
+        { action: "For each live PID printed in step 1, open Process Explorer Properties > Image and Properties > Performance.", why: "These views separate file identity from runtime accounting and private state.", observe: "The exact executable paths normally match, while PID, parent, start time, private bytes, working set, handle count, and thread count belong to each live instance." },
+        { action: "Select each PID printed in step 1, choose View > Show Lower Pane, and switch View > Lower Pane View between DLLs and Handles.", why: "Modules are mapped code images, while handles are checked references to objects.", observe: "DLLs mode shows shared module paths and Handles mode shows process-local object references. Access denied and an exited PID are distinct visible branches." },
+        { action: "Close the first live process from step 1 and refresh the second process's Properties window.", why: "Independent lifetime is a direct test of the process-container model.", observe: "The second process remains live and its executable file remains on disk, while the first PID is no longer live." }
       ],
-      hints: [{ title: "Notepad reused an existing process", body: "Recent Notepad versions can behave differently across builds. If two starts do not produce two rows, run the two labeled py -c fallback blocks from separate PowerShell windows." }],
-      cleanup: ["Close both test processes and any Process Explorer property windows.", "Do not terminate unrelated processes that happen to share the same executable name."],
-      extension: { title: "Optional extension", prompt: "Start the same executable from two different parent terminals. Compare ancestry, then close one parent and observe whether its child automatically exits." }
+      hints: [{ title: "Notepad reused an existing process", body: "Recent Notepad versions can behave differently across builds. If two starts do not yield two rows, run the two labelled py -c fallback blocks from separate PowerShell windows." }],
+      cleanup: ["Close the remaining test process and its Process Explorer property windows.", "Do not terminate unrelated processes that happen to share the same executable name."]
     },
     checks: [
       ["Which item belongs to the executable file rather than one process instance?", ["PID", "Creation time", "Publisher signature", "Private heap"], 2, "The signature describes the file. PID, creation time, and private heap belong to a running instance."],
@@ -200,23 +197,21 @@ window.ILOVEOS_LESSON_DEPTH = {
       time: "25 min",
       intro: "Run a supplied process that creates known memory, file, and thread state, then find each category externally.",
       download: ["downloads/process_inventory_lab.py", "process_inventory_lab.py"],
-      expectedOutcome: "The script should report its PID, allocate a recognizable private buffer, keep one temporary file open, and start one waiting worker. Process Explorer should show the process identity, at least two threads, and an open file handle. VMMap should classify image, heap, stack, and private regions, but exact addresses and byte counts will vary.",
-      predictionPrompt: "Predict which observations should disappear when the file closes, when the worker exits, and when the whole process ends.",
+      expectedOutcome: "process_inventory_lab.py reports its PID, allocates a recognizable private buffer, keeps one temporary file open, and starts one waiting worker. Process Explorer shows the process identity, at least two threads, and an open file handle. VMMap shows image, heap, stack, and private regions, but exact addresses and byte counts vary.",
       steps: [
         {
           action: "Download process_inventory_lab.py, open PowerShell in its folder, run this command, and leave process_inventory_lab.py at 'Inspect the process now'.",
           commands: [{ label: "PowerShell", code: "py .\\process_inventory_lab.py" }],
           why: "process_inventory_lab.py creates known state, giving every external observation a ground-truth explanation.",
-          observe: "Record its PID, held-open path, Python architecture, main native TID, worker native TID, and 16,777,216-byte private buffer. If py is unavailable, record that dependency failure and stop."
+          observe: "process_inventory_lab.py prints its PID, held-open path, Python architecture, main native TID, worker native TID, and a 16,777,216-byte private buffer. If py is unavailable, the dependency message is the setup-failure branch."
         },
-        { action: "Select the recorded PID in Process Explorer. Inspect Properties > Image, Performance, and Threads; then choose View > Show Lower Pane and switch View > Lower Pane View between Handles and DLLs.", why: "Handles and DLLs must be inspected as separate resource categories.", observe: "Find the exact held-open path in Handles, several Python or Windows modules in DLLs, the recorded worker TID in Threads, start time, and current memory counters. Distinguish access denied from an exited PID." },
-        { action: "In VMMap choose File > Select Process, select the recorded PID, and classify one row each under Image, Heap, Stack, and Private Data.", why: "Virtual memory needs a region map rather than one total counter.", observe: "Record the base address, committed size, private size, working set, and protection shown for one representative row in each category. If the PID has exited or access is denied, record that branch explicitly." },
-        { action: "Press Enter once in process_inventory_lab.py so it closes the held-open path and releases its explicit worker; leave it at 'Refresh the tools'. Refresh Process Explorer and VMMap for the same PID.", why: "A controlled state transition tests which resource belongs to which lifetime.", observe: "Confirm that the exact held-open path and recorded worker TID disappear while the process image, main TID, and remaining memory stay until final exit." },
-        { action: "Press Enter a second time in process_inventory_lab.py to exit and remove its temporary directory, then write a scope table using the recorded PID, TIDs, path, and region rows.", why: "The table converts tool rows into a reusable process model.", observe: "Classify each recorded value as file, mapping, process-wide state, thread state, security context, or measurement; confirm the recorded PID is no longer live." }
+        { action: "Select the PID printed by process_inventory_lab.py in Process Explorer. Inspect Properties > Image, Performance, and Threads; then choose View > Show Lower Pane and switch View > Lower Pane View between Handles and DLLs.", why: "Handles and DLLs are separate resource categories.", observe: "Handles mode shows the exact held-open path, DLLs mode shows Python and Windows modules, and Properties > Threads shows the printed worker TID. Access denied and an exited PID are distinct branches." },
+        { action: "In VMMap choose File > Select Process, select the PID printed by process_inventory_lab.py, and locate Image, Heap, Stack, and Private Data rows.", why: "Virtual memory requires a region map rather than one total counter.", observe: "VMMap shows category rows with machine-dependent base, committed, private, working-set, and protection values. An exited PID or access denied is visible instead of requiring guessed values." },
+        { action: "Press Enter once in process_inventory_lab.py so it closes the held-open path and releases its explicit worker; leave it at Refresh the tools. Refresh Process Explorer and VMMap for the same PID.", why: "A controlled transition exposes the file and worker lifetimes while the process remains live.", observe: "The exact held-open path and printed worker TID disappear, while the process image, main TID, and remaining memory stay visible until final exit." },
+        { action: "Press Enter a second time in process_inventory_lab.py so it exits and removes its temporary directory; refresh Process Explorer once more.", why: "The supplied artifact owns the temporary path and completes its own cleanup.", observe: "The command returns to PowerShell, the printed PID is no longer live, and the temporary directory has been removed." }
       ],
-      hints: [{ title: "The file handle is missing", body: "Confirm the script is still at its first prompt, select Handle mode in the lower pane, and search for part of the exact temporary path." }],
-      cleanup: ["Allow the script to finish so it closes the file and removes its temporary directory.", "Close Process Explorer and VMMap views created for the lab."],
-      extension: { title: "Optional extension", prompt: "Double the allocated buffer, refresh VMMap and Process Explorer, and explain which counter or region changes most clearly and why." }
+      hints: [{ title: "The file handle is missing", body: "Confirm process_inventory_lab.py is still at its first prompt, select Handles mode in the lower pane, and search for the exact temporary path." }],
+      cleanup: ["If process_inventory_lab.py is still paused, press Enter until it exits and removes its temporary directory.", "Close Process Explorer and VMMap views opened for the showcase."]
     },
     checks: [
       ["Which metric counts resident pages associated with a process?", ["Working set", "Private bytes", "PID", "Handle count"], 0, "The working set is the current resident-page view. It can include shared as well as private pages."],
@@ -307,32 +302,34 @@ window.ILOVEOS_LESSON_DEPTH = {
       intro: "Use a supplied directory reader to compare one worker with several while preserving the limits of the evidence.",
       download: ["downloads/thread_io_lab.py", "thread_io_lab.py"],
       expectedOutcome: "A small file set may be slower with several workers because startup and coordination dominate. A larger cached or storage-backed set may improve when reads overlap, but the best count depends on the machine and files. Process Monitor should attribute reads to more worker TIDs in multi mode. Interleaving supports concurrent issue, not guaranteed physical-disk or CPU parallelism.",
-      predictionPrompt: "Predict separately for a directory with two files and a directory with hundreds of files. State what result would change your prediction.",
       steps: [
         {
           action: "Download thread_io_lab.py and open PowerShell in its folder. Create the owned .\\iloveos-io-tiny and .\\iloveos-io-many inputs with this complete block.",
           commands: [{ label: "PowerShell", code: "$tiny = Join-Path $PWD 'iloveos-io-tiny'\n$many = Join-Path $PWD 'iloveos-io-many'\nif ((Test-Path -LiteralPath $tiny) -or (Test-Path -LiteralPath $many)) { throw 'Remove or rename the existing iloveos-io-tiny and iloveos-io-many lab folders first.' }\nNew-Item -ItemType Directory -Path $tiny,$many | Out-Null\n1..2 | ForEach-Object { Set-Content -LiteralPath (Join-Path $tiny \"tiny-$_.txt\") -Value ('T' * 4096) -Encoding ascii }\n1..200 | ForEach-Object { Set-Content -LiteralPath (Join-Path $many \"many-$_.txt\") -Value ('M' * 65536) -Encoding ascii }\nGet-ChildItem -File $tiny,$many | Group-Object DirectoryName | Select-Object Name,Count,@{Name='Bytes';Expression={($_.Group | Measure-Object Length -Sum).Sum}}" }],
           why: "Controlled file counts avoid scanning sensitive or changing system directories and make repeated runs comparable.",
-          observe: "Record the full directory paths, file count, and total bytes printed for each directory."
+          observe: "PowerShell prints the full directory paths, a count of 2 for iloveos-io-tiny, and a count of 200 for iloveos-io-many. A collision error protects pre-existing folders."
         },
         {
-          action: "Run these CPU-light, I/O-bound tiny-directory commands from the folder containing thread_io_lab.py. Repeat the entire block three times; only the worker argument changes between paired runs.",
+          action: "Run these CPU-light, I/O-bound tiny-directory commands from the folder containing thread_io_lab.py.",
           commands: [{ label: "PowerShell", code: "py .\\thread_io_lab.py .\\iloveos-io-tiny 1\npy .\\thread_io_lab.py .\\iloveos-io-tiny 5" }],
           why: "The final argument selects worker count, and the small case exposes fixed thread and executor overhead.",
-          observe: "For each run record root, files, workers, bytes read, and elapsed milliseconds; compare the three elapsed values and median for 1 versus 5 workers."
+          observe: "Each run prints root, files: 2, its fixed worker count, bytes read, and a machine-dependent elapsed value. A dependency or path error is the setup-failure branch."
         },
         {
-          action: "For the many-file input, run the complete one-worker capture command, then repeat the full setup with the five-worker command. At each script pause, add Process Monitor filters PID is the printed PID Include and Operation is ReadFile Include, clear the display, resume capture, then press Enter to start the timed read; pause capture when the command prints elapsed time.",
+          action: "For the many-file input, run the complete one-worker command, then repeat the full setup with the five-worker command. At each thread_io_lab.py pause, add Process Monitor filters PID is the printed PID Include and Operation is ReadFile Include, clear the display, resume capture, press Enter once, and pause capture when elapsed time prints.",
           commands: [{ label: "One worker", code: "py .\\thread_io_lab.py .\\iloveos-io-many 1 --pause" }, { label: "Five workers", code: "py .\\thread_io_lab.py .\\iloveos-io-many 5 --pause" }],
           why: "The larger I/O-bound workload tests whether overlapping file waits can repay the fixed overhead.",
-          observe: "For each recorded PID, show the TID column and record how many distinct worker TIDs issued ReadFile events, along with files, bytes read, and elapsed milliseconds. If no ReadFile rows appear, broaden only the Operation filter and record the limitation."
+          observe: "Process Monitor attributes ReadFile rows to the printed PID. The five-worker run can show several TIDs issuing reads, while exact ordering and elapsed values vary. If no ReadFile rows appear, disable only the Operation filter to expose the capture limitation."
         },
-        { action: "Compare elapsed time with process CPU time and trace ordering.", why: "Multiple evidence types prevent a wall-time improvement from being mislabeled as CPU parallelism.", observe: "State whether the run supports I/O overlap, CPU parallelism, concurrent issue only, or an inconclusive result." },
-        { action: "Repeat one condition after the cache is warm and write the limitation paragraph.", why: "Cache state can dominate file benchmarks and must appear in the conclusion.", observe: "Name the machine, directory, worker count, repetitions, cache limitation, and any background-load uncertainty." }
+        {
+          action: "After both thread_io_lab.py processes exit, run this PowerShell cleanup block from the folder containing the two owned input directories.",
+          commands: [{ label: "PowerShell", code: "$tiny = Join-Path $PWD 'iloveos-io-tiny'\n$many = Join-Path $PWD 'iloveos-io-many'\nforeach ($ownedPath in @($tiny, $many)) { if (Test-Path -LiteralPath $ownedPath) { Remove-Item -LiteralPath $ownedPath -Recurse } }\nTest-Path -LiteralPath $tiny,$many" }],
+          why: "Cleanup is limited to the two directories created by step 1.",
+          observe: "PowerShell prints False for both owned paths. Any True result means that specific directory remains."
+        }
       ],
-      hints: [{ title: "The multi-worker run is always slower", body: "That is a valid result. Increase the number or size of controlled files, avoid console output during timing, and check whether the storage or cache can provide useful overlap." }],
-      cleanup: ["Delete only .\\iloveos-io-tiny and .\\iloveos-io-many after all thread_io_lab.py runs finish.", "Stop and clear the Process Monitor capture, then allow both paused thread_io_lab.py processes to exit."],
-      extension: { title: "Optional extension", prompt: "Add a CPU-only hashing mode and compare threads with processes. Explain the roles of the GIL, native hashing implementation, and workload size." }
+      hints: [{ title: "The multi-worker run is slower", body: "That is a valid machine-dependent result. The showcase is concerned with attributed ReadFile activity, not a promised speedup." }],
+      cleanup: ["Leave Process Monitor capture stopped and clear only the showcase display.", "The final PowerShell block removes only .\\iloveos-io-tiny and .\\iloveos-io-many."]
     },
     checks: [
       ["What does process CPU time exclude most directly?", ["Time its threads executed in kernel mode", "Wall time spent not executing", "Execution by every worker thread", "Accumulated user-mode execution"], 1, "CPU time accumulates actual execution. Waiting and descheduled wall-clock intervals are not CPU time."],
@@ -425,32 +422,30 @@ window.ILOVEOS_LESSON_DEPTH = {
       intro: "Use a corrected ctypes launcher that exposes structure inputs, returned outputs, waiting, exit status, and cleanup.",
       download: ["downloads/create_process_lab.py", "create_process_lab.py"],
       expectedOutcome: "The launcher should create Notepad or another explicit harmless target, print the child PID and TID, optionally request a hidden initial window, and keep the process handle until the child exits. Process Explorer should reveal the child in either window mode. The wait should return WAIT_OBJECT_0, the exit code should become available, and both returned handles should close in finally.",
-      predictionPrompt: "Predict which fields Windows reads, which fields Windows writes, and which two resources the parent owns after success.",
       steps: [
-        { action: "Download create_process_lab.py and inspect its structure declarations before running it.", why: "ABI review is safer when separated from native execution.", observe: "Confirm full field order, pointer-sized HANDLE fields, startup.cb, WinDLL, use_last_error, argtypes, and restype." },
+        { action: "Download create_process_lab.py and open the complete file in a text viewer before running it.", why: "The supplied artifact exposes its ABI declarations before native execution.", observe: "create_process_lab.py contains full STARTUPINFOW and PROCESS_INFORMATION fields, pointer-sized HANDLE members, startup.cb, WinDLL, use_last_error, argtypes, and restype." },
         {
           action: "From PowerShell in the folder containing create_process_lab.py, run the visible-target command and leave it at 'Inspect the child'.",
           commands: [{ label: "PowerShell", code: "py .\\create_process_lab.py" }],
           why: "The default target is the explicit System32\\notepad.exe path, establishing ordinary creation and correlation before presentation flags change.",
-          observe: "Record child PID, initial TID, hide requested False, parent PID, exact image path, and creation time in Process Explorer."
+          observe: "create_process_lab.py prints child PID, initial TID, and hide requested: False. Process Explorer shows that exact child PID with its parent, System32\\notepad.exe image path, and creation time."
         },
         { action: "Close the child identified by the printed child PID, then press Enter in create_process_lab.py so it performs WaitForSingleObject.", why: "Waiting on the process handle demonstrates process-object signaling and avoids process-name polling.", observe: "Confirm a child exit code is printed, followed by 'closed initial thread handle' and 'closed process handle'. A missing child is distinct from access denied while inspecting it." },
         {
           action: "Run the complete hidden-presentation command and leave create_process_lab.py at its inspection prompt before locating the printed child PID externally.",
           commands: [{ label: "PowerShell", code: "py .\\create_process_lab.py --hide" }],
           why: "The comparison changes only the --hide request and separates window presentation from process existence.",
-          observe: "Record hide requested True, child PID, and initial TID. The initial window behavior may differ by target, but the process and thread remain observable until exit."
+          observe: "create_process_lab.py prints hide requested: True, child PID, and initial TID. Initial window behavior may differ by target, but the exact process and thread remain observable until exit."
         },
         {
           action: "After closing the hidden test child and allowing that launcher to finish, run this guarded absent-target failure command.",
           commands: [{ label: "PowerShell", code: "$missingTarget = Join-Path $env:TEMP 'ILOVEOS-does-not-exist.exe'\nif (Test-Path -LiteralPath $missingTarget) { throw \"Remove or rename the existing collision before this failure test: $missingTarget\" }\npy .\\create_process_lab.py $missingTarget" }],
           why: "The failure path proves last-error handling without creating partial ownership.",
-          observe: "Record the full absent path and numeric Windows error. Distinguish file-not-found from access denied, and confirm no child PID or handle-cleanup success messages are printed for the failed creation. If the collision guard fires, do not delete an unknown file merely to force the test; choose another owned absent name and repeat the complete guarded block."
+          observe: "The command shows the absent path in a numeric Windows error and prints no child PID or handle-cleanup success messages. A collision guard or access-denied error is distinct from the intended file-not-found branch and leaves unknown files untouched."
         }
       ],
       hints: [{ title: "Notepad does not stay hidden", body: "Modern applications can delegate or control their own windows. The lesson tests that the startup request is not a process-hiding mechanism, not that every target must honor SW_HIDE indefinitely." }],
-      cleanup: ["Close the harmless child process and allow the launcher to finish its wait.", "Do not use the launcher for protected, unrelated, or untrusted executables."],
-      extension: { title: "Optional extension", prompt: "Reimplement the same launch with win32process.CreateProcess and compare code size, returned Python types, failure behavior, and unchanged handle ownership." }
+      cleanup: ["Close the harmless --hide child and press Enter in create_process_lab.py so its wait and handle cleanup finish.", "Do not use the supplied launcher for protected, unrelated, or untrusted executables."]
     },
     checks: [
       ["What does CreateProcess create in addition to the process object?", ["Only a filename", "An initial thread", "A permanent parent-child ownership link", "A Job object automatically"], 1, "A new process begins with an initial thread whose handle and TID are returned to the creator."],
@@ -541,27 +536,27 @@ window.ILOVEOS_LESSON_DEPTH = {
       intro: "Use a two-mode starter to create and open one named event while WinObj and Process Explorer show its namespace and handle views.",
       download: ["downloads/named_event_lab.py", "named_event_lab.py"],
       expectedOutcome: "Creator mode should create Local\\ILOVEOS_ObjectLab and pause with one event handle. Opener mode should obtain a distinct handle to the same object. WinObj should show the event name, and each live process should show an Event handle. The object should survive either first close and disappear after both handles close.",
-      predictionPrompt: "Predict which tool will show the name, which will show each owner, and what happens after the creator exits first.",
       steps: [
         {
           action: "Download named_event_lab.py. In the first PowerShell window opened in its folder, run creator mode and leave it at 'Inspect WinObj and Process Explorer'.",
           commands: [{ label: "Creator PowerShell", code: "py .\\named_event_lab.py creator" }],
           why: "The pause makes Local\\ILOVEOS_ObjectLab and the creator handle long-lived enough for snapshot tools.",
-          observe: "Record mode creator, creator PID, name Local\\ILOVEOS_ObjectLab, and process-local handle value."
+          observe: "named_event_lab.py prints mode: creator, creator PID, name: Local\\ILOVEOS_ObjectLab, and a process-local handle value. A pywin32 dependency error is the setup-failure branch."
         },
-        { action: "In WinObj browse \\Sessions\\your-session-number\\BaseNamedObjects and select ILOVEOS_ObjectLab. In Process Explorer select the recorded creator PID, choose View > Show Lower Pane and View > Lower Pane View > Handles, then find the Event row whose name ends with ILOVEOS_ObjectLab.", why: "The two observations distinguish namespace presence from per-process ownership.", observe: "Confirm Event type and the exact creator PID. If WinObj presents the current session directly under \\BaseNamedObjects, record that path; distinguish access denied from a missing object." },
+        { action: "In Process Explorer choose View > Select Columns > Process Image, enable Session, and read the Session value for the creator PID printed in step 1. In WinObj open \\Sessions, open the numeric directory that matches that Session value, open BaseNamedObjects, and select ILOVEOS_ObjectLab.", why: "The live process supplies the current session number consumed by the Object Manager namespace path.", observe: "WinObj shows an Event named ILOVEOS_ObjectLab. Some WinObj versions present the current session directly under \\BaseNamedObjects; access denied and a missing object are distinct branches." },
+        { action: "In Process Explorer select the creator PID printed in step 1, choose View > Show Lower Pane and View > Lower Pane View > Handles, then find the Event row whose name ends with ILOVEOS_ObjectLab.", why: "The handle lower pane shows creator ownership separately from the WinObj namespace entry.", observe: "Handles mode shows an Event row ending in ILOVEOS_ObjectLab for the exact creator PID while the first pause remains active." },
         {
           action: "In a second PowerShell window opened in the folder containing named_event_lab.py, run opener mode and leave it paused.",
           commands: [{ label: "Opener PowerShell", code: "py .\\named_event_lab.py opener" }],
           why: "OpenEvent demonstrates name lookup, access checking, and a separate handle-table entry.",
-          observe: "Record mode opener, second PID, the same printed name, and its process-local handle value; do not expect the numeric handles to match. If Windows reports error 2, the named object is missing; other error codes such as access denied are a different branch."
+          observe: "Opener mode prints a second PID, the same fixed name, and its own process-local handle value. The numeric values need not match. Windows error 2 means the named object is missing; access denied is a different branch."
         },
-        { action: "Exit the creator while keeping the opener paused, then refresh both tools.", why: "The transition tests whether creator lifetime and object lifetime are the same.", observe: "The creator handle disappears, while the event name and opener handle remain." },
-        { action: "Exit the opener and verify final disappearance.", why: "Releasing the final user handle should allow deletion when no hidden reference remains.", observe: "The event no longer appears under the name and a new OpenEvent attempt reports not found." }
+        { action: "Press Enter in creator mode while keeping opener mode paused, then refresh WinObj and Process Explorer.", why: "The transition tests whether creator lifetime and object lifetime are the same.", observe: "The creator PID and handle disappear, while the ILOVEOS_ObjectLab namespace entry and opener handle remain." },
+        { action: "Press Enter in opener mode, then refresh WinObj and Process Explorer.", why: "Releasing the final user handle allows deletion when no other reference remains.", observe: "opener mode prints handle closed and exits; the event name and opener PID disappear after refresh." }
       ],
+      checkpoints: [{ afterStep: 2, type: "short", prompt: "Complete the supplied event name: Local\\ILOVEOS_[____]", answer: "ObjectLab", acceptedAnswers: [], feedback: "named_event_lab.py deliberately creates Local\\ILOVEOS_ObjectLab." }],
       hints: [{ title: "The event is not under the expected directory", body: "Use the exact Local prefix and inspect the BaseNamedObjects view for the current session. WinObj presentation can differ across Windows builds." }],
-      cleanup: ["Exit both named_event_lab.py processes through their prompts so each closes its handle.", "Verify neither recorded PID remains; Local\\ILOVEOS_ObjectLab needs no file cleanup."],
-      extension: { title: "Optional extension", prompt: "Use Global instead of Local in an isolated lab session. Record any privilege or cross-session difference without weakening security settings." }
+      cleanup: ["If either named_event_lab.py process is still waiting, press Enter once so its handle closes.", "Local\\ILOVEOS_ObjectLab needs no file cleanup after both processes exit."]
     },
     checks: [
       ["What does an Object Manager name primarily provide?", ["Automatic full access", "A lookup path to an object", "A raw kernel pointer", "Permanent storage"], 1, "Names make objects discoverable. Opening still performs access checks and returns a handle."],
@@ -657,38 +652,41 @@ window.ILOVEOS_LESSON_DEPTH = {
       time: "35 min",
       intro: "Use one supplied Python logger with three modes so the operation sequence and output data remain controlled.",
       download: ["downloads/file_lifetime_lab.py", "file_lifetime_lab.py"],
-      expectedOutcome: "Keep-open mode should show one main open and close around many writes. Reopen mode should show repeated opens and closes. Flush mode should keep one handle but request a flush after each record. Reopen and flush modes will often take longer, but the exact ratio depends on storage, caching, antivirus, and record count. Every mode should produce equivalent logical records.",
-      predictionPrompt: "Predict the Process Monitor sequence for each mode and separately predict which mode provides the strongest requested durability boundary.",
+      expectedOutcome: "Keep-open mode shows one main open and close around many writes. Reopen mode shows repeated opens and closes. Flush mode keeps one handle but requests a flush after each entry. Reopen and flush modes often take longer, but the exact ratio depends on storage, caching, antivirus, and entry count. Every mode emits equivalent logical entries.",
       steps: [
         {
-          action: "Download file_lifetime_lab.py and open PowerShell in its folder. Run all three 25-record correctness commands with explicit output filenames.",
-          commands: [{ label: "PowerShell", code: "py .\\file_lifetime_lab.py keep-open --records 25 --output .\\iloveos_keep-open.log\npy .\\file_lifetime_lab.py reopen --records 25 --output .\\iloveos_reopen.log\npy .\\file_lifetime_lab.py flush --records 25 --output .\\iloveos_flush.log" }],
+          action: "Download file_lifetime_lab.py and open PowerShell in its folder. Run all three 25-entry correctness commands with explicit output filenames.",
+          commands: [{ label: "PowerShell", code: "$ownedLogs = @('.\\iloveos_keep-open.log', '.\\iloveos_reopen.log', '.\\iloveos_flush.log')\nforeach ($ownedLog in $ownedLogs) { if (Test-Path -LiteralPath $ownedLog) { throw \"Remove or rename the existing lab file first: $ownedLog\" } }\npy .\\file_lifetime_lab.py keep-open --records 25 --output .\\iloveos_keep-open.log\npy .\\file_lifetime_lab.py reopen --records 25 --output .\\iloveos_reopen.log\npy .\\file_lifetime_lab.py flush --records 25 --output .\\iloveos_flush.log" }],
           why: "Correctness must be established before timing or event-count comparisons are meaningful.",
-          observe: "At each 'Start the filtered Process Monitor capture' prompt, press Enter to begin. Confirm 25 records and identical logical line order in the three named log files."
+          observe: "At each Start the filtered Process Monitor capture prompt, press Enter once. Every mode prints records: 25, and all three owned files contain the same fixed entry sequence. A collision error protects pre-existing files."
         },
         {
           action: "Run the complete keep-open capture command. At its pause, configure Process Monitor with PID is the printed PID Include and Path is the printed full path Include; clear the display, resume capture, press Enter to start timing, and pause capture when elapsed time prints.",
           commands: [{ label: "PowerShell", code: "py .\\file_lifetime_lab.py keep-open --records 250 --output .\\iloveos_keep-open.log" }],
           why: "This establishes the minimal logical handle-lifetime sequence for the exact output file.",
-          observe: "Record PID, mode keep-open, full path, records, bytes, elapsed milliseconds, and counts for CreateFile, WriteFile, FlushBuffersFile, and CloseFile."
+          observe: "Process Monitor shows the printed PID and exact path using one main CreateFile lifetime around the writes. The program prints mode: keep-open, records: 250, bytes, and machine-dependent elapsed time."
         },
         {
           action: "Repeat the complete capture procedure with reopen mode and its distinct output path; change only the mode and output filename shown here.",
           commands: [{ label: "PowerShell", code: "py .\\file_lifetime_lab.py reopen --records 250 --output .\\iloveos_reopen.log" }],
           why: "Changing handle lifetime isolates repeated open and close behavior.",
-          observe: "Record the printed PID and path for the new filters, show repeated CreateFile and CloseFile rows, and compare elapsed milliseconds across several full invocations."
+          observe: "For the newly printed PID and path, Process Monitor shows repeated CreateFile and CloseFile activity. Exact elapsed time remains machine-dependent."
         },
         {
           action: "Repeat the complete capture procedure with flush mode and its distinct output path; change only the mode and output filename shown here.",
           commands: [{ label: "PowerShell", code: "py .\\file_lifetime_lab.py flush --records 250 --output .\\iloveos_flush.log" }],
           why: "A durability barrier is a different design choice from repeated acquisition.",
-          observe: "Record the printed PID and path for the new filters, then count FlushBuffersFile separately from CreateFile and CloseFile while comparing elapsed milliseconds."
+          observe: "For the newly printed PID and path, Process Monitor shows FlushBuffersFile activity without the reopen mode's repeated handle lifetime. Exact elapsed time remains machine-dependent."
         },
-        { action: "Write a conclusion with evidence and limitations.", why: "The supplied exercise should teach defensible investigation, not a universal storage-performance rule.", observe: "State logical operation counts, median timing, requested durability difference, cache uncertainty, and what Process Monitor cannot reveal about physical media." }
+        {
+          action: "After all file_lifetime_lab.py commands exit, run this PowerShell cleanup block in the same folder.",
+          commands: [{ label: "PowerShell", code: "$ownedLogs = @('.\\iloveos_keep-open.log', '.\\iloveos_reopen.log', '.\\iloveos_flush.log')\nforeach ($ownedLog in $ownedLogs) { if (Test-Path -LiteralPath $ownedLog) { Remove-Item -LiteralPath $ownedLog } }\n$ownedLogs | ForEach-Object { Test-Path -LiteralPath $_ }" }],
+          why: "Cleanup targets only the three explicit files created by the showcase.",
+          observe: "PowerShell prints False three times. Any True result identifies an owned log that remains."
+        }
       ],
-      hints: [{ title: "There are extra file events", body: "Runtimes and Windows can issue metadata or cleanup operations. Keep PID and exact path filters, preserve the event order, and explain unexpected rows rather than deleting them from the evidence." }],
-      cleanup: ["Delete only .\\iloveos_keep-open.log, .\\iloveos_reopen.log, and .\\iloveos_flush.log.", "Stop and clear the Process Monitor capture after saving any notes you need."],
-      extension: { title: "Optional extension", prompt: "Add a batched-flush mode that flushes every 25 records. Compare latency and the maximum number of records between requested durability barriers." }
+      hints: [{ title: "There are extra file events", body: "Runtimes and Windows can issue metadata or cleanup operations. Keep the PID and exact Path filters so unrelated activity stays outside the display." }],
+      cleanup: ["Leave Process Monitor capture stopped and clear only the showcase display.", "The final PowerShell block removes only the three explicit ILOVEOS log files."]
     },
     checks: [
       ["What does granted access belong to most directly?", ["The executable filename", "The handle table entry", "The PID forever", "The desktop window"], 1, "The access check records granted rights in the caller's handle entry."],

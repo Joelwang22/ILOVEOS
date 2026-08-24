@@ -75,6 +75,8 @@ const downloadPaths = [];
 const sourceUrls = [];
 let investigationCount = 0;
 let commandCount = 0;
+let checkpointCount = 0;
+let choiceCheckpointCount = 0;
 for (const lesson of lessons) {
   const expanded = { ...lesson, ...(depth[lesson.id] || {}) };
   const prefix = `${lesson.module}/${lesson.id}`;
@@ -92,10 +94,12 @@ for (const lesson of lessons) {
   requireCondition((expanded.sources || []).length >= 1, `${prefix}: missing primary source`);
   if (expanded.practice) {
     investigationCount += 1;
-    const practiceResult = validatePractice(expanded.practice, prefix);
+    const practiceResult = validatePractice(expanded.practice, prefix, { enforceClarity: true });
     errors.push(...practiceResult.errors);
     warnings.push(...practiceResult.warnings);
     commandCount += practiceResult.commandCount;
+    checkpointCount += practiceResult.checkpointCount;
+    choiceCheckpointCount += practiceResult.choiceCheckpointCount;
     for (const download of practiceDownloads(expanded.practice)) downloadPaths.push({ lesson: prefix, path: download.path });
   }
   for (const [, url] of expanded.sources || []) sourceUrls.push({ owner: prefix, url });
@@ -195,6 +199,8 @@ console.log(`lessons: ${lessons.length}`);
 console.log(`deep lessons: ${lessons.filter((lesson) => depth[lesson.id]).length}`);
 console.log(`guided investigations: ${investigationCount}`);
 console.log(`practice command blocks: ${commandCount}`);
+console.log(`practice checkpoints: ${checkpointCount}`);
+console.log(`choice checkpoints: ${choiceCheckpointCount}`);
 console.log(`downloads checked: ${downloadPaths.length}`);
 console.log(`reference features: ${referenceNames.size}`);
 console.log(`API signature entries: ${Object.keys(signatures).length}`);
@@ -206,4 +212,4 @@ console.log(`errors: ${errors.length}`);
 for (const error of errors) console.log(`ERROR ${error}`);
 console.log(`warnings: ${warnings.length}`);
 for (const warning of warnings) console.log(`WARN ${warning}`);
-if (errors.length) process.exitCode = 1;
+if (errors.length || warnings.length) process.exitCode = 1;

@@ -78,29 +78,28 @@ window.ILOVEOS_LESSON_DEPTH = {
       }
     ],
     practice: {
-      title: "Explain one VMMap region completely",
-      time: "20 min",
-      intro: "Choose one image or private region in a harmless process you started and turn its row into a verified address annotation.",
-      expectedOutcome: "The calculated exclusive end should equal base plus size, the last byte should be one less, and a page-aligned size should divide evenly by the reported page size. Restarting the process may change the base while the module-relative or structural relationship remains.",
+      title: "Observe one VMMap region",
+      time: "15 min",
+      intro: "Open one controlled Notepad instance and inspect a current VMMap row without turning live addresses into a worksheet.",
+      expectedOutcome: "VMMap shows the controlled process's Image and Private Data regions with current Address, Size, Committed, Private, Total WS, and Protection values. Closing the process makes that live map unavailable; its addresses are not durable identifiers.",
       steps: [
         {
           action: "In PowerShell, start the controlled Notepad instance and print the process identity; then open that exact live PID in VMMap with File > Select Process.",
           commands: [{ label: "PowerShell", code: "$target = Start-Process -FilePath notepad.exe -PassThru\n\"PID: $($target.Id)\"\n\"Creation time: $($target.StartTime.ToString('o'))\"\n\"System page size: $([Environment]::SystemPageSize) bytes\"" }],
           why: "Addresses are scoped to one live process instance.",
-          observe: "Record the PID, creation time, architecture shown by the tool, and system page size. If modern Notepad redirects and the returned PID exits, select the live Notepad PID by matching its creation time and path, and record that branch."
+          observe: "PowerShell prints the requested PID, creation time, and page size. If modern Notepad redirects and the returned PID exits, use Process Explorer to match the surviving Notepad by creation time and image path before selecting it in VMMap."
         },
-        { action: "In VMMap's lower Details view, choose one stable Image or Private Data row and record Address, Type, Size, Committed, Private, Total WS, and Protection; open the row details to record Allocation Base when available.", why: "Keeping the region address and allocation base prevents the common region-versus-allocation mistake.", observe: "Treat Address as the region BaseAddress. Note whether it equals Allocation Base and explain what either result means; distinguish reserved Size from Committed and resident Total WS." },
-        { action: "Calculate exclusive end, last included byte, page count, and the offset of BaseAddress + 0x25A.", why: "These four operations cover the arithmetic used throughout memory and PE lessons.", observe: "Verify that the offset is below the page size and that the chosen inner address falls inside the half-open range." },
+        { action: "In VMMap's lower Details view for the matched live PID, select one Image row and one Private Data row; open row details for Allocation Base when available.", why: "The two categories expose current region purpose without requiring address arithmetic.", observe: "Each row shows Address, Type, Size, Committed, Private, Total WS, and Protection. Address is the current region start, while Allocation Base can identify the larger originating allocation." },
         {
-          action: "Restart the controlled experiment: close the Notepad from step 1 through its own window, run this complete launch block in the same PowerShell window, then select the newly identified live PID in VMMap with File > Select Process and find the corresponding Image or Private Data category again.",
-          commands: [{ label: "PowerShell", code: "$notepadPath = (Get-Command notepad.exe -ErrorAction Stop).Source\n$restart = Start-Process -FilePath $notepadPath -PassThru\n\"Restart requested path: $notepadPath\"\n\"Restart launcher PID: $($restart.Id)\"\n\"Restart creation time: $($restart.StartTime.ToString('o'))\"" }],
-          why: "A fresh launch and explicit identity reacquisition separate a structural offset from a temporary virtual address.",
-          observe: "Record the new live PID, creation time, exact image path, and new region base before recalculating. If the returned launcher PID has exited or modern Notepad redirected the request, use Process Explorer to match the surviving Notepad by the recorded creation time and image path, record the redirected branch, and stop if no unique live process can be identified. Compare the new values with step 1 and explain why the old pointer must not be reused."
-        }
+          action: "Restart the controlled identity check: close the first Notepad through its own window, start a replacement, print the replacement PID and creation time, and select that newly identified live PID in VMMap.",
+          commands: [{ label: "PowerShell", code: "$replacement = Start-Process -FilePath notepad.exe -PassThru\n\"Replacement launcher PID: $($replacement.Id)\"\n\"Replacement creation time: $($replacement.StartTime.ToString('o'))\"" }],
+          why: "A restart supplies a new process identity instead of treating old live addresses as durable evidence.",
+          observe: "PowerShell prints a replacement PID and creation time. If the replacement launcher PID exited or redirected, match the surviving Notepad by that creation time and image path in Process Explorer; stop if no unique live match exists. VMMap then shows the replacement process's current regions, whose addresses need not match the first instance."
+        },
+        { action: "Close the controlled Notepad through its own window, then refresh VMMap for the same PID.", why: "Process lifetime bounds the validity of every current address-space row.", observe: "VMMap reports that the PID exited or can no longer refresh it. The prior addresses remain machine-dependent historical output only." }
       ],
-      hints: [{ title: "The region size is not page aligned", body: "Recheck whether you copied the size from the correct column and whether the tool is displaying a committed subset or another counter. VirtualQueryEx RegionSize covers whole pages." }],
-      cleanup: ["Close the controlled Notepad process and VMMap.", "Do not retain live addresses as if they identify future process instances."],
-      extension: { title: "Independent variation", prompt: "Repeat with a 32-bit process if available and explain which formatting and pointer-width assumptions change." }
+      hints: [{ title: "VMMap cannot select the printed PID", body: "Modern Notepad can redirect its launcher. Match the surviving instance by creation time and image path in Process Explorer, and stop if the identity is ambiguous." }],
+      cleanup: ["If the controlled Notepad remains live, close it through its own window.", "Close VMMap."]
     },
     checks: [
       ["What is the inclusive final byte of base 0x8000 with size 0x2000?", ["0x9FFF", "0xA000", "0x7FFF", "0xA001"], 0, "The exclusive end is 0xA000, so the final included byte is 0x9FFF."],
@@ -186,35 +185,27 @@ window.ILOVEOS_LESSON_DEPTH = {
     ],
     practice: {
       title: "Compare sequential and strided access",
-      time: "30 min",
-      intro: "Use cache_locality_lab.py to separate buffer creation from timed access and report a checksum so work cannot disappear.",
+      time: "15 min",
+      intro: "Use cache_locality_lab.py to run fixed sequential and strided access modes over the same buffer.",
       download: ["downloads/cache_locality_lab.py", "cache_locality_lab.py"],
       expectedOutcome: "Sequential access will usually provide better useful throughput than a sufficiently irregular or large-stride pattern, but exact ratios depend on Python overhead, buffer size, cache hierarchy, memory speed, and background load. Equal checksums establish comparable logical work, not identical machine instructions.",
       steps: [
         {
-          action: "Download cache_locality_lab.py, open PowerShell in its folder, and run the 64 MiB sequential mode five times with this complete block.",
-          commands: [{ label: "PowerShell", code: "1..5 | ForEach-Object { \"Sequential run $_\"; py .\\cache_locality_lab.py --mib 64 --mode sequential }" }],
-          why: "Repeated measurements expose normal timing variation.",
-          observe: "For each CPU- and memory-bound run record elapsed milliseconds, million visits per second, checksum, Python architecture, buffer bytes, and sampled lines."
+          action: "Download cache_locality_lab.py, open PowerShell in its folder, and run the fixed 64 MiB sequential mode.",
+          commands: [{ label: "PowerShell", code: "py .\\cache_locality_lab.py --mib 64 --mode sequential" }],
+          why: "The supplied mode establishes the buffer, visit count, checksum, and one machine-dependent timing observation.",
+          observe: "cache_locality_lab.py prints mode: sequential, buffer bytes, sampled lines, checksum, visits, elapsed milliseconds, and million visits per second. A dependency or allocation error is the setup-failure branch."
         },
         {
-          action: "Run the 64 MiB strided mode five times; the only changed argument is --mode strided.",
-          commands: [{ label: "PowerShell", code: "1..5 | ForEach-Object { \"Strided run $_\"; py .\\cache_locality_lab.py --mib 64 --mode strided }" }],
+          action: "Run the fixed 64 MiB strided mode; only --mode changes from step 1.",
+          commands: [{ label: "PowerShell", code: "py .\\cache_locality_lab.py --mib 64 --mode strided" }],
           why: "Changing only access order makes locality the intended independent variable.",
-          observe: "Verify checksum and sampled-line count match sequential mode, then compare median elapsed time and throughput."
+          observe: "cache_locality_lab.py prints mode: strided with the same buffer bytes, sampled lines, checksum, and visits as sequential mode. Elapsed time and throughput remain machine-dependent."
         },
-        {
-          action: "If the machine has comfortable free memory, run both complete modes at 4 MiB and at 128 MiB.",
-          commands: [{ label: "PowerShell", code: "py .\\cache_locality_lab.py --mib 4 --mode sequential\npy .\\cache_locality_lab.py --mib 4 --mode strided\npy .\\cache_locality_lab.py --mib 128 --mode sequential\npy .\\cache_locality_lab.py --mib 128 --mode strided" }],
-          why: "Working-set size can cross cache and memory-capacity regions.",
-          observe: "Record buffer, mode, checksum, visits, elapsed milliseconds, and throughput for each command; do not assign an exact cache boundary from Python timings alone."
-        },
-        { action: "Open Process Explorer before one 128 MiB command, match cache_locality_lab.py's printed PID if the process remains live, and inspect Properties > Performance plus the CPU and Working Set columns.", why: "External evidence separates active computation from file I/O or allocation surprises.", observe: "Confirm cache_locality_lab.py is CPU- and memory-bound and performs no controlled file I/O. If cache_locality_lab.py finishes before inspection, record the timing limitation rather than adding an unsupported pause flag." },
-        { action: "Write a conclusion that states result, likely mechanism, and limitation separately.", why: "This prevents a useful benchmark from becoming an unsupported hardware claim.", observe: "Mention locality, interpreter overhead, repetition count, and missing hardware-counter evidence." }
+        { action: "Compare the labelled checksum, sampled lines, and visits values visible in the two terminal outputs.", why: "Matching fixed work fields distinguishes the access-order change from a changed workload.", observe: "The fixed work fields match. The elapsed and throughput fields can differ, but they do not identify an exact cache boundary or replacement policy." }
       ],
-      hints: [{ title: "The timings are almost identical", body: "Increase the buffer within a safe limit, close heavy background applications, and compare medians. Python loop overhead can hide smaller hardware effects." }],
-      cleanup: ["Allow the script to exit so its bytearray is released.", "Close any monitoring tools opened for the experiment."],
-      extension: { title: "Independent variation", prompt: "Implement the same two access orders with a native array library or compiled helper and explain why the results may make cache effects easier to see." }
+      hints: [{ title: "The timings are almost identical", body: "That is a valid machine-dependent result. Python loop overhead can hide smaller hardware effects." }],
+      cleanup: ["Both cache_locality_lab.py invocations release their bytearrays when they exit; no lab file is created."]
     },
     checks: [
       ["Which locality describes reusing the same value soon?", ["Spatial locality", "Temporal locality", "Address randomization", "Page protection"], 1, "Temporal locality rewards recently used data remaining close to execution."],
@@ -331,23 +322,26 @@ window.ILOVEOS_LESSON_DEPTH = {
           action: "Download virtual_allocation_lab.py and memory_map_csv_lab.py. In the first PowerShell window opened in their folder, run the staged allocator and leave it at 'Inspect the reserved range'.",
           commands: [{ label: "Allocator PowerShell", code: "py .\\virtual_allocation_lab.py" }],
           why: "The returned base is authoritative even when a caller suggests an address.",
-          observe: "Record PID, page size, allocation granularity, reserved base, and all three printed page addresses. Confirm the base is allocation-granularity aligned and the address span is three pages."
+          observe: "virtual_allocation_lab.py prints PID, page size, allocation granularity, reserved base, and three page addresses before pausing. If py is unavailable, the dependency message is the setup-failure branch."
         },
-        { action: "At the reserved pause, open the recorded PID in VMMap with File > Select Process and find the printed reserved base in the lower Details view.", why: "Reservation changes virtual ownership without committing backing.", observe: "Record Address, Type, Size, Committed, Private, Total WS, and Protection. The full Size is reserved; Committed and Total WS answer different commitment and residency questions." },
-        { action: "Press Enter once to commit and touch page 0; refresh VMMap. Press Enter again to commit and touch page 1; refresh again, leaving virtual_allocation_lab.py at the read-only transition prompt.", why: "Separating the calls makes each allocation stage observable.", observe: "At each stage record the rows covering the printed three-page range and distinguish reserved Size, Committed bytes, Private bytes, and resident Total WS." },
+        { action: "At the reserved pause, open the PID printed by virtual_allocation_lab.py in VMMap with File > Select Process and find the printed reserved base in the lower Details view.", why: "Reservation changes virtual ownership without committing backing.", observe: "The row shows the three-page Size as reserved. Committed and Total WS remain separate commitment and residency fields with machine-dependent values." },
+        { action: "Press Enter once to commit and touch page 0; refresh VMMap. Press Enter again to commit and touch page 1; refresh again, leaving virtual_allocation_lab.py at the read-only transition prompt.", why: "Separating the calls makes each allocation stage visible.", observe: "VMMap first shows page 0 committed and then pages 0 and 1 committed, while page 2 remains reserved. Address, Committed, Private, Total WS, and Protection update without becoming answers to enter." },
         {
-          action: "While virtual_allocation_lab.py remains paused, open a second PowerShell window in the same folder. Enter the allocator PID when prompted and export the exact .\\memory-map.csv path.",
-          commands: [{ label: "Exporter PowerShell", code: "$targetPid = [int](Read-Host 'Enter the PID printed by virtual_allocation_lab.py')\npy .\\memory_map_csv_lab.py $targetPid .\\memory-map.csv" }],
+          action: "While virtual_allocation_lab.py remains paused, open a second PowerShell window in the same folder. Enter the allocator PID when prompted and export the exact .\\memory-map.csv path with memory_map_csv_lab.py.",
+          commands: [{ label: "Exporter PowerShell", code: "$csvPath = Join-Path $PWD 'memory-map.csv'\nif (Test-Path -LiteralPath $csvPath) { throw \"Remove or rename the existing lab file first: $csvPath\" }\n$targetPid = [int](Read-Host 'Enter the PID printed by virtual_allocation_lab.py')\npy .\\memory_map_csv_lab.py $targetPid $csvPath" }],
           why: "The known three-page allocation gives memory_map_csv_lab.py an externally verifiable target.",
-          observe: "Confirm the exporter says it wrote regions for the entered target PID to memory-map.csv. Compare CSV BaseAddress, AllocationBase, RegionSizeBytes, State, Protect, and Type with VMMap at the printed allocation base. If OpenProcess is denied or the PID exited, record that branch separately."
+          observe: "memory_map_csv_lab.py prints the number of regions written for the entered PID and the exact memory-map.csv path. The CSV contains BaseAddress, AllocationBase, RegionSizeBytes, State, Protect, and Type columns; OpenProcess denied and an exited PID are distinct branches."
         },
-        { action: "Check five consecutive CSV ranges for gaps, overlaps, and inclusive-end arithmetic.", why: "Traversal defects are easier to detect as geometry than as isolated labels.", observe: "For adjacent regions, confirm previous EndAddressInclusive + 1 equals the next BaseAddress." },
-        { action: "Return to virtual_allocation_lab.py: press Enter to make page 1 read-only, refresh VMMap, then press Enter at the final prompt to call MEM_RELEASE and let the process exit.", why: "MEM_RELEASE returns the entire reservation rather than decommitting one page.", observe: "Record page 1 old protection 0x4, its new read-only protection, and the final released base. After process exit the target is unavailable; do not confuse that with a live free region." },
-        { action: "Write a three-column explanation for reserve, commit, and resident.", why: "The vocabulary is the prerequisite for page faults, heaps, and mapped files.", observe: "For each state, name what is guaranteed, what is not, and which tool field supports it." }
+        { action: "Return to virtual_allocation_lab.py, press Enter to make page 1 read-only, refresh VMMap, then press Enter at the final prompt to call MEM_RELEASE and let the process exit.", why: "MEM_RELEASE returns the entire reservation rather than decommitting one page.", observe: "virtual_allocation_lab.py prints page 1 old protection: 0x4, VMMap shows page 1 read-only, and the final message names the released base. After exit the target is unavailable rather than a live free region." },
+        {
+          action: "After memory_map_csv_lab.py and virtual_allocation_lab.py exit, run this PowerShell cleanup block for the exported CSV.",
+          commands: [{ label: "PowerShell", code: "$csvPath = Join-Path $PWD 'memory-map.csv'\nif (Test-Path -LiteralPath $csvPath) { Remove-Item -LiteralPath $csvPath }\nTest-Path -LiteralPath $csvPath" }],
+          why: "The showcase removes only the CSV path it deliberately created.",
+          observe: "PowerShell prints False. A True result means the owned CSV remains."
+        }
       ],
       hints: [{ title: "VMMap does not show the exact row", body: "Refresh the correct PID, search for the printed base, and keep the script at the matching pause. Address-space state can disappear immediately after release." }],
-      cleanup: ["Let virtual_allocation_lab.py reach its finally block and report MEM_RELEASE.", "Close VMMap and delete only .\\memory-map.csv after retaining any study notes you need."],
-      extension: { title: "Independent variation", prompt: "Reserve 16 pages but commit every fourth page. Predict how many VirtualQueryEx regions the alternating state can create." }
+      cleanup: ["If virtual_allocation_lab.py is still paused, press Enter until its finally block reports MEM_RELEASE.", "Close VMMap; the final PowerShell block removes only memory-map.csv."]
     },
     checks: [
       ["What does reservation guarantee most directly?", ["Every page is resident", "The virtual range is unavailable to competing allocations", "The pages are executable", "The data is saved to disk"], 1, "Reservation claims address-space range without necessarily committing backing."],
@@ -442,15 +436,14 @@ window.ILOVEOS_LESSON_DEPTH = {
           action: "Download virtual_allocation_lab.py, open PowerShell in its folder, run it, and leave it at 'Inspect the reserved range'.",
           commands: [{ label: "PowerShell", code: "py .\\virtual_allocation_lab.py" }],
           why: "Using the printed base plus N times the printed page size connects arithmetic to exact subranges.",
-          observe: "Record PID, page size, reserved base, and all three page addresses; confirm each address is page aligned."
+          observe: "virtual_allocation_lab.py prints PID, page size, reserved base, and three page addresses before pausing. If py is unavailable, the dependency message is the setup-failure branch."
         },
-        { action: "Open the recorded PID in VMMap. At the reserve pause and after each of the two commit prompts, refresh the lower Details view and record every row covering the three printed page addresses.", why: "A transition log makes region splitting visible over time.", observe: "For each stage record Address as BaseAddress, Allocation Base from row details, Size, Committed, Type, Total WS, and Protection. Reserved, committed, and resident values must remain distinct." },
+        { action: "Open the PID printed by virtual_allocation_lab.py in VMMap with File > Select Process. At the reserve pause and after each of the two commit prompts, refresh the lower Details view over the three printed page addresses.", why: "The controlled pauses make region splitting visible over time.", observe: "The range starts reserved, then shows page 0 committed, then pages 0 and 1 committed. VMMap displays Address, Allocation Base, Size, Committed, Type, Total WS, and Protection as observations only." },
         { action: "Press Enter at the third prompt to make page 1 read-only, then refresh VMMap before advancing again.", why: "Protection changes are page-level causes of new query regions.", observe: "Confirm virtual_allocation_lab.py reports old protection 0x4 and VMMap shows page 1 read-only; page 0 remains read/write and page 2 remains reserved." },
-        { action: "Press Enter at the final prompt so virtual_allocation_lab.py calls VirtualFree with the printed allocation base, size zero, and MEM_RELEASE; then refresh VMMap.", why: "MEM_RELEASE operates on the allocation base with size zero.", observe: "Confirm 'released full reservation' names the same base and the process exits. Explain why an interior page address would violate this release contract." }
+        { action: "Press Enter at the final prompt so virtual_allocation_lab.py calls VirtualFree with the printed allocation base, size zero, and MEM_RELEASE; then refresh VMMap.", why: "MEM_RELEASE operates on the allocation base with size zero.", observe: "released full reservation names the same printed base, the process exits, and VMMap can no longer refresh that PID." }
       ],
       hints: [{ title: "Two adjacent pages remain one row", body: "That is expected when their state, type, and protection match. A region is a run of equal page attributes, not one row per page." }],
-      cleanup: ["Complete the script so it calls MEM_RELEASE.", "Close VMMap after confirming cleanup."],
-      extension: { title: "Independent variation", prompt: "Commit pages 0 and 2 as read/write while leaving page 1 reserved. Predict the returned region sequence before testing." }
+      cleanup: ["If virtual_allocation_lab.py is still paused, press Enter until it calls MEM_RELEASE.", "Close VMMap after the process exits."]
     },
     checks: [
       ["What remains unchanged during ordinary page translation?", ["The virtual page number", "The byte offset within the page", "The process PID", "The protection mask"], 1, "Translation selects a frame while preserving the within-page byte offset."],
@@ -542,23 +535,21 @@ window.ILOVEOS_LESSON_DEPTH = {
       time: "30 min",
       intro: "Commit a modest demand-zero region, touch one byte per page, then touch the same pages again while observing fault counters.",
       download: ["downloads/page_fault_lab.py", "page_fault_lab.py"],
-      expectedOutcome: "The first touch should normally produce substantially more page-fault activity than the immediate second touch because each demand-zero page needs initial resolution. Most first-touch faults should not require storage reads. Exact counts differ because the interpreter, monitoring tools, and background activity also fault.",
+      expectedOutcome: "The first touch normally causes substantially more page-fault activity than the immediate second touch because each demand-zero page needs initial resolution. Most first-touch faults should not require storage reads. Exact counts differ because the interpreter, monitoring tools, and background activity also fault.",
       safety: "Keep the default 64 MiB unless the machine has ample available memory. Do not modify the page-file configuration, trim unrelated working sets, or increase the allocation until the system becomes unresponsive.",
       steps: [
         {
           action: "Download page_fault_lab.py, open PowerShell in its folder, run the 64 MiB page-fault workload, and leave it at 'committed but untouched'.",
           commands: [{ label: "PowerShell", code: "py .\\page_fault_lab.py --mib 64" }],
           why: "This CPU- and memory-bound mode separates commit from physical first touch.",
-          observe: "Record PID, base, size 64 MiB, and page count. In Process Explorer record Page Faults, Private Bytes, and Working Set for that PID."
+          observe: "page_fault_lab.py prints PID, base, size: 64 MiB, and page count before the committed-but-untouched pause. In Process Explorer, the exact PID exposes Page Faults, Private Bytes, and Working Set; a py failure is the setup-failure branch."
         },
-        { action: "Open Performance Monitor, choose Monitoring Tools > Performance Monitor, then select the green + Add Counters button. On Windows 11 or later, expand Process V2, select Page Faults/sec and Working Set - Private, choose the python instance whose name embeds the recorded PID, and select Add. If Process V2 is unavailable, expand Process, select ID Process for every python and python# instance, choose Add > OK, find the series whose Last value equals the recorded PID, record that exact instance name, remove the temporary ID Process series, reopen Add Counters, and add Process > Page Faults/sec and Working Set - Private for only that instance. Also add Memory > Page Reads/sec, choose OK, record baselines, then press Enter once in page_fault_lab.py and sample until 'first touch elapsed' prints.", why: "PID correlation prevents a duplicated python instance name from silently attaching the counters to another process, while one write per page triggers demand-zero handling without scanning every byte.", observe: "Record the correlated Process V2 or Process instance name, recorded PID, first-touch elapsed time, checksum, process page-fault change, working-set change, and system Page Reads/sec. Page Reads/sec is not attributable solely to the target PID. If no Process V2 instance or ID Process value matches because the target exited, rerun the complete page_fault_lab.py command, record its new PID, and repeat correlation before touching pages; do not reuse a stale python instance." },
-        { action: "At the second pause, record new counter baselines, press Enter once, and sample the same counters until 'second touch elapsed' prints.", why: "The repeated access uses the same page order against already valid and recently resident mappings.", observe: "Compare second-touch elapsed time, checksum, process page-fault delta, working-set change, and Page Reads/sec with first touch without expecting an exact zero." },
-        { action: "At the final pause, record the target PID's memory counters, press Enter once, and wait for 'released demand-zero test region'.", why: "Explicit cleanup distinguishes release from working-set trimming.", observe: "Confirm release is reported before process exit. If the process disappears before the final counter refresh, record the exited-target branch rather than claiming an observed total." },
-        { action: "Write a bounded conclusion about soft and hard faults.", why: "The experiment does not create enough controlled pressure to model every page-file path.", observe: "State which result supports demand-zero handling and which page-file claims remain untested." }
+        { action: "Open Performance Monitor, choose Monitoring Tools > Performance Monitor, then select the green + Add Counters button. On Windows 11 or later, expand Process V2, select Page Faults/sec and Working Set - Private, choose the python instance whose name embeds the PID printed by page_fault_lab.py, and select Add. If Process V2 is unavailable, expand Process, select ID Process for every python and python# instance, choose Add > OK, find the series whose Last value equals the printed PID, remove the temporary ID Process series, reopen Add Counters, and add Process > Page Faults/sec and Working Set - Private for only that matched instance. Also add Memory > Page Reads/sec, choose OK, then press Enter once in page_fault_lab.py and sample until first touch elapsed prints.", why: "PID correlation prevents a duplicated python instance name from attaching the counters to another process, while one write per page triggers demand-zero handling.", observe: "The target's page-fault and private-working-set series change during first touch, while page_fault_lab.py prints first touch checksum and elapsed. Memory > Page Reads/sec is system-wide and is not attributable solely to the target. If the PID exited, restart the exact step 1 command and correlate its new PID before touching pages." },
+        { action: "At page_fault_lab.py's second pause, press Enter once and sample the same counters until second touch elapsed prints.", why: "The repeated access uses the same page order against already valid and recently resident mappings.", observe: "page_fault_lab.py prints the same fixed checksum for second touch. Elapsed time and counter deltas vary, and the repeated touch is not required to show an exact zero." },
+        { action: "At page_fault_lab.py's final pause, press Enter once and wait for released demand-zero test region.", why: "Explicit cleanup distinguishes release from working-set trimming.", observe: "The release message appears before process exit. If the PID disappears before a final refresh, that is the exited-target branch rather than a counter value to guess." }
       ],
-      hints: [{ title: "Hard faults appear during the run", body: "Monitoring tools, Python modules, antivirus, or other processes can cause unrelated storage activity. Correlate by PID and interval, repeat, and avoid claiming every system hard fault belongs to the test region." }],
-      cleanup: ["Complete the script so it calls VirtualFree with MEM_RELEASE.", "Close monitoring tools and leave page-file settings unchanged."],
-      extension: { title: "Independent variation", prompt: "Change the order of page touches and compare elapsed time only after explaining why page-fault count may remain similar while cache and TLB behavior changes." }
+      hints: [{ title: "Hard faults appear during the run", body: "Monitoring tools, Python modules, antivirus, or other processes can cause unrelated storage activity. Keep the PID and interval correlation, and do not attribute every system hard fault to the test region." }],
+      cleanup: ["If page_fault_lab.py is still paused, press Enter until it calls VirtualFree with MEM_RELEASE.", "Close monitoring tools and leave page-file settings unchanged."]
     },
     checks: [
       ["Which page fault necessarily requires storage I/O?", ["Every demand-zero fault", "A hard fault", "Every copy-on-write fault", "Every guard-page fault"], 1, "Hard fault is the term for a fault whose resolution must obtain data from storage."],
@@ -650,29 +641,29 @@ window.ILOVEOS_LESSON_DEPTH = {
       expectedOutcome: "The reader process should open the named mapping and see the creator's bytes even though its virtual base differs. After the reader writes and signals completion through the prompts, the creator should see the shared change. In copy mode, the process should see its private edit while reopening the file shows the original data unchanged.",
       steps: [
         {
-          action: "Download shared_mapping_lab.py. In the first PowerShell window opened in its folder, run creator mode and leave it at 'Start reader mode'.",
+          action: "Download shared_mapping_lab.py. In the first PowerShell window opened in its folder, run creator mode and leave it at Start reader mode. In Process Explorer select the printed creator PID, choose View > Show Lower Pane and View > Lower Pane View > Handles, then search for a Section handle.",
           commands: [{ label: "Creator PowerShell", code: "py .\\shared_mapping_lab.py creator" }],
           why: "Creator mode establishes the page-file-backed mapping Local\\ILOVEOS_SharedMappingLab and writes the initial bytes.",
-          observe: "Record creator PID, name, creator view address, and b'creator says hello'. In Process Explorer Handles lower-pane mode, look for a Section handle for the recorded PID; if its name is not exposed, record that limitation."
+          observe: "Creator mode prints PID, name: Local\\ILOVEOS_SharedMappingLab, a view address, and initial bytes b'creator says hello'. Process Explorer can show a Section handle; an unavailable name is a tool limitation."
         },
         {
           action: "In the second PowerShell window opened in the same folder, run reader mode and leave it at 'Let creator mode observe the update'.",
           commands: [{ label: "Reader PowerShell", code: "py .\\shared_mapping_lab.py reader" }],
           why: "Reader mode opens the existing named mapping, reads creator bytes, and writes the controlled shared update.",
-          observe: "Record reader PID, the same mapping name, reader view address, initial creator text, and b'reader updated shared bytes'. The two view addresses need not match. If creator mode is absent, record shared_mapping_lab.py's missing-mapping message rather than calling it access denied."
+          observe: "Reader mode prints a second PID, the same mapping name, its view address, the initial creator text, and reader wrote: b'reader updated shared bytes'. The two view addresses need not match. Without creator mode, the missing-mapping message is distinct from access denied."
         },
-        { action: "While reader mode remains paused, press Enter once in creator mode so creator mode consumes the shared bytes; leave creator mode at its second pause. Then press Enter in reader mode to close its view.", why: "The prompt ordering ensures creator mode consumes the value produced by reader mode before reader mode closes its view.", observe: "Confirm creator mode prints b'reader updated shared bytes'; then verify the creator-mode view and named mapping remain while the PID recorded for reader mode has exited." },
+        { action: "While reader mode remains paused, press Enter once in creator mode so it consumes the shared bytes; leave creator mode at its second pause. Then press Enter in reader mode to close its view.", why: "The prompt ordering ensures creator mode consumes reader mode's value before reader mode closes its view.", observe: "Creator mode prints creator now reads: b'reader updated shared bytes'. Creator view and named mapping remain while reader-mode PID exits." },
         {
           action: "After pressing Enter at the creator's second pause so the last shared view closes, run copy mode in PowerShell.",
           commands: [{ label: "PowerShell", code: "py .\\shared_mapping_lab.py copy" }],
           why: "ACCESS_COPY demonstrates a private copy-on-write view over a disposable file created by shared_mapping_lab.py.",
-          observe: "Record the temporary file path, copy-view address, ORIGINAL FILE BYTES before the private write, PRIVATE! bytes in the view, unchanged reopened file bytes, and the deletion confirmation."
+          observe: "Copy mode prints its temporary path and view address, ORIGINAL FILE BYTES before the private write, PRIVATE! bytes in the view, unchanged reopened file bytes, and deleted controlled copy-on-write file."
         },
-        { action: "Explain every resource lifetime.", why: "Mapped memory has both view and object ownership.", observe: "Identify when each mmap view closes, when the named object can disappear, and which temporary file is deleted." }
+        { action: "Refresh Process Explorer after creator, reader, and copy modes have exited.", why: "The final snapshot confirms that all supplied views and processes completed their owned lifetimes.", observe: "All three printed PIDs are absent, the named mapping no longer has a live user handle, and copy mode already removed only its own temporary file." }
       ],
+      checkpoints: [{ afterStep: 3, type: "short", prompt: "Complete the fixed shared update: reader updated shared [____]", answer: "bytes", acceptedAnswers: [], feedback: "Reader mode writes reader updated shared bytes, and creator mode displays the same fixed value." }],
       hints: [{ title: "The reader cannot open the mapping", body: "Keep the creator paused, use the exact default name, run both under the same user session, and avoid adding Global scope unless the security and privilege implications are understood." }],
-      cleanup: ["Let both shared-mapping processes close their views normally.", "Allow copy mode to delete only its own temporary file."],
-      extension: { title: "Independent variation", prompt: "Add a named event that indicates data-ready state and document why the event is still needed when the bytes are already shared." }
+      cleanup: ["If creator or reader mode is still paused, press Enter until both shared views close normally.", "Allow copy mode to delete only its own temporary file."]
     },
     checks: [
       ["Must two shared views use the same virtual address?", ["Yes, always", "No, their pages can map the same backing at different bases", "Only on 32-bit Windows", "Only for executables"], 1, "Sharing is based on the section and offsets, not equal process-local pointers."],
@@ -780,24 +771,24 @@ window.ILOVEOS_LESSON_DEPTH = {
         {
           action: "Download virtual_allocation_lab.py and heap_allocation_lab.py. In PowerShell from their folder, run the virtual-page program and leave it at the reserved-range pause.",
           commands: [{ label: "PowerShell", code: "py .\\virtual_allocation_lab.py" }],
-          why: "Prediction at each pause turns VMMap into a test of the contract rather than a screenshot exercise.",
-          observe: "Record PID, returned base, all three printed page addresses, and the reserved row's Size, Committed, Private, Total WS, and Protection in VMMap's lower Details view. Confirm all three pages are reserved and not yet committed."
+          why: "Each supplied pause makes one allocation state visible in VMMap.",
+          observe: "virtual_allocation_lab.py prints PID, returned base, and three page addresses. In VMMap's lower Details view, the three-page range is reserved and not yet committed; a py failure is the setup-failure branch."
         },
-        { action: "At the reserved-range pause, press Enter once to commit page 0. Leave virtual_allocation_lab.py at 'Inspect committed page 0', refresh the same PID in VMMap, and inspect the three printed page addresses.", why: "The first transition separates reservation from commitment for one page while the allocation base remains unchanged.", observe: "Record page 0 as committed read/write and pages 1 and 2 as still reserved, including Size, Committed, Private, Total WS, and Protection for the resulting rows." },
-        { action: "Press Enter once to commit page 1. Leave virtual_allocation_lab.py at 'Inspect both committed pages', refresh the same PID in VMMap, and inspect the same three addresses.", why: "The second transition makes the only changed state visible before protection is altered.", observe: "Record pages 0 and 1 as committed read/write, page 2 as reserved, and the updated Committed, Private, Total WS, and Protection values." },
-        { action: "Press Enter once to make page 1 read-only. Leave virtual_allocation_lab.py at 'Inspect the final mixed state', refresh the same PID in VMMap, and explain why virtual_allocation_lab.py does not write page 1 after the protection change.", why: "A deliberate invalid write would terminate ordinary Python without adding useful evidence.", observe: "Confirm page 0 remains read/write, page 1 is read-only, page 2 remains reserved, the old page-1 protection is printed as 0x4, and virtual_allocation_lab.py retains cleanup control." },
+        { action: "At the reserved-range pause, press Enter once to commit page 0. Leave virtual_allocation_lab.py at Inspect committed page 0, refresh the same PID in VMMap, and inspect the three printed page addresses.", why: "The first transition separates reservation from commitment while the allocation base remains unchanged.", observe: "VMMap shows page 0 committed read/write and pages 1 and 2 reserved, with Size, Committed, Private, Total WS, and Protection visible for the resulting rows." },
+        { action: "Press Enter once to commit page 1. Leave virtual_allocation_lab.py at Inspect both committed pages, refresh the same PID in VMMap, and inspect the same three addresses.", why: "The second transition exposes the only changed state before protection changes.", observe: "VMMap shows pages 0 and 1 committed read/write and page 2 reserved. Committed, Private, Total WS, and Protection remain machine-dependent observations." },
+        { action: "Press Enter once to make page 1 read-only. Leave virtual_allocation_lab.py at Inspect the final mixed state and refresh the same PID in VMMap.", why: "The supplied artifact avoids an invalid write after changing the protection.", observe: "Page 0 remains read/write, page 1 is read-only, page 2 remains reserved, and virtual_allocation_lab.py prints page 1 old protection: 0x4." },
         { action: "Press Enter at the final virtual_allocation_lab.py prompt and verify 'released full reservation' names the original base before process exit.", why: "Explicit release proves correct ownership independent of automatic process teardown.", observe: "Confirm the region disappears and no interior address is passed as the MEM_RELEASE base." },
         {
           action: "Run the 100-byte heap program and leave it at 'Find the containing heap region in VMMap'.",
           commands: [{ label: "PowerShell", code: "py .\\heap_allocation_lab.py --bytes 100" }],
           why: "A small block demonstrates process-heap suballocation below page granularity.",
-          observe: "Record PID, process heap, block pointer, requested bytes, reported usable bytes, and checksum. In VMMap's lower Details view locate the pointer inside a Heap row and record that row's Size, Committed, Private, Total WS, and Protection; it is not a dedicated 100-byte virtual region."
+          observe: "heap_allocation_lab.py prints PID, process heap, block pointer, requested bytes: 100, reported usable bytes, and checksum. In VMMap's lower Details view, the pointer falls inside a Heap row rather than a dedicated 100-byte virtual region."
         },
-        { action: "Compare the two APIs in an ownership table.", why: "The most important design decision is the matching abstraction and cleanup family.", observe: "Include unit of allocation, protection control, handle or pointer owner, failure result, and release function." }
+        { action: "Press Enter once in heap_allocation_lab.py after locating the containing Heap row.", why: "The heap block must be freed through the same process heap that allocated it.", observe: "heap_allocation_lab.py prints freed block through the same process heap and returns to PowerShell." }
       ],
+      checkpoints: [{ afterStep: 4, type: "short", prompt: "Complete the fixed old page-1 protection printed by virtual_allocation_lab.py: 0x[____]", answer: "4", acceptedAnswers: ["04"], feedback: "PAGE_READWRITE is 0x4 before the supplied transition changes page 1 to read-only." }],
       hints: [{ title: "The heap pointer is hard to find in VMMap", body: "Search the address only to identify its containing region. Heap managers combine many blocks, so a 100-byte request should not appear as a dedicated 100-byte VMMap row." }],
-      cleanup: ["Let virtual_allocation_lab.py and heap_allocation_lab.py finish their finally blocks.", "Close VMMap after confirming the virtual reservation has been released."],
-      extension: { title: "Independent variation", prompt: "Add a decommit and recommit stage for page 0. Explain why the allocation base remains owned until MEM_RELEASE." }
+      cleanup: ["If either supplied program is still paused, press Enter until its finally cleanup completes.", "Close VMMap after the virtual reservation is released and the heap block is freed."]
     },
     checks: [
       ["Which release matches a whole VirtualAlloc reservation?", ["HeapFree", "VirtualFree with MEM_RELEASE and size zero", "CloseHandle", "FreeLibrary"], 1, "MEM_RELEASE uses the original allocation base and a zero size."],

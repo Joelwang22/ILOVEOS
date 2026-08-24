@@ -702,6 +702,14 @@ Final audit record:
 - The final release gate covered JavaScript syntax, assessment data and state transitions, browser interaction and focus behavior, responsive layout, routing, search, supporting-reference dialogs, the complete course audit, and whitespace validation. The audit reports 10 reviews, 50 module activities, 20 final questions, 62 deep lessons, 43 downloads, 347 reference features, 0 errors, and 0 warnings.
 - Each Stage 7 implementation task was published to `main`, followed by a successful GitHub Pages deployment check before work continued to the next task.
 
+Guided-investigation clarity audit, 24 August 2026:
+
+- All 62 guided investigations pass the closed-loop clarity gate with zero errors and zero warnings, zero extension assignments, zero off-page deliverables, and no dynamic checkpoint answers.
+- The measured course contains 149 copyable practice command blocks, 11 sparse checkpoints, 2 choice checkpoints, and 55 checked download references.
+- Every practice stays within two checkpoints and one choice checkpoint. Checkpoints are used only for invariant supplied-artifact evidence or a fixed distinction the webpage can grade.
+- Every Modules 1-5 investigation received a step-by-step content and artifact-contract review. Process Explorer module-base evidence uses `View > Show Lower Pane`, `View > Lower Pane View > DLLs`, lower-pane `Select Columns > DLL > Base Address`, and an exact module path row; thread-start evidence uses the selected TID in `Properties > Threads`.
+- True Chromium device emulation at desktop, compact, Edge-minimum, and 390-pixel widths, with small, default, and large content sizes, found no document or practice overflow. Commands, 40-pixel copy targets, checkpoint controls, and feedback remain visible and contained.
+
 ### Stage 8: Supporting study pages
 
 - Add a concise Setup page covering Python, pywin32, the Sysinternals Suite, permissions, architecture checks, and preparation of a safe Windows lab environment.

@@ -54,11 +54,11 @@ def main():
         print(f"base: 0x{base:X}")
         print(f"size: {args.mib} MiB")
         print(f"pages: {byte_count // PAGE_SIZE}")
-        input("Record the committed but untouched state, then press Enter for first touch...")
+        input("Inspect the committed but untouched state, then press Enter for first touch...")
         timed_touch("first touch", base, byte_count)
-        input("Record the first-touch counters, then press Enter for second touch...")
+        input("Inspect the first-touch counters, then press Enter for second touch...")
         timed_touch("second touch", base, byte_count)
-        input("Record the repeated-touch counters, then press Enter to release...")
+        input("Inspect the repeated-touch counters, then press Enter to release...")
     finally:
         if not kernel32.VirtualFree(base, 0, MEM_RELEASE):
             raise ctypes.WinError(ctypes.get_last_error())

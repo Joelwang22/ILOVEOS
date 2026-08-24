@@ -100,7 +100,13 @@ const probe = `<script>
   });
 <\/script>`;
 
-const source = fs.readFileSync(path.join(root, "index.html"), "utf8")
+const indexSource = fs.readFileSync(path.join(root, "index.html"), "utf8");
+const tiedAssets = [...indexSource.matchAll(/(?:href|src)="[^"]+\?v=([^"]+)"/g)];
+if (!tiedAssets.length || tiedAssets.some((match) => match[1] !== "guided-investigation-4")) {
+  console.error("ERROR every tied asset must use the guided-investigation-4 release key");
+  process.exit(1);
+}
+const source = indexSource
   .replace("<head>", `<head><base href="${baseUrl}">`)
   .replace("</body>", `${probe}</body>`);
 

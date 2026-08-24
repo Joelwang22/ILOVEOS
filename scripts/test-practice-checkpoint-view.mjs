@@ -124,7 +124,7 @@ const probe = `<script>
   });
 <\/script>`;
 
-const appTag = '<script src="app.js?v=guided-investigation-3" defer></script>';
+const appTag = '<script src="app.js?v=guided-investigation-4" defer></script>';
 const source = fs.readFileSync(path.join(root, "index.html"), "utf8")
   .replace("<head>", `<head><base href="${baseUrl}">`)
   .replace(appTag, `<script src="${pathToFileURL(fixturePath).href}" defer></script>\n    ${appTag}`)

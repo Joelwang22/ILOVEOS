@@ -112,36 +112,46 @@ const lessons = Array.from(context.window.ILOVEOS_LESSONS, (lesson) => ({
   ...lesson,
   ...(context.window.ILOVEOS_LESSON_DEPTH[lesson.id] || {}),
 }));
-const isTask4ClosedLoopDebt = (message) => (
-  message.includes("extension fields are not allowed") || message.includes("off-page task verb")
-);
-const pointerLesson = lessons.find((lesson) => lesson.id === "cpu-architecture-data");
-const pointerResult = validatePractice(pointerLesson.practice, pointerLesson.id, { enforceClarity: true });
-const pointerBlockingErrors = pointerResult.errors.filter((message) => !isTask4ClosedLoopDebt(message));
-assert.deepEqual(pointerBlockingErrors, [], pointerBlockingErrors.join("\n"));
-assert.match(
-  pointerLesson.practice.steps[2].action,
-  /one start address for your Python process that you recorded in the previous step/i,
-  "the conversion step must name the start address recorded by the previous step",
-);
-
 const firstBatch = new Set(["foundations", "processes-handles", "threads-scheduling", "memory", "linking-loading"]);
-const firstBatchFindings = lessons
-  .filter((lesson) => firstBatch.has(lesson.module))
-  .flatMap((lesson) => {
-    const result = validatePractice(lesson.practice, lesson.id, { enforceClarity: true });
-    return [...result.errors, ...result.warnings].filter((message) => !isTask4ClosedLoopDebt(message));
-  });
-assert.deepEqual(firstBatchFindings, [], firstBatchFindings.join("\n"));
-
 const secondBatch = new Set(["management", "security", "synchronisation", "ipc", "hooking-injection"]);
-const secondBatchFindings = lessons
-  .filter((lesson) => secondBatch.has(lesson.module))
-  .flatMap((lesson) => {
-    const result = validatePractice(lesson.practice, lesson.id, { enforceClarity: true });
-    return [...result.errors, ...result.warnings];
-  });
-assert.deepEqual(secondBatchFindings, [], secondBatchFindings.join("\n"));
+const firstBatchDownloadPaths = [...new Set(lessons
+  .filter((lesson) => firstBatch.has(lesson.module))
+  .flatMap((lesson) => practiceDownloads(lesson.practice).map((download) => download.path)))];
+const offPageRuntimePromptPattern = /input\([^)]*(?:\b(?:record|explain|classify|calculate|draw|design|research|reconstruct|document|summari[sz]e|produce)\b|\bwrite\s+(?:an?|the|your|one)\b)/is;
+for (const downloadPath of firstBatchDownloadPaths) {
+  const source = fs.readFileSync(path.join(root, downloadPath), "utf8");
+  assert.doesNotMatch(source, offPageRuntimePromptPattern, `${downloadPath}: runtime prompt must stay inside the closed-loop showcase`);
+}
+const strictResults = lessons.map((lesson) => ({
+  lesson,
+  result: validatePractice(lesson.practice, lesson.id, { enforceClarity: true }),
+}));
+const strictErrors = strictResults.flatMap(({ result }) => result.errors);
+const strictWarnings = strictResults.flatMap(({ result }) => result.warnings);
+const authoredDownloadPaths = lessons.flatMap((lesson) => {
+  const authored = lesson.practice.downloads || (lesson.practice.download ? [lesson.practice.download] : []);
+  return authored.map((download) => download[0]);
+});
+const returnedDownloadPaths = lessons.flatMap((lesson) => practiceDownloads(lesson.practice).map((download) => download.path));
+const extensionCount = lessons.filter((lesson) => lesson.practice.extension !== undefined).length;
+const predictionPromptCount = lessons.filter((lesson) => firstBatch.has(lesson.module) && lesson.practice.predictionPrompt !== undefined).length;
+const fieldCollectionCount = lessons.filter((lesson) => firstBatch.has(lesson.module) && lesson.practice.fields !== undefined).length;
+const offPageTaskFindings = strictErrors.filter((message) => message.includes("off-page task verb"));
+const dynamicCheckpointFindings = strictErrors.filter((message) => message.includes("checkpoint must not request a dynamic answer"));
+
+assert.equal(lessons.length, 62, "expected exactly 62 guided investigations");
+assert.deepEqual(strictErrors, [], strictErrors.join("\n"));
+assert.deepEqual(strictWarnings, [], strictWarnings.join("\n"));
+assert.equal(extensionCount, 0, `expected zero extensions, found ${extensionCount}`);
+assert.equal(predictionPromptCount, 0, `expected zero first-batch prediction prompts, found ${predictionPromptCount}`);
+assert.equal(fieldCollectionCount, 0, `expected zero first-batch field worksheets, found ${fieldCollectionCount}`);
+assert.deepEqual(offPageTaskFindings, [], offPageTaskFindings.join("\n"));
+assert.deepEqual(dynamicCheckpointFindings, [], dynamicCheckpointFindings.join("\n"));
+for (const { lesson, result } of strictResults) {
+  assert.ok(result.checkpointCount <= 2, `${lesson.id}: no more than two checkpoints`);
+  assert.ok(result.choiceCheckpointCount <= 1, `${lesson.id}: no more than one choice checkpoint`);
+}
+assert.deepEqual(returnedDownloadPaths, authoredDownloadPaths, "practiceDownloads() must return every authored download path");
 
 const lessonById = new Map(lessons.map((lesson) => [lesson.id, lesson]));
 const reviewFindings = [];
@@ -186,10 +196,30 @@ const task3PracticeText = lessons
   .filter((lesson) => secondBatch.has(lesson.module))
   .map((lesson) => JSON.stringify(lesson.practice))
   .join("\n");
+const misleadingStartAddressPath = ["Process Performance", "Start Address"].join(" > ");
 requireReview(
-  !task3PracticeText.includes("Process Performance > Start Address"),
+  !task3PracticeText.includes(misleadingStartAddressPath),
   "Task 3 practices must not present a process-list Start Address as thread or module evidence",
 );
+const task4PracticeText = lessons
+  .filter((lesson) => firstBatch.has(lesson.module))
+  .map((lesson) => JSON.stringify(lesson.practice))
+  .join("\n");
+requireReview(
+  !task4PracticeText.includes(misleadingStartAddressPath),
+  "Task 4 practices must not present a process-list Start Address as thread or module evidence",
+);
+const pointerPracticeText = JSON.stringify(lessonById.get("cpu-architecture-data").practice);
+for (const requiredText of ["Properties > Threads", "selected TID", "Start Address"]) {
+  requireReview(pointerPracticeText.includes(requiredText), `pointer-size thread-start workflow must name ${requiredText}`);
+}
+for (const lessonId of ["compile-link-execute", "static-dynamic-linking", "imports-exports-iat", "windows-loader"]) {
+  const practiceText = JSON.stringify(lessonById.get(lessonId).practice);
+  for (const requiredText of ["View > Show Lower Pane", "View > Lower Pane View > DLLs", "Select Columns > DLL > Base Address"]) {
+    requireReview(practiceText.includes(requiredText), `${lessonId} module-base workflow must name ${requiredText}`);
+  }
+  requireReview(/exact.{0,160}module (?:path )?row/i.test(practiceText), `${lessonId} module-base workflow must locate the exact module path row`);
+}
 for (const lessonId of ["hooking-injection", "startup-code-loading", "detect-injection"]) {
   const practiceText = JSON.stringify(lessonById.get(lessonId).practice);
   for (const requiredText of ["View > Show Lower Pane", "View > Lower Pane View > DLLs", "Select Columns", "Base Address"]) {

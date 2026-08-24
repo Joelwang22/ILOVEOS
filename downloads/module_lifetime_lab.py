@@ -17,7 +17,7 @@ def main():
     print(f"PID: {os.getpid()}")
     print(f"Python pointer width: {ctypes.sizeof(ctypes.c_void_p) * 8} bits")
     print(f"explicit DLL path: {path}")
-    input("Record whether the DLL is already mapped, then press Enter to call LoadLibrary...")
+    input("Inspect whether the DLL is already mapped, then press Enter to call LoadLibrary...")
 
     module = win32api.LoadLibrary(str(path))
     try:

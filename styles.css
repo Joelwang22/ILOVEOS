@@ -1821,13 +1821,14 @@ pre {
 .practice-steps > li { display: grid; grid-template-columns: 42px 1fr; gap: 14px; margin: 0; padding: 22px 24px; }
 .practice-steps > li + li { border-top: 1px solid var(--line); }
 .practice-number { display: grid; width: 32px; height: 32px; place-items: center; border-radius: 8px; color: var(--violet); background: var(--violet-soft); font: 700 9px/1 "Cascadia Code", Consolas, monospace; }
+.practice-step-copy { min-width: 0; }
 .practice-step-copy h4 { margin: 2px 0 8px; color: #d8e0ea; font-size: 13px; line-height: 1.5; }
 .practice-step-copy h4:last-child { margin-bottom: 2px; }
 .practice-step-copy > p { margin: 0 0 14px; font-size: 11px; }
 .practice-command { min-width: 0; margin: 12px 0 14px; border: 1px solid var(--line); border-radius: 9px; background: rgba(8,12,18,.78); overflow: hidden; }
 .practice-command-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 9px; min-width: 0; padding: 9px 11px; border-bottom: 1px solid var(--line); }
 .practice-command-head [data-command-label] { color: var(--violet); font: 700 10px/1.3 "Cascadia Code", Consolas, monospace; text-transform: uppercase; letter-spacing: .05em; }
-.practice-command-copy { min-width: 0; padding: 5px 8px; border: 1px solid rgba(167,139,250,.42); border-radius: 6px; color: #d8ccff; background: var(--violet-soft); font: 700 10px/1 "Cascadia Code", Consolas, monospace; cursor: pointer; }
+.practice-command-copy { min-width: 40px; min-height: 40px; padding: 5px 8px; border: 1px solid rgba(167,139,250,.42); border-radius: 6px; color: #d8ccff; background: var(--violet-soft); font: 700 10px/1 "Cascadia Code", Consolas, monospace; cursor: pointer; }
 .practice-command-copy:hover { border-color: var(--violet); background: rgba(167,139,250,.2); }
 .practice-command-copy:focus-visible { outline: 2px solid var(--violet); outline-offset: 2px; }
 .practice-command pre { min-width: 0; margin: 0; padding: 13px; overflow-x: auto; }
