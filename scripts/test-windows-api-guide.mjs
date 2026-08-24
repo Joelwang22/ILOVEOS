@@ -187,6 +187,30 @@ requireCondition(createEventFamily?.variants.length === 4, "CreateEvent family m
 requireCondition(JSON.stringify(createEventFamily?.variants.map((variant) => variant.name)) === JSON.stringify(["CreateEventW", "CreateEventA", "CreateEventExW", "CreateEventExA"]), "CreateEvent family variants are incomplete or out of order");
 requireCondition(window.ILOVEOS_WINDOWS_API_FAMILY_DATA.resolveSelection(createEventFamily, "CreateEvent") === "CreateEventW", "CreateEvent alias does not resolve to CreateEventW");
 requireCondition(window.ILOVEOS_WINDOWS_API_FAMILY_DATA.resolveSelection(createEventFamily, "CreateEventEx") === "CreateEventExW", "CreateEventEx alias does not resolve to CreateEventExW");
+const createEventSignatures = new Map([
+  ["CreateEventW", {
+    native: `HANDLE CreateEventW(\n  [in, optional] SECURITY_ATTRIBUTES * lpEventAttributes,\n  [in] BOOL bManualReset,\n  [in] BOOL bInitialState,\n  [in, optional] LPCWSTR lpName\n);`,
+    python: `CreateEventW.argtypes = [\n    ctypes.POINTER(SECURITY_ATTRIBUTES),  # lpEventAttributes\n    wintypes.BOOL,  # bManualReset\n    wintypes.BOOL,  # bInitialState\n    wintypes.LPCWSTR,  # lpName\n]`,
+  }],
+  ["CreateEventA", {
+    native: `HANDLE CreateEventA(\n  [in, optional] SECURITY_ATTRIBUTES * lpEventAttributes,\n  [in] BOOL bManualReset,\n  [in] BOOL bInitialState,\n  [in, optional] LPCSTR lpName\n);`,
+    python: `CreateEventA.argtypes = [\n    ctypes.POINTER(SECURITY_ATTRIBUTES),  # lpEventAttributes\n    wintypes.BOOL,  # bManualReset\n    wintypes.BOOL,  # bInitialState\n    wintypes.LPCSTR,  # lpName\n]`,
+  }],
+  ["CreateEventExW", {
+    native: `HANDLE CreateEventExW(\n  [in, optional] SECURITY_ATTRIBUTES * lpEventAttributes,\n  [in, optional] LPCWSTR lpName,\n  [in] DWORD dwFlags,\n  [in] DWORD dwDesiredAccess\n);`,
+    python: `CreateEventExW.argtypes = [\n    ctypes.POINTER(SECURITY_ATTRIBUTES),  # lpEventAttributes\n    wintypes.LPCWSTR,  # lpName\n    wintypes.DWORD,  # dwFlags\n    wintypes.DWORD,  # dwDesiredAccess\n]`,
+  }],
+  ["CreateEventExA", {
+    native: `HANDLE CreateEventExA(\n  [in, optional] SECURITY_ATTRIBUTES * lpEventAttributes,\n  [in, optional] LPCSTR lpName,\n  [in] DWORD dwFlags,\n  [in] DWORD dwDesiredAccess\n);`,
+    python: `CreateEventExA.argtypes = [\n    ctypes.POINTER(SECURITY_ATTRIBUTES),  # lpEventAttributes\n    wintypes.LPCSTR,  # lpName\n    wintypes.DWORD,  # dwFlags\n    wintypes.DWORD,  # dwDesiredAccess\n]`,
+  }],
+]);
+for (const [name, expected] of createEventSignatures) {
+  const variant = variants.get(name);
+  requireCondition(variant?.nativeSignature === expected.native, `${name}: native signature does not preserve typed SECURITY_ATTRIBUTES`);
+  requireCondition(variant?.python.includes("class SECURITY_ATTRIBUTES(ctypes.Structure)"), `${name}: Python declaration omits SECURITY_ATTRIBUTES`);
+  requireCondition(variant?.python.includes(expected.python), `${name}: Python argtypes do not preserve the exact typed signature`);
+}
 
 console.log(`Windows API guide entries: ${entries.size}`);
 console.log(`Windows API guide variants: ${variants.size}`);

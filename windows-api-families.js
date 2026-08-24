@@ -146,14 +146,27 @@
         if (names.has(name) || variants.has(name)) errors.push(`duplicate variant: ${name}`);
         names.add(name);
         variants.set(name, (variants.get(name) || 0) + 1);
-        if (!(Array.isArray(variant.sources) && variant.sources.some((source) => typeof source === "string" && source.includes("learn.microsoft.com")))) {
+        if (!(Array.isArray(variant.sources) && variant.sources.some((source) => typeof source === "string" && source.startsWith("https://learn.microsoft.com/")))) {
           errors.push(`variant missing Microsoft Learn source: ${name}`);
         }
-        if (words(variant.useWhen).length > 24) errors.push(`useWhen exceeds 24 words: ${name}`);
-        const behaviors = Array.isArray(variant.keyBehaviors) ? variant.keyBehaviors : [];
-        if (behaviors.length > 5) errors.push(`too many key behaviors: ${name}`);
-        for (const behavior of behaviors) {
-          if (words(behavior).length > 30) errors.push(`key behavior exceeds 30 words: ${name}`);
+        if (typeof variant.useWhen !== "string") {
+          errors.push(`useWhen must be a string: ${name}`);
+        } else if (!variant.useWhen.trim()) {
+          errors.push(`variant missing useWhen: ${name}`);
+        } else if (words(variant.useWhen).length > 24) {
+          errors.push(`useWhen exceeds 24 words: ${name}`);
+        }
+        if (!Array.isArray(variant.keyBehaviors)) {
+          errors.push(`keyBehaviors must be an array: ${name}`);
+        } else {
+          if (variant.keyBehaviors.length > 5) errors.push(`too many key behaviors: ${name}`);
+          for (const behavior of variant.keyBehaviors) {
+            if (typeof behavior !== "string") {
+              errors.push(`key behavior must be a string: ${name}`);
+            } else if (words(behavior).length > 30) {
+              errors.push(`key behavior exceeds 30 words: ${name}`);
+            }
+          }
         }
         for (const parameter of Array.isArray(variant.parameters) ? variant.parameters : []) {
           if (parameter?.choiceSet && !guideChoiceSets[parameter.choiceSet]) errors.push(`unknown choice set: ${parameter.choiceSet}`);
