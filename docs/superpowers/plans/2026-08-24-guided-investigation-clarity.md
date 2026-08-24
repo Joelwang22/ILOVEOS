@@ -2,9 +2,9 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Make every one of the course's 62 guided investigations independently understandable and executable, with exact copyable PowerShell commands, complete downloads for multi-line programs, precise Windows-tool instructions, and automated regression protection.
+**Goal:** Turn all 62 guided investigations into self-contained, closed-loop showcases with exact commands and tool paths, sparse webpage-verifiable evidence checks, and no off-page homework.
 
-**Architecture:** Add optional `commands` metadata to practice steps and render it as accessible copyable command blocks. Extract practice validation into a focused Node module used by the course audit, then rewrite the lesson content in two module batches before enabling a zero-warning clarity gate across the complete course.
+**Architecture:** Practice steps carry optional `commands` metadata and practices carry optional invariant `checkpoints` metadata; `app.js` renders both with accessible transient interactions. A focused Node validator enforces artifacts, clarity, closed-loop content, checkpoint shape and sparsity, while two content batches are audited before the complete course receives a zero-warning gate.
 
 **Tech Stack:** Dependency-free HTML, CSS, browser JavaScript, Node.js audit/test scripts, headless Microsoft Edge, static GitHub Pages.
 
@@ -16,8 +16,12 @@
 - Direct terminal input must be displayed as a complete copyable PowerShell block in the step that requires it.
 - Multi-line Python work must provide a complete `.py` download and an exact PowerShell invocation.
 - GUI/tool steps must name the tool, target, interface path or filter, timing, evidence, and unavailable branch where applicable.
+- Process Explorer steps must distinguish `Properties > Threads` thread start addresses from DLL lower-pane module base addresses and spell out every pane, tab, and column needed to reveal the requested value.
 - A later step must name the earlier output it consumes; unresolved references such as "the script" or "the same command" are not acceptable.
-- Do not add response forms, stored progress, automatic execution, a backend, or artificial command blocks to reasoning-only steps.
+- Guided investigations must not request off-page writing, recording, explanations, classifications, calculations, diagrams, designs, research, code reconstruction, or unsupplied examples, and must not contain extension assignments.
+- Learner decisions must be transient and webpage-verifiable against fixed answers supplied by the course. Prefer short evidence blanks; use multiple choice only for a meaningful distinction.
+- Add no checkpoint by default, normally no more than one, never more than two, and at most one choice checkpoint per investigation. Never grade dynamic PIDs, addresses, timings, paths, inventories, or machine-dependent values.
+- Do not add stored progress, automatic execution, a backend, or artificial command blocks to observation-only steps.
 - Preserve the dependency-free static architecture and the existing lesson visual language.
 - Preserve the owner's untracked `stuff_to_add.txt` and all unrelated changes.
 - After every task, fast-forward `main`, push it, wait for the exact GitHub Pages workflow SHA, and verify the public asset cache key before continuing.
@@ -73,7 +77,7 @@ const valid = validatePractice({
   steps: [{
     action: "Run one.py from the folder containing the downloaded file.",
     commands: [{ label: "PowerShell", code: "py .\\one.py" }],
-    observe: "Record the printed PID and pointer width.",
+    observe: "The command prints the PID and pointer width.",
   }],
   download: ["downloads/one.py", "one.py", "Download one.py"],
 }, "fixture", { enforceClarity: true });
@@ -81,12 +85,12 @@ assert.deepEqual(valid.errors, []);
 assert.deepEqual(valid.warnings, []);
 
 for (const [name, practice, expectedText] of [
-  ["vague reference", { steps: [{ action: "Run the script from this lesson.", observe: "Record output." }] }, "unresolved reference"],
-  ["malformed command", { steps: [{ action: "Run one.py.", commands: [{ label: "", code: "" }], observe: "Record output." }] }, "command"],
-  ["unsupported command field", { steps: [{ action: "Print a value.", commands: [{ label: "PowerShell", code: "Write-Output 1", shell: "pwsh" }], observe: "Record output." }] }, "unsupported"],
-  ["terminal instruction without command", { steps: [{ action: "Run one.py from PowerShell.", observe: "Record output." }] }, "command block"],
-  ["unnamed artifact", { download: ["downloads/one.py", "one.py"], steps: [{ action: "Run a direct check.", commands: [{ label: "PowerShell", code: "py -c \"print(1)\"" }], observe: "Record output." }] }, "one.py"],
-  ["paste-hostile placeholder", { steps: [{ action: "Query a PID.", commands: [{ label: "PowerShell", code: "tool.exe <PID>" }], observe: "Record output." }] }, "placeholder"],
+  ["vague reference", { steps: [{ action: "Run the script from this lesson.", observe: "The output should become visible." }] }, "unresolved reference"],
+  ["malformed command", { steps: [{ action: "Run one.py.", commands: [{ label: "", code: "" }], observe: "The output should become visible." }] }, "command"],
+  ["unsupported command field", { steps: [{ action: "Print a value.", commands: [{ label: "PowerShell", code: "Write-Output 1", shell: "pwsh" }], observe: "The value 1 should appear." }] }, "unsupported"],
+  ["terminal instruction without command", { steps: [{ action: "Run one.py from PowerShell.", observe: "The program output should appear." }] }, "command block"],
+  ["unnamed artifact", { download: ["downloads/one.py", "one.py"], steps: [{ action: "Run a direct check.", commands: [{ label: "PowerShell", code: "py -c \"print(1)\"" }], observe: "The value 1 should appear." }] }, "one.py"],
+  ["paste-hostile placeholder", { steps: [{ action: "Query a PID.", commands: [{ label: "PowerShell", code: "tool.exe <PID>" }], observe: "The query result should appear." }] }, "placeholder"],
 ]) {
   const result = validatePractice(practice, name, { enforceClarity: true });
   assert.ok([...result.errors, ...result.warnings].some((message) => message.includes(expectedText)), name);
@@ -302,7 +306,7 @@ Expected: FAIL listing the remaining vague references and terminal steps without
 
 - [ ] **Step 2: Inventory the real command contract for every Modules 1–5 artifact**
 
-For each `practice.download` and `practice.downloads` entry in the five lesson-depth files, inspect the Python file's `argparse`, `sys.argv`, prompts, pause points, output fields, and cleanup. Record the exact filename and invocation in the lesson step; do not invent flags absent from the artifact or change an artifact merely to simplify the prose. Run `py <file> --help` only when the file defines help safely; otherwise inspect the source without executing configuration-changing behavior.
+For each `practice.download` and `practice.downloads` entry in the five lesson-depth files, inspect the Python file's `argparse`, `sys.argv`, prompts, pause points, output fields, and cleanup. Encode the exact filename and invocation in the lesson step; do not invent flags absent from the artifact or change an artifact merely to simplify the prose. Run `py <file> --help` only when the file defines help safely; otherwise inspect the source without executing configuration-changing behavior.
 
 - [ ] **Step 3: Rewrite all foundations investigations**
 
@@ -367,101 +371,166 @@ Fast-forward and push `main`, wait for the exact Pages workflow, and verify the 
 
 ---
 
-### Task 3: Audit and rewrite Modules 6–10
+### Task 3: Checkpoints and closed-loop Modules 6–10
 
 **Files:**
 
+- Modify: `app.js`
+- Modify: `styles.css`
+- Modify: `scripts/practice-audit.mjs`
 - Modify: `lesson-depth-management.js`
 - Modify: `lesson-depth-security.js`
 - Modify: `lesson-depth-sync-ipc.js`
 - Modify: `lesson-depth-hooking.js`
 - Modify: `scripts/test-practice-audit.mjs`
 - Modify: `scripts/test-practice-command-view.mjs`
+- Create: `scripts/test-practice-checkpoint-view.mjs`
 - Modify: `index.html`
 
 **Interfaces:**
 
-- Consumes Task 1 command blocks and Task 2's clarity-clean first batch.
-- Produces clarity-clean practices for module IDs `management`, `security`, `synchronisation`, `ipc`, and `hooking-injection`.
+- Consumes Task 1 command blocks and Task 2's first-batch clarity work.
+- Adds `practice.checkpoints?: Array<ShortCheckpoint | ChoiceCheckpoint>` where `afterStep` is a one-based step number.
+- `ShortCheckpoint` has exactly `{ afterStep, type: "short", prompt, answer, acceptedAnswers?, feedback }`.
+- `ChoiceCheckpoint` has exactly `{ afterStep, type: "choice", prompt, options, answerIndex, feedback }`.
+- Produces closed-loop practices for module IDs `management`, `security`, `synchronisation`, `ipc`, and `hooking-injection`.
 
-- [ ] **Step 1: Add the Modules 6–10 clarity assertion and verify RED**
+- [ ] **Step 1: Add checkpoint validation fixtures and verify RED**
 
-Add the second module set to `scripts/test-practice-audit.mjs`, validate with `enforceClarity: true`, and assert an empty finding list. Run the test and confirm it fails on the remaining vague references and missing commands.
+Extend `scripts/test-practice-audit.mjs` with one valid short checkpoint and one valid choice checkpoint. Add invalid fixtures for an extension, the rejected five-part writing instruction, unsupported checkpoint fields, an out-of-range `afterStep`, empty answers, fewer than two choice options, an out-of-range `answerIndex`, three checkpoints, two choice checkpoints, and a prompt that asks for a live PID. Require each invalid fixture to return the named error.
 
-- [ ] **Step 2: Inventory the real command contract for every Modules 6–10 artifact**
+Run `node .\scripts\test-practice-audit.mjs`.
+
+Expected: FAIL because the validator does not yet enforce closed-loop or checkpoint rules.
+
+- [ ] **Step 2: Implement the validator rules and verify GREEN**
+
+In `scripts/practice-audit.mjs`, validate `practice.extension`, task verbs across `action`, `observe`, step `hint`, practice hints, and expected outcome, and the exact checkpoint unions above. Check one-based `afterStep`, trimmed fixed answers, choice bounds, the two-checkpoint/one-choice limits, and dynamic-answer wording. Return `checkpointCount` and `choiceCheckpointCount` with the existing validation result.
+
+Keep the closed-loop verb patterns narrow enough that explanatory lesson prose is unaffected; validation applies only to practice task fields. Run `node .\scripts\test-practice-audit.mjs` and require every fixture to pass.
+
+- [ ] **Step 3: Write the failing checkpoint browser test**
+
+Create `scripts/test-practice-checkpoint-view.mjs` using the repository's headless-Edge helper pattern. Inject a deterministic short checkpoint and choice checkpoint through a fixture lesson, then assert that each appears immediately after its `afterStep`, has a visible prompt, an accessible form control, a `Check answer` button, and a polite feedback region. Assert that `OS`, ` os `, and an accepted alias pass the short check; a wrong answer shows corrective feedback but remains editable; the correct choice passes; navigating away and back restores blank unchecked controls.
+
+Run `node .\scripts\test-practice-checkpoint-view.mjs`.
+
+Expected: FAIL because checkpoint markup and wiring do not exist.
+
+- [ ] **Step 4: Render and wire transient checkpoints**
+
+In `app.js`, add `renderPracticeCheckpoints(practice, afterStep)` and `wirePracticeCheckpoints()`. Render short answers as a labelled text input and choices as a `fieldset`/`legend` radio group. Add stable test hooks `data-practice-checkpoint`, `data-checkpoint-input`, `data-checkpoint-option`, `data-checkpoint-check`, and `data-checkpoint-feedback`. Insert each checkpoint after the matching list item content, compare short answers with `trim().toLocaleLowerCase()`, and use no storage API. Incorrect answers remain editable; feedback uses `role="status"` and does not move focus.
+
+In `styles.css`, add practice-card-consistent checkpoint spacing, input, option, feedback, correct/incorrect text cues, and visible `:focus-visible` rules. Correctness must have a textual cue and not rely on color. Run the checkpoint browser test until GREEN.
+
+- [ ] **Step 5: Add the Modules 6–10 closed-loop assertion and verify RED**
+
+Add the second module set to `scripts/test-practice-audit.mjs`, validate with `enforceClarity: true`, and assert an empty finding list. Run the test and confirm it fails on remaining vague references, missing commands, off-page tasks, extensions, and malformed external-tool instructions.
+
+- [ ] **Step 6: Inventory every Modules 6–10 artifact and evidence contract**
 
 Inspect each referenced download's arguments, prompts, output, privileges, state changes, and cleanup. Match the displayed commands exactly to the artifact rather than modifying the artifact to fit a guessed command. Configuration-changing and security-context scripts are inspected statically unless their existing controlled test mode is explicitly safe.
 
-- [ ] **Step 3: Rewrite management investigations**
+- [ ] **Step 7: Rewrite management investigations**
 
-Review all six lessons. Name Registry paths/views, service names, query/change modes, architecture probes, elevation requirements, and confirmation flags. Provide exact commands for inventory versus state change and state how to record/restore the original Registry or service value.
+Review all six lessons. Name Registry paths/views, service names, query/change modes, architecture probes, elevation requirements, and confirmation flags. Provide exact commands for inventory versus state change. Keep restoration inside supplied commands or artifact modes; show the restored state on the page or in the tool without asking the learner to record or explain it. Remove every extension and off-page deliverable. Add a checkpoint only for a worthwhile fixed artifact result.
 
-- [ ] **Step 4: Rewrite security investigations**
+- [ ] **Step 8: Rewrite security investigations**
 
-Review all seven lessons. Replace `starter`, `same script`, and `controlled pair` with filenames and complete commands. Name normal/elevated terminals separately, state where SIDs/integrity/privilege values appear, identify Process Explorer Security paths, and make absent privilege, access denied, cancellation, and restoration branches explicit.
+Review all seven lessons. Replace `starter`, `same script`, and `controlled pair` with filenames and complete commands. Name normal/elevated terminals separately, state where SIDs/integrity/privilege values appear, identify exact Process Explorer `Properties > Security` tabs and fields, and make absent privilege, access denied, cancellation, and restoration branches explicit. Convert comparisons into visible observations, not tables or written explanations.
 
-- [ ] **Step 5: Rewrite synchronisation investigations**
+- [ ] **Step 9: Rewrite synchronisation investigations**
 
-Review all six synchronisation lessons in `lesson-depth-sync-ipc.js`. Provide complete commands for each role/mode, say which terminal starts first, name events/mutexes/semaphores, identify expected wait codes and timeout/abandoned branches, and state the process/thread cleanup order.
+Review all six synchronisation lessons in `lesson-depth-sync-ipc.js`. Provide complete commands for each role/mode, say which terminal starts first, name events/mutexes/semaphores, identify expected wait codes and timeout/abandoned branches, and state the process/thread cleanup order. Use a short evidence blank for a deliberately fixed wait result only when it materially checks the run.
 
-- [ ] **Step 6: Rewrite IPC investigations**
+- [ ] **Step 10: Rewrite IPC investigations**
 
 Review all five IPC lessons in `lesson-depth-sync-ipc.js`. Provide separate labelled command blocks for server/client or producer/consumer terminals, name pipe/mapping/output identifiers, state startup order and blocking point, and make EOF, unavailable endpoint, timeout, partial transfer, and cleanup evidence explicit.
 
-- [ ] **Step 7: Rewrite hooking and injection investigations**
+- [ ] **Step 11: Rewrite hooking and injection investigations**
 
-Review all six lessons. Name `memory_provenance_lab.py`, `pe_imports_lab.py`, and `module_baseline_lab.py`; provide exact read-only/owned-target commands; identify Process Explorer, VMMap, ListDLLs, or Sigcheck views; and replace survey/reader/starter wording with the concrete artifact and output fields. Preserve the existing non-payload, diagnostic scope.
+Review all six lessons. Name `memory_provenance_lab.py`, `pe_imports_lab.py`, and `module_baseline_lab.py`; provide exact read-only/owned-target commands; identify Process Explorer, VMMap, ListDLLs, or Sigcheck views; and replace survey/reader/starter wording with concrete artifacts and visible output fields. For Process Explorer DLL evidence, require `View > Show Lower Pane`, `View > Lower Pane View > DLLs`, lower-pane `Select Columns > DLL > Base Address`, and the exact module row. Use `Properties > Threads` only for a selected TID's start address. Preserve the existing non-payload, diagnostic scope.
 
-- [ ] **Step 8: Run the complete content audit and verify GREEN**
+- [ ] **Step 12: Run the Task 3 content and interaction gates**
 
 Extend `scripts/test-practice-command-view.mjs` to load `#/lesson/events-waits`, assert that its creator and waiter PowerShell blocks are independently labelled, copy the waiter block, and confirm that the creator block's button/status does not change. Then run `node .\scripts\test-practice-audit.mjs`, `node .\scripts\test-practice-command-view.mjs`, and `node .\scripts\audit-course.mjs`.
 
-Expected: both module-batch assertions pass. Any remaining warnings are audit-heuristic false positives that must be resolved by clearer wording or a narrowly justified validator adjustment before continuing.
+Also run `node .\scripts\test-practice-checkpoint-view.mjs`. Expected: the Modules 6–10 assertion passes, checkpoint fixtures and browser interactions pass, and any remaining course warnings belong only to Modules 1–5 closed-loop debt scheduled for Task 4.
 
-- [ ] **Step 9: Update cache key and verify rendering**
+- [ ] **Step 13: Update cache key and verify rendering**
 
-Change every tied asset query to `guided-investigation-3`. Browser-check at least one command-heavy lesson from management, security, synchronisation, IPC, and hooking/injection at desktop and compact width.
+Change every tied asset query to `guided-investigation-3`. Browser-check one command-heavy lesson from each Task 3 module and every authored checkpoint at desktop and compact width. Confirm no investigation contains an extension card.
 
-- [ ] **Step 10: Verify, review, commit, and publish Task 3**
+- [ ] **Step 14: Verify, review, commit, and publish Task 3**
 
 Run JavaScript syntax checks, Python parsing for every download, all practice tests, the complete course audit, browser layout/integration tests, and `git diff --check`. Request content review focused on commands, permissions, failure branches, and cleanup. Fix all Critical/Important findings, then commit:
 
 ```powershell
-git add lesson-depth-management.js lesson-depth-security.js lesson-depth-sync-ipc.js lesson-depth-hooking.js scripts\test-practice-audit.mjs scripts\test-practice-command-view.mjs index.html
-git commit -m "Clarify guided investigations for modules six to ten"
+git add app.js styles.css lesson-depth-management.js lesson-depth-security.js lesson-depth-sync-ipc.js lesson-depth-hooking.js scripts\practice-audit.mjs scripts\test-practice-audit.mjs scripts\test-practice-command-view.mjs scripts\test-practice-checkpoint-view.mjs index.html
+git commit -m "Close guided investigations for modules six to ten"
 ```
 
 Fast-forward and push `main`, wait for the exact Pages workflow, and verify `guided-investigation-3` live before Task 4.
 
 ---
 
-### Task 4: Zero-warning release gate and final record
+### Task 4: Modules 1–5 closed-loop retrofit and zero-warning release
 
 **Files:**
 
+- Modify: `lesson-depth-foundations.js`
+- Modify: `lesson-depth-processes.js`
+- Modify: `lesson-depth-threads.js`
+- Modify: `lesson-depth-memory.js`
+- Modify: `lesson-depth-linking.js`
 - Modify: `scripts/audit-course.mjs`
 - Modify: `scripts/test-practice-audit.mjs`
 - Modify: `scripts/test-practice-command-view.mjs`
+- Modify: `scripts/test-practice-checkpoint-view.mjs`
 - Create: `scripts/test-practice-command-layout.mjs`
 - Modify: `PLAN.md`
 - Modify: `index.html`
 
 **Interfaces:**
 
-- Changes the complete course audit from clarity-warning mode to `enforceClarity: true` for all lessons.
-- Produces a final audit record containing investigation, command-block, and checked-artifact totals.
+- Consumes Task 3's closed-loop/checkpoint validator and transient renderer.
+- Produces closed-loop practices for module IDs `foundations`, `processes-handles`, `threads-scheduling`, `memory`, and `linking-loading`.
+- Changes the complete course audit to `enforceClarity: true` for all lessons.
+- Produces a final audit record containing investigation, command-block, checkpoint, and checked-artifact totals.
 
-- [ ] **Step 1: Write the failing zero-warning release assertion**
+- [ ] **Step 1: Write the failing full-course closed-loop assertion**
 
-In `scripts/test-practice-audit.mjs`, validate every merged lesson with `enforceClarity: true`, collect all errors and warnings, and assert both arrays are empty. Also assert exactly 62 investigations were validated and every authored download path is returned by `practiceDownloads()`.
+In `scripts/test-practice-audit.mjs`, validate every merged lesson with `enforceClarity: true`, collect all errors and warnings, and assert both arrays are empty. Assert exactly 62 investigations, zero extensions, no off-page-task findings, no dynamic checkpoint answers, no more than two checkpoints per investigation, no more than one choice checkpoint per investigation, and every authored download path returned by `practiceDownloads()`.
 
-Run the test and confirm any remaining wording or structural debt fails explicitly. If it passes immediately, temporarily restore one original vague fixture string and verify the assertion fails, then restore the audited content before implementation continues.
+Run the test. Expected: FAIL on Modules 1–5 writing, recording, classification, calculation, diagram, extension, and external-tool path debt.
 
-- [ ] **Step 2: Enable the strict course-audit gate**
+- [ ] **Step 2: Retrofit foundations investigations**
+
+Review all eight foundations practices against the closed-loop standard. Delete five-part distinctions, conversion worksheets, observation tables, diagrams, explanatory writing, and every extension. Keep supplied commands and visible evidence. Correct Process Explorer instructions so a module base uses the DLL lower pane and a thread start address uses `Properties > Threads`; do not substitute `View > Select Columns > Process Performance > Start Address`. Add only deterministic evidence blanks justified by supplied artifacts.
+
+- [ ] **Step 3: Retrofit processes and handles investigations**
+
+Review all six practices. Remove requests to list, classify, compare in writing, or explain collected values. Make PID/path transfer immediate, name exact Handles/DLL lower-pane modes and columns, show deterministic artifact evidence, and keep unavailable/access-denied branches observable. Remove every extension.
+
+- [ ] **Step 4: Retrofit threads and scheduling investigations**
+
+Review all five practices. Remove written timing tables, scheduler explanations, and hardware/software distinction homework. Commands may display timings and relationships, but checkpoints may test only invariant artifact output or one meaningful distinction whose answer the page knows. Remove every extension.
+
+- [ ] **Step 5: Retrofit memory investigations**
+
+Review all seven practices. Remove address arithmetic worksheets, manually recorded VMMap tables, classifications, predictions, and explanations. Preserve controlled allocation transitions and exact VMMap/Performance Monitor navigation. Dynamic addresses, counters, and elapsed times remain observations only and are never checkpoint answers. Remove every extension.
+
+- [ ] **Step 6: Retrofit linking and loading investigations**
+
+Review all six practices. Remove hand-authored inventories, reports, comparisons, and explanations. Keep supplied parsers/loaders and exact Process Monitor/Process Explorer module paths. Where a supplied artifact deliberately exposes a distinctive module or fixed import, prefer one short evidence blank such as `i_love_[____].dll`; otherwise add no question. Remove every extension.
+
+- [ ] **Step 7: Enable the strict course-audit gate**
 
 Call `validatePractice(..., { enforceClarity: true })` for every lesson in `scripts/audit-course.mjs`. Treat every returned warning as release-blocking by setting a non-zero exit code when warnings remain. Preserve separate error/warning output so the author knows whether a finding is malformed data or prose requiring review.
 
-- [ ] **Step 3: Write the failing command-layout browser test**
+Print measured `guided investigations`, `practice command blocks`, `practice checkpoints`, `choice checkpoints`, and `downloads checked` totals. Run `node .\scripts\test-practice-audit.mjs` and `node .\scripts\audit-course.mjs`; require zero errors and zero warnings.
+
+- [ ] **Step 8: Write the failing command-and-checkpoint layout browser test**
 
 Create `scripts/test-practice-command-layout.mjs` using the real site and true CDP device emulation. At desktop, compact, Edge-minimum, and 390-pixel widths, and for small/default/large text sizes, assert:
 
@@ -473,25 +542,29 @@ Create `scripts/test-practice-command-layout.mjs` using the real site and true C
   commandScrollContained: true,
   copyButtonVisible: true,
   copyTargetAtLeast40: true,
-  codeReadable: true
+  codeReadable: true,
+  checkpointVisible: true,
+  checkpointContained: true,
+  checkpointControlReachable: true,
+  checkpointFeedbackReadable: true
 }
 ```
 
 Use an intentionally long real command from the audited lessons. The first run must fail because this test and any required responsive refinements do not yet exist.
 
-- [ ] **Step 4: Refine responsive/accessibility behavior until GREEN**
+- [ ] **Step 9: Refine responsive/accessibility behavior until GREEN**
 
 Make the smallest `styles.css` or `app.js` changes required by the layout test. Do not alter instructional content in response to a layout problem. Run both command browser tests after every refinement.
 
-- [ ] **Step 5: Perform the final human-readability pass**
+- [ ] **Step 10: Perform the final human-readability pass**
 
-Read every rendered investigation in course order. For each, verify the action-prerequisite-command-evidence-cleanup chain against the specification. Confirm commands use the actual download filename, PowerShell syntax, and real artifact arguments. Confirm GUI menu paths and failure branches remain appropriate to the task rather than generic boilerplate.
+Read every rendered investigation in course order. For each, verify the action-prerequisite-command-evidence-cleanup chain against the specification. Confirm commands use the actual download filename, PowerShell syntax, and real artifact arguments. Confirm GUI menu paths name every setting needed to reveal evidence. Confirm the investigation ends on the webpage with no request to record, write, explain, classify, calculate, draw, design, research, reconstruct code, or perform an independent extension.
 
-- [ ] **Step 6: Update the plan and release key**
+- [ ] **Step 11: Update the plan and release key**
 
-Add a dated guided-investigation clarity audit record to `PLAN.md` with measured totals from the strict audit. Change every tied asset query in `index.html` to `guided-investigation-4`.
+Add a dated guided-investigation clarity audit record to `PLAN.md` with measured totals from the strict audit, including checkpoint and choice counts. Change every tied asset query in `index.html` to `guided-investigation-4`.
 
-- [ ] **Step 7: Run the complete release gate**
+- [ ] **Step 12: Run the complete release gate**
 
 Run sequentially:
 
@@ -504,18 +577,18 @@ Get-ChildItem .\scripts -File -Filter test-*.mjs | Sort-Object Name | ForEach-Ob
 git diff --check
 ```
 
-Expected: all commands exit 0; audit errors 0; audit warnings 0; 62 investigations validated; every singular/plural download checked; every browser/layout assertion true.
+Expected: all commands exit 0; audit errors 0; audit warnings 0; 62 investigations validated; zero extensions and off-page tasks; checkpoint sparsity limits satisfied; every singular/plural download checked; every browser/layout assertion true.
 
-- [ ] **Step 8: Final review and commit**
+- [ ] **Step 13: Final review and commit**
 
-Request final code review and separate instructional-content review against the approved spec. Fix every Critical/Important issue and repeat Step 7. Commit:
+Request final code review and separate instructional-content review against the approved spec. Fix every Critical/Important issue and repeat Step 12. Commit:
 
 ```powershell
-git add PLAN.md index.html app.js styles.css lesson-depth-*.js downloads scripts docs\superpowers
+git add PLAN.md index.html app.js styles.css lesson-depth-foundations.js lesson-depth-processes.js lesson-depth-threads.js lesson-depth-memory.js lesson-depth-linking.js scripts\audit-course.mjs scripts\test-practice-audit.mjs scripts\test-practice-command-view.mjs scripts\test-practice-checkpoint-view.mjs scripts\test-practice-command-layout.mjs
 git commit -m "Complete guided investigation clarity audit"
 ```
 
-- [ ] **Step 9: Publish and externally verify**
+- [ ] **Step 14: Publish and externally verify**
 
 Fast-forward `main`, rerun the strict audit and command browser/layout tests there, push `main`, and wait for the exact GitHub Pages workflow SHA. Verify:
 
