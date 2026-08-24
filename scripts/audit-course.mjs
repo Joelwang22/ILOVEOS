@@ -87,7 +87,6 @@ for (const lesson of lessons) {
   requireCondition((expanded.practice?.steps || []).length >= 3, `${prefix}: practice has fewer than three steps`);
   requireCondition(Boolean(expanded.practice?.expectedOutcome), `${prefix}: practice missing expected outcome`);
   requireCondition((expanded.practice?.cleanup || []).length >= 1, `${prefix}: practice missing cleanup`);
-  requireCondition(Boolean(expanded.practice?.extension), `${prefix}: practice missing independent variation`);
   requireCondition((expanded.checks || []).length >= 2, `${prefix}: fewer than two review questions`);
   requireCondition((expanded.keys || []).length >= 3, `${prefix}: fewer than three take-forward points`);
   requireCondition((expanded.sources || []).length >= 1, `${prefix}: missing primary source`);

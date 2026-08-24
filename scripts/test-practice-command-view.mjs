@@ -63,6 +63,36 @@ const probe = `<script>
       await waitForRoute();
       checks.fallbackSelectsCommand = window.getSelection()?.toString() === command?.textContent;
       checks.fallbackLiveConfirmation = status?.textContent.includes("Press Ctrl+C to copy");
+
+      window.location.hash = "#/lesson/events-waits";
+      await waitForRoute();
+      const eventBlocks = Array.from(document.querySelectorAll("[data-practice-command]"));
+      const blockWithLabel = (label) => eventBlocks.find((block) => (
+        block.querySelector("[data-command-label]")?.textContent.trim() === label
+      ));
+      const creatorBlock = blockWithLabel("Creator PowerShell");
+      const waiterBlock = blockWithLabel("Waiter PowerShell");
+      checks.eventCreatorLabel = Boolean(creatorBlock);
+      checks.eventWaiterLabel = Boolean(waiterBlock);
+      checks.eventBlocksDistinct = Boolean(creatorBlock && waiterBlock && creatorBlock !== waiterBlock);
+
+      const creatorButton = creatorBlock?.querySelector("[data-copy-practice-command]");
+      const creatorStatus = creatorBlock?.querySelector("[data-copy-status]");
+      const waiterButton = waiterBlock?.querySelector("[data-copy-practice-command]");
+      const waiterCommand = waiterBlock?.querySelector("[data-practice-command-code]");
+      const creatorButtonBefore = creatorButton?.textContent;
+      const creatorStatusBefore = creatorStatus?.textContent;
+      copiedText = "";
+      Object.defineProperty(navigator, "clipboard", {
+        configurable: true,
+        value: { writeText: async (value) => { copiedText = value; } },
+      });
+      waiterButton?.click();
+      await waitForRoute();
+      checks.eventWaiterCopied = copiedText === waiterCommand?.textContent;
+      checks.eventWaiterCopiedState = waiterButton?.textContent.trim() === "Copied";
+      checks.eventCreatorCopyUnchanged = creatorButton?.textContent === creatorButtonBefore;
+      checks.eventCreatorStatusUnchanged = creatorStatus?.textContent === creatorStatusBefore;
     } catch (error) {
       checks.exception = error.message;
     }

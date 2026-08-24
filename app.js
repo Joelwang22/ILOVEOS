@@ -410,6 +410,35 @@ handle = <span class="code-function">win32process.GetCurrentProcess</span>()
     }).join("");
   }
 
+  function renderPracticeCheckpoints(practice, afterStep) {
+    return (practice.checkpoints || []).map((checkpoint, checkpointIndex) => ({ checkpoint, checkpointIndex }))
+      .filter(({ checkpoint }) => checkpoint.afterStep === afterStep)
+      .map(({ checkpoint, checkpointIndex }) => {
+        const checkpointId = `practice-checkpoint-${checkpointIndex}`;
+        const feedbackId = `${checkpointId}-feedback`;
+        const prompt = escapeHtml(checkpoint.prompt);
+        const control = checkpoint.type === "choice"
+          ? `<fieldset>
+              <legend data-checkpoint-prompt>${prompt}</legend>
+              <div class="practice-checkpoint-options">
+                ${checkpoint.options.map((option, optionIndex) => `
+                  <label>
+                    <input type="radio" name="${checkpointId}" value="${optionIndex}" data-checkpoint-option aria-describedby="${feedbackId}">
+                    <span>${escapeHtml(option)}</span>
+                  </label>`).join("")}
+              </div>
+            </fieldset>`
+          : `<label for="${checkpointId}-input" data-checkpoint-prompt>${prompt}</label>
+            <input id="${checkpointId}-input" type="text" autocomplete="off" spellcheck="false" data-checkpoint-input aria-describedby="${feedbackId}">`;
+        return `
+          <section class="practice-checkpoint" data-practice-checkpoint="${checkpointIndex}" data-checkpoint-type="${escapeHtml(checkpoint.type)}">
+            ${control}
+            <button type="button" data-checkpoint-check>Check answer</button>
+            <p id="${feedbackId}" data-checkpoint-feedback role="status" aria-live="polite"></p>
+          </section>`;
+      }).join("");
+  }
+
   function renderPractice(lesson) {
     const practice = normalizedPractice(lesson);
     const downloads = practice.downloads || (practice.download ? [practice.download] : []);
@@ -429,7 +458,7 @@ handle = <span class="code-function">win32process.GetCurrentProcess</span>()
           ${practice.steps.map((step, index) => `
             <li>
               <span class="practice-number">${String(index + 1).padStart(2, "0")}</span>
-              <div class="practice-step-copy"><h4>${escapeHtml(step.action)}</h4>${renderPracticeCommands(step, index)}${step.why ? `<p><strong>Why this step matters:</strong> ${escapeHtml(step.why)}</p>` : ""}${step.observe ? `<p class="practice-observe"><strong>Look for:</strong> ${escapeHtml(step.observe)}</p>` : ""}${step.hint ? `<details><summary>Hint for this step</summary><p>${escapeHtml(step.hint)}</p></details>` : ""}</div>
+              <div class="practice-step-copy"><h4>${escapeHtml(step.action)}</h4>${renderPracticeCommands(step, index)}${step.why ? `<p><strong>Why this step matters:</strong> ${escapeHtml(step.why)}</p>` : ""}${step.observe ? `<p class="practice-observe"><strong>Look for:</strong> ${escapeHtml(step.observe)}</p>` : ""}${step.hint ? `<details><summary>Hint for this step</summary><p>${escapeHtml(step.hint)}</p></details>` : ""}${renderPracticeCheckpoints(practice, index + 1)}</div>
             </li>`).join("")}
         </ol>
         <details class="practice-hints"><summary>Need a nudge?</summary>${practice.hints.map((hint) => `<div><strong>${escapeHtml(hint.title)}</strong><p>${escapeHtml(hint.body)}</p></div>`).join("")}</details>
@@ -596,6 +625,7 @@ handle = <span class="code-function">win32process.GetCurrentProcess</span>()
 
     wireQuizzes();
     wirePracticeCommands();
+    wirePracticeCheckpoints(normalizedPractice(lesson));
   }
 
   function renderLegacyLesson() {
@@ -772,6 +802,37 @@ user = <span class="code-function">win32api.GetUserName</span>()
       });
       button.addEventListener("blur", () => {
         if (button.textContent === "Copied") button.textContent = "Copy";
+      });
+    });
+  }
+
+  function wirePracticeCheckpoints(practice) {
+    document.querySelectorAll("[data-practice-checkpoint]").forEach((container) => {
+      const checkpoint = practice.checkpoints?.[Number(container.dataset.practiceCheckpoint)];
+      const button = container.querySelector("[data-checkpoint-check]");
+      const feedback = container.querySelector("[data-checkpoint-feedback]");
+      if (!checkpoint || !button || !feedback) return;
+
+      const setResult = (correct, empty = false) => {
+        container.classList.toggle("correct", correct);
+        container.classList.toggle("incorrect", !correct);
+        feedback.textContent = correct
+          ? `Correct. ${checkpoint.feedback}`
+          : `${empty ? "Choose or enter an answer, then try again." : "Try again."} ${checkpoint.feedback}`;
+      };
+
+      button.addEventListener("click", () => {
+        if (checkpoint.type === "short") {
+          const input = container.querySelector("[data-checkpoint-input]");
+          const submitted = input?.value.trim().toLocaleLowerCase() || "";
+          const answers = [checkpoint.answer, ...(checkpoint.acceptedAnswers || [])]
+            .map((answer) => answer.trim().toLocaleLowerCase());
+          setResult(Boolean(submitted) && answers.includes(submitted), !submitted);
+          return;
+        }
+
+        const selected = container.querySelector("[data-checkpoint-option]:checked");
+        setResult(Boolean(selected) && Number(selected.value) === checkpoint.answerIndex, !selected);
       });
     });
   }
