@@ -24,8 +24,19 @@ const probe = `<script>
   const runProbe = async () => {
     const checks = {};
     const wait = () => new Promise((resolve) => setTimeout(resolve, 50));
-    const selected = () => document.querySelector("[data-api-variant][aria-selected=\\\"true\\\"]");
-    const currentName = () => selected()?.dataset.apiVariant;
+    const selected = () => document.querySelector('[data-api-variant][aria-selected="true"]');
+    const selectionState = (expectedName) => {
+      const tabs = [...document.querySelectorAll("[data-api-variant]")];
+      const selectedTabs = tabs.filter((tab) => tab.getAttribute("aria-selected") === "true");
+      const selectedTab = selectedTabs[0];
+      return selectedTabs.length === 1
+        && selectedTab?.dataset.apiVariant === expectedName
+        && selectedTab.tabIndex === 0
+        && tabs.filter((tab) => tab !== selectedTab).every((tab) => tab.tabIndex === -1)
+        && document.querySelector("#api-detail-title")?.textContent.includes(expectedName)
+        && document.querySelector(".windows-contract-block")?.textContent.includes(expectedName + ".argtypes")
+        && document.activeElement === selectedTab;
+    };
     try {
       await wait();
       const filter = document.querySelector("#windows-api-filter");
@@ -36,28 +47,30 @@ const probe = `<script>
       await wait();
       const dialog = document.querySelector("#api-detail-dialog");
       checks.clickOpensOneDialog = dialog?.open === true && document.querySelectorAll("#api-detail-dialog dialog").length === 0;
-      checks.clickStartsRecommended = currentName() === "CreateEventW";
-      const tab = selected();
-      tab?.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true }));
+      checks.clickStartsRecommended = selectionState("CreateEventW");
+      document.querySelector('[data-api-variant="CreateEventExA"]')?.click();
       await wait();
-      checks.arrowRightSelectsNext = currentName() === "CreateEventA" && document.activeElement?.dataset.apiVariant === "CreateEventA" && selected()?.tabIndex === 0;
-      selected()?.dispatchEvent(new KeyboardEvent("keydown", { key: "End", bubbles: true }));
-      await wait();
-      checks.endSelectsLast = currentName() === "CreateEventExA" && document.activeElement?.dataset.apiVariant === "CreateEventExA";
+      checks.variantClickSelectsExact = selectionState("CreateEventExA");
       selected()?.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowLeft", bubbles: true }));
       await wait();
-      checks.arrowLeftSelectsPrevious = currentName() === "CreateEventExW" && document.querySelector("#api-detail-title")?.textContent.includes("CreateEventExW") && document.querySelector(".windows-contract-block")?.textContent.includes("CreateEventExW.argtypes");
+      checks.arrowLeftSelectsPrevious = selectionState("CreateEventExW");
+      selected()?.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true }));
+      await wait();
+      checks.arrowRightSelectsNext = selectionState("CreateEventExA");
       selected()?.dispatchEvent(new KeyboardEvent("keydown", { key: "Home", bubbles: true }));
       await wait();
-      checks.homeSelectsFirst = currentName() === "CreateEventW" && document.activeElement?.dataset.apiVariant === "CreateEventW";
+      checks.homeSelectsFirst = selectionState("CreateEventW");
+      selected()?.dispatchEvent(new KeyboardEvent("keydown", { key: "End", bubbles: true }));
+      await wait();
+      checks.endSelectsLast = selectionState("CreateEventExA");
       dialog?.querySelector(".api-dialog-close")?.click();
       createEventRow?.click();
       await wait();
-      checks.reopenResetsToRecommended = currentName() === "CreateEventW";
+      checks.reopenResetsToRecommended = selectionState("CreateEventW");
       dialog?.querySelector(".api-dialog-close")?.click();
       window.location.hash = "#/reference/windows-api?q=CreateEventExA";
       await wait();
-      checks.filteredRouteSelectsExactVariant = dialog?.open === true && currentName() === "CreateEventExA" && document.querySelector("#api-detail-title")?.textContent.includes("CreateEventExA");
+      checks.filteredRouteSelectsExactVariant = dialog?.open === true && selectionState("CreateEventExA");
     } catch (error) { checks.exception = error.message; }
     document.body.innerHTML = '<pre id="api-family-browser-result">' + JSON.stringify(checks) + "</pre>";
   };

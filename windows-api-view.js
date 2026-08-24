@@ -16,6 +16,7 @@
     return [
       variant.name, variant.category, variant.dll, variant.summary, variant.nativeSignature, variant.python,
       variant.example, variant.result, variant.cleanup, variant.pywin32, variant.useWhen, variant.availability,
+      ...(variant.sources || []),
       ...(variant.keyBehaviors || []),
       ...(variant.parameters || []).flatMap((parameter) => [parameter.name, parameter.direction, parameter.native, parameter.python, parameter.explanation]),
     ].join(" ");

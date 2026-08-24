@@ -38,6 +38,10 @@ requireCondition(aliasMatches[0]?.selectedVariant === "CreateEventExW", "CreateE
 const unicodeMatches = view.filterFamilies?.(guide.families, "Unicode event") || [];
 requireCondition(unicodeMatches.length === 1 && unicodeMatches[0]?.family?.id === "create-event", "Unicode event search did not return CreateEvent exactly once");
 
+// This catches source URLs being omitted from variant search text.
+const sourceMatches = view.filterFamilies?.(guide.families, "nf-synchapi-createeventexa") || [];
+requireCondition(sourceMatches.length === 1 && sourceMatches[0]?.family?.id === "create-event", "variant Microsoft Learn source is not searchable");
+
 const familyRows = view.renderEntries?.(exaMatches, true) || "";
 requireCondition(familyRows.includes('data-windows-api-family="create-event"'), "family row is missing its family data attribute");
 requireCondition(familyRows.includes('data-windows-api-variant="CreateEventExA"'), "family row is missing its selected-variant data attribute");
@@ -53,6 +57,16 @@ requireCondition(dialogHtml.includes("CreateEventExA.argtypes"), "selected varia
 requireCondition(dialogHtml.includes("CreateEventExA("), "selected variant native signature is absent");
 requireCondition(!dialogHtml.includes("CreateEventW.argtypes") && !dialogHtml.includes("CreateEventExW.argtypes"), "family popup leaks a non-selected variant signature");
 requireCondition(!dialogHtml.includes("nf-synchapi-createeventw"), "family popup leaks a non-selected variant source");
+
+// This catches dynamic family text being interpolated into the dialog without escaping.
+const unsafeFamily = {
+  ...createEvent,
+  name: '<script>alert("family")</script>',
+  summary: '<img src=x onerror="alert(1)">',
+};
+const unsafeDialog = view.renderDialog?.(unsafeFamily, "CreateEventW") || "";
+requireCondition(!unsafeDialog.includes('<script>alert("family")</script>') && unsafeDialog.includes("&lt;script&gt;alert(&quot;family&quot;)&lt;/script&gt;"), "family heading is not HTML escaped");
+requireCondition(!unsafeDialog.includes('<img src=x onerror="alert(1)">') && unsafeDialog.includes("&lt;img src=x onerror=&quot;alert(1)&quot;&gt;"), "family summary is not HTML escaped");
 
 const singleton = guide.families.find((family) => family.variants.length === 1);
 const singletonHtml = view.filterFamilies ? view.renderDialog?.(singleton, singleton?.recommendedVariant) || "" : "";

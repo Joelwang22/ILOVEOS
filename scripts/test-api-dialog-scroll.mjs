@@ -110,6 +110,8 @@ try {
       const firstVariantScrollTop = popup.scrollTop;
       popup.querySelector('[data-api-variant="CreateEventExW"]')?.click();
       await wait();
+      const switchedVariantScrollBeforeForcedScroll = popup.scrollTop;
+      const switchedVariantScrollPreserved = switchedVariantScrollBeforeForcedScroll >= firstVariantScrollTop - 1;
       popup.scrollTop = popup.scrollHeight;
       const switchedVariantLinkReachable = linkIsReachable();
       const switchedVariantScrollTop = popup.scrollTop;
@@ -118,7 +120,7 @@ try {
       filter.dispatchEvent(new Event("input", { bubbles: true }));
       document.querySelector('[data-windows-api-family="virtual-alloc-ex"]')?.click();
       await wait();
-      const result = { firstVariantScrollTop, firstVariantLinkReachable, switchedVariantScrollTop, switchedVariantLinkReachable, reopenedScrollTop: popup.scrollTop };
+      const result = { firstVariantScrollTop, firstVariantLinkReachable, switchedVariantScrollBeforeForcedScroll, switchedVariantScrollPreserved, switchedVariantScrollTop, switchedVariantLinkReachable, reopenedScrollTop: popup.scrollTop };
       const output = document.createElement("pre");
       output.id = "reopen-result";
       output.textContent = JSON.stringify(result);
@@ -145,8 +147,8 @@ try {
   if (!reopenMatch) throw new Error(`browser did not return popup reopening metrics (exit ${reopenRun.status}): ${reopenRun.stderr.trim()}`);
   const reopenResult = JSON.parse(reopenMatch[1].replaceAll("&quot;", '"'));
   console.log(JSON.stringify(reopenResult));
-  if (reopenResult.firstVariantScrollTop <= 0 || !reopenResult.firstVariantLinkReachable || reopenResult.switchedVariantScrollTop <= 0 || !reopenResult.switchedVariantLinkReachable || reopenResult.reopenedScrollTop !== 0) {
-    console.error("ERROR family popup sources are not reachable after switching variants, or a newly opened popup does not start at the top");
+  if (reopenResult.firstVariantScrollTop <= 0 || !reopenResult.firstVariantLinkReachable || !reopenResult.switchedVariantScrollPreserved || reopenResult.switchedVariantScrollTop <= 0 || !reopenResult.switchedVariantLinkReachable || reopenResult.reopenedScrollTop !== 0) {
+    console.error("ERROR family popup scroll is not preserved through a variant switch, sources are unreachable, or a newly opened popup does not start at the top");
     process.exitCode = 1;
   }
 } finally {

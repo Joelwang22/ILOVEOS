@@ -1317,7 +1317,7 @@ except pywintypes.error as error:
     apiDetailContent.innerHTML = windowsApiView.renderDialog(family, variantName);
     showApiDialog(!preserveScroll);
     if (preserveScroll) apiDialog.scrollTop = scrollTop;
-    apiDetailContent.querySelector(`[data-api-variant="${CSS.escape(variantName)}"]`)?.focus();
+    apiDetailContent.querySelector(`[data-api-variant="${CSS.escape(variantName)}"]`)?.focus({ preventScroll: true });
   }
 
   function openWindowsApiDetails(familyId, variantName) {
