@@ -2,9 +2,9 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Turn all 62 guided investigations into self-contained, closed-loop showcases with exact commands and tool paths, sparse webpage-verifiable evidence checks, and no off-page homework.
+**Goal:** Turn all 62 guided investigations into self-contained, closed-loop showcases with exact commands and tool paths, sparse webpage-verifiable evidence checks, optional local case studies, and no off-page homework or cross-lesson navigation.
 
-**Architecture:** Practice steps carry optional `commands` metadata and practices carry optional invariant `checkpoints` metadata; `app.js` renders both with accessible transient interactions. A focused Node validator enforces artifacts, clarity, closed-loop content, checkpoint shape and sparsity, while two content batches are audited before the complete course receives a zero-warning gate.
+**Architecture:** Practice steps carry optional `commands` metadata, practices carry optional invariant `checkpoints`, and only investigations whose steps share one fixed source carry a singular `caseStudy`. `app.js` renders all three without storage or a backend. A focused Node validator enforces artifacts, clarity, local references, case-study shape, checkpoint shape and sparsity, while every investigation receives a manual audit before the complete course passes a zero-warning gate.
 
 **Tech Stack:** Dependency-free HTML, CSS, browser JavaScript, Node.js audit/test scripts, headless Microsoft Edge, static GitHub Pages.
 
@@ -21,6 +21,8 @@
 - Guided investigations must not request off-page writing, recording, explanations, classifications, calculations, diagrams, designs, research, code reconstruction, or unsupplied examples, and must not contain extension assignments.
 - Learner decisions must be transient and webpage-verifiable against fixed answers supplied by the course. Prefer short evidence blanks; use multiple choice only for a meaningful distinction.
 - Add no checkpoint by default, normally no more than one, never more than two, and at most one choice checkpoint per investigation. Never grade dynamic PIDs, addresses, timings, paths, inventories, or machine-dependent values.
+- Retain executable script, downloadable artifact, external-tool, and controlled-transition investigation formats. A case study is optional, singular, always visible, and justified only when at least two steps consume the same fixed source.
+- Every case-study fact required by a step must live inside that practice. Steps may name an exact local case-study section or a named earlier-step output, but must not send the learner to an example, walkthrough, stage, card, or section elsewhere in the lesson.
 - Do not add stored progress, automatic execution, a backend, or artificial command blocks to observation-only steps.
 - Preserve the dependency-free static architecture and the existing lesson visual language.
 - Preserve the owner's untracked `stuff_to_add.txt` and all unrelated changes.
@@ -599,3 +601,184 @@ Fast-forward `main`, rerun the strict audit and command browser/layout tests the
 - the public site has no horizontal page overflow at 390 pixels.
 
 Record the deployment run ID and final commit SHA in the handoff.
+
+---
+
+### Task 5: Self-contained case studies and cross-lesson reference gate
+
+**Files:**
+
+- Modify: `app.js`
+- Modify: `styles.css`
+- Modify: `lesson-depth-foundations.js`
+- Modify: `lesson-depth-management.js`
+- Modify: `scripts/practice-audit.mjs`
+- Modify: `scripts/audit-course.mjs`
+- Modify: `scripts/test-practice-audit.mjs`
+- Create: `scripts/test-practice-case-study-view.mjs`
+- Modify: `scripts/test-practice-command-layout.mjs`
+- Modify: `PLAN.md`
+
+**Interfaces:**
+
+- Consumes the Task 4 command/checkpoint renderer, strict validator, all-download runtime-prompt reader, and true-CDP layout matrix.
+- Adds optional `practice.caseStudy: { label: string, title: string, summary: string, sections: CaseStudySection[] }`.
+- A `CaseStudySection` has exactly `title` plus at least one of `body: string`, `facts: Array<[string, string]>`, or `code: string`; section titles are unique.
+- Adds optional `step.caseStudySections: string[]`; every name resolves to a local section and at least two distinct steps must consume the case study.
+- Produces exactly two case-study practices in `lesson-depth-foundations.js`: `reading-winapi-docs` and `calling-winapi-python`.
+- Keeps `system-calls-win32` as a non-case-study investigation by placing its one required CreateFileW fact set directly in its consuming step.
+- Corrects the carried EventLog query evidence so it promises only fields actually printed by `service_controller_lab.py query EventLog`.
+
+- [ ] **Step 1: Add failing case-study and reference fixtures**
+
+Extend `scripts/test-practice-audit.mjs` with a valid case-study fixture and invalid fixtures for unsupported case-study fields, duplicate section titles, a section without body/facts/code, malformed fact rows, a nonexistent `caseStudySections` name, a step reference without a case study, only one consuming step, and a decorative case study with no consumers. Add cross-lesson fixtures that must fail for:
+
+```js
+const validCaseStudy = {
+  title: "Inspect a supplied contract",
+  intro: "Use the fixed contract supplied inside this investigation.",
+  caseStudy: {
+    label: "API contract case study",
+    title: "Open an existing file",
+    summary: "The same fixed contract supports both steps.",
+    sections: [
+      { title: "Call choices", facts: [["Creation", "OPEN_EXISTING"]] },
+      { title: "Ownership", body: "Release the successful handle with CloseHandle." },
+    ],
+  },
+  steps: [
+    { action: "Inspect the supplied call choice.", caseStudySections: ["Call choices"], observe: "OPEN_EXISTING is visible." },
+    { action: "Inspect the supplied ownership rule.", caseStudySections: ["Ownership"], observe: "CloseHandle is visible." },
+  ],
+};
+assert.deepEqual(validatePractice(validCaseStudy, "valid case study", { enforceClarity: true }).errors, []);
+```
+
+Add cross-lesson fixtures that must fail for:
+
+```js
+[
+  "Open the displayed example above.",
+  "Return to the same walkthrough.",
+  "Open the Assign ownership stage in the earlier card.",
+  "Use the example elsewhere in this lesson."
+]
+```
+
+Include positive fixtures for `Use the PID printed in step 1.` and `Refresh the same PID.` within one controlled practice. Run `node .\scripts\test-practice-audit.mjs`.
+
+Expected: FAIL because `caseStudy`, `caseStudySections`, and the cross-lesson patterns are not validated.
+
+- [ ] **Step 2: Implement exact case-study/reference validation**
+
+In `scripts/practice-audit.mjs`, validate the exact unions from the Interfaces block, return `caseStudyCount` as `0` or `1`, and reject unresolved cross-lesson navigation in practice title/intro/safety, step action/why/observe/hint, expected outcome, practice hints, and cleanup. Do not reject named earlier-step outputs or legitimate same-process/same-file state inside a controlled investigation.
+
+Use explicit allowed-field sets:
+
+```js
+const caseStudyFields = new Set(["label", "title", "summary", "sections"]);
+const caseStudySectionFields = new Set(["title", "body", "facts", "code"]);
+const caseStudyStepFields = new Set(["action", "commands", "why", "observe", "hint", "caseStudySections"]);
+```
+
+Keep existing step fields valid when `caseStudySections` is absent; the third set defines the complete supported step surface after this task rather than requiring a case study on every step.
+
+Require at least two distinct consuming steps and resolve every `caseStudySections` item against the case-sensitive authored section title. Run the focused audit test until every fixture is GREEN.
+
+- [ ] **Step 3: Add the real-course reference assertion and verify RED**
+
+Extend the merged-course section of `scripts/test-practice-audit.mjs` to collect strict results for all 62 practices and assert zero cross-lesson-reference findings. Add exact assertions that `reading-winapi-docs` and `calling-winapi-python` have a case study, every other practice does not, and `system-calls-win32` contains no cross-lesson reference.
+
+Run `node .\scripts\test-practice-audit.mjs`.
+
+Expected: FAIL on the CreateFileW stage references in `reading-winapi-docs`, the wait/ctypes example and walkthrough references in `calling-winapi-python`, and the displayed CreateFileW reference in `system-calls-win32`.
+
+- [ ] **Step 4: Rewrite the three affected foundations investigations**
+
+In `reading-winapi-docs`, supply one case study titled `Opening an existing file with CreateFileW` with these sections: `Goal`, `Call choices`, `Parameter directions`, `Result and error`, and `Ownership`. Include the complete fixed behavior, `GENERIC_READ`, `FILE_SHARE_READ | FILE_SHARE_WRITE`, `OPEN_EXISTING`, `FILE_ATTRIBUTE_NORMAL`, required UTF-16 `lpFileName`, nullable `lpSecurityAttributes`, `INVALID_HANDLE_VALUE`, immediate `GetLastError`, and owned `CloseHandle` cleanup. Associate each step with the exact sections it consumes and remove every instruction to open a stage elsewhere in the lesson.
+
+In `calling-winapi-python`, supply one case study titled `Interpreting wait results and ctypes failures` with sections `Wait results`, `Wrapper failure`, `ctypes declaration`, and `Immediate error capture`. Include fixed `WAIT_OBJECT_0`, `WAIT_TIMEOUT`, `pywintypes.error`, `WinDLL(..., use_last_error=True)`, `CloseHandle` argtypes/restype, the documented zero failure test, immediate `ctypes.get_last_error()`, and `ctypes.WinError(code)`. Associate the four steps with the exact local sections and remove example/walkthrough/stage navigation.
+
+In `system-calls-win32`, rewrite the one dependent step to state its complete CreateFileW access, sharing, creation, failure, error, and cleanup facts directly. Do not add a case study for one consumer.
+
+- [ ] **Step 5: Complete the manual all-62 dependency audit**
+
+Read every practice in all `lesson-depth-*.js` files together with its surrounding lesson examples. For each action, why, observation, hint, intro, safety, expected outcome, and cleanup item, determine whether the learner must leave the practice to recover a fact. Keep named downloads, exact external-tool views, and named earlier-step outputs. Rewrite any semantic cross-lesson dependency found even if no banned phrase matched. Do not add a case study unless at least two steps share the same fixed source.
+
+Also correct the carried `control-services-python` mismatch in `lesson-depth-management.js`: query mode promises only the returned service state and PID plus normal service/SCM handle cleanup; it does not promise checkpoint, wait hint, accepted controls, or service exit-code fields that query mode does not print.
+
+- [ ] **Step 6: Write the failing real-browser case-study test**
+
+Create `scripts/test-practice-case-study-view.mjs` with the existing temporary-site/headless-Edge pattern. Load `#/lesson/reading-winapi-docs` and assert:
+
+```js
+{
+  oneCaseStudy: true,
+  beforeSteps: true,
+  alwaysVisible: true,
+  notDetailsOrDialog: true,
+  labelAndTitleVisible: true,
+  fiveSectionHeadings: true,
+  semanticFactPairs: true,
+  exactSectionReferences: true,
+  noCopyButton: true
+}
+```
+
+Then load one executable download practice and assert `data-practice-case-study` is absent. Run the test.
+
+Expected: FAIL because the renderer and data hooks do not exist.
+
+- [ ] **Step 7: Render and style the singular case study**
+
+In `app.js`, add `renderPracticeCaseStudy(practice)` and insert it after the intro/safety content and before expected outcome/steps. Escape every label, title, summary, fact, body, and code value. Render facts as semantic `<dl><dt><dd>` associations, code only in `<pre><code>`, and visible step references using the exact authored section title. Add test hooks `data-practice-case-study`, `data-case-study-section`, `data-case-study-facts`, and `data-case-study-reference`.
+
+The rendered hierarchy is:
+
+```html
+<section class="practice-case-study" data-practice-case-study>
+  <header><!-- escaped label, title, summary --></header>
+  <section data-case-study-section><!-- heading plus body, dl facts, and/or pre code --></section>
+</section>
+<!-- each consuming step contains visible "Use case study: Section title" references -->
+```
+
+In `styles.css`, use the existing practice-card colors and spacing, clear section hierarchy, `min-width: 0`, contained preformatted overflow, visible section-reference text, and content-size selectors. Do not make fact/body sections look like a terminal, and do not add dropdown, popup, sticky, copy, or persistence behavior. Run the case-study browser test until GREEN.
+
+- [ ] **Step 8: Extend strict totals and layout coverage**
+
+Aggregate `caseStudyCount` in `scripts/audit-course.mjs` and print `practice case studies: 2`. Extend `scripts/test-practice-command-layout.mjs` to load `reading-winapi-docs` and assert the case-study box, fact rows, section references, and any code region remain contained at 1440, 900, 500, and true 390-pixel widths under small/default/large content sizes. Preserve all existing 132 command/checkpoint assertions and add the new case-study assertions rather than replacing them.
+
+- [ ] **Step 9: Update the audit record and confirm the unpublished cache key**
+
+Assert that every existing tied asset and browser fixture still uses `guided-investigation-5`, which has not been published. Update `PLAN.md` to record 62 investigations, 147 command blocks, 2 case studies, 11 checkpoints, 2 choice checkpoints, 55 downloads, and zero errors/warnings.
+
+- [ ] **Step 10: Run the complete release gate**
+
+Run sequentially:
+
+```powershell
+Get-ChildItem -File -Filter *.js | ForEach-Object { node --check $_.FullName }
+Get-ChildItem .\scripts -File -Filter *.mjs | ForEach-Object { node --check $_.FullName }
+Get-ChildItem .\downloads -File -Filter *.py | ForEach-Object { py -c "import ast, pathlib; ast.parse(pathlib.Path(r'$($_.FullName)').read_text(encoding='utf-8'))" }
+node .\scripts\audit-course.mjs
+Get-ChildItem .\scripts -File -Filter test-*.mjs | Sort-Object Name | ForEach-Object { node $_.FullName }
+git diff --check
+```
+
+Expected: all commands exit 0; 62 investigations; 147 commands; 2 case studies; 11 checkpoints; 2 choices; 55 downloads; zero errors/warnings; every existing and new browser/layout assertion true.
+
+- [ ] **Step 11: Review and commit Task 5**
+
+Request a task-scoped code/content review that explicitly checks case-study restraint, all-62 manual audit evidence, the three foundations rewrites, the EventLog evidence correction, cross-lesson false-positive handling, semantics, escaping, and compact layout. Fix every Critical/Important finding and repeat Step 10. Commit only:
+
+```powershell
+git add app.js styles.css lesson-depth-foundations.js lesson-depth-management.js scripts\practice-audit.mjs scripts\audit-course.mjs scripts\test-practice-audit.mjs scripts\test-practice-case-study-view.mjs scripts\test-practice-command-layout.mjs PLAN.md
+git commit -m "Add self-contained investigation case studies"
+```
+
+- [ ] **Step 12: Final combined review and publication**
+
+Generate one combined review package from public `main` SHA `a83c9fdbef6f71081c1ff9c1a7a95bfa4733db47` through Task 5 head so it includes the unpushed final-review fixes, the approved design/plan commits, the EventLog correction, and case-study implementation. Resolve the review under the normal five-round task loop if required.
+
+After approval, fast-forward `main`, rerun the strict audit plus case-study/command/checkpoint/layout browser tests there, push `main`, and wait for the exact GitHub Pages workflow SHA. Verify the public site serves `guided-investigation-5`, exactly two practice case studies, no external-stage references in the three affected foundations practices, the corrected EventLog evidence, unchanged script/download/external-tool investigation formats, and contained case-study rendering at 390 pixels. Record the final SHA and Pages run ID.
