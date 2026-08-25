@@ -38,8 +38,7 @@ const errors = [];
 const sizeMetrics = [];
 const releaseAssets = ["styles.css", "windows-api-data.js", "reference-overview-view.js", "windows-api-view.js", "assessment-data.js", "assessment-view.js", "app.js"];
 const releaseVersions = releaseAssets.map((asset) => indexSource.match(new RegExp(`${asset.replace(".", "\\.")}\\?v=([^\"']+)`))?.[1]);
-if (releaseVersions.some((version) => !version) || new Set(releaseVersions).size !== 1) errors.push(`Stage 8 release assets do not share one cache key: ${JSON.stringify(releaseVersions)}`);
-if (releaseVersions[0] === "windows-api-families-8") errors.push("assessment stylesheet still uses the pre-accessibility cache key");
+if (releaseVersions.some((version) => version !== "stage-8-accessibility-1")) errors.push(`Stage 8 release assets must use stage-8-accessibility-1: ${JSON.stringify(releaseVersions)}`);
 
 try {
   for (const scenario of scenarios) {

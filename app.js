@@ -20,7 +20,7 @@
   const searchDialog = document.querySelector("#search-dialog");
   const searchInput = document.querySelector("#search-input");
   const searchResults = document.querySelector("#search-results");
-  const mobileDrawerBackground = [main, document.querySelector("#search-trigger"), document.querySelector(".settings-control")];
+  const mobileDrawerBackground = [document.querySelector(".skip-link"), main, document.querySelector("#search-trigger"), document.querySelector(".settings-control")];
   const apiDialog = document.querySelector("#api-detail-dialog");
   const apiDetailContent = document.querySelector("#api-detail-content");
   let openWindowsApiFamilyId = "";

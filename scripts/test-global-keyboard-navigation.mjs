@@ -52,10 +52,23 @@ const probe = `<script>
       menu.focus();
       menu.click();
       await wait();
+      const backgroundControls = [
+        document.querySelector(".skip-link"),
+        document.querySelector("#search-trigger"),
+        document.querySelector("#settings-trigger"),
+      ];
+      const cannotReceiveFocus = (control) => {
+        sidebar.focus();
+        control.focus();
+        return document.activeElement !== control;
+      };
+      const isInert = (control) => Boolean(control.closest("[inert]"));
       checks.menuOpensWithNavigationFocus = sidebar.classList.contains("open")
         && sidebar.contains(document.activeElement)
         && document.querySelector("#main-content").inert
         && !menu.inert;
+      checks.drawerBlocksBackgroundControls = backgroundControls.every((control) => isInert(control) && cannotReceiveFocus(control));
+      checks.menuRemainsFocusable = !menu.inert && (menu.focus(), document.activeElement === menu);
       document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
       await wait();
       checks.escapeClosesAndReturnsFocus = !sidebar.classList.contains("open")
