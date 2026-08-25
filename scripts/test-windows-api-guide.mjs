@@ -106,6 +106,7 @@ for (const entry of variants.values()) {
   requireCondition(Boolean(entry.result), `${prefix}: missing result and failure guidance`);
   requireCondition(Boolean(entry.cleanup), `${prefix}: missing ownership or cleanup guidance`);
   requireCondition((entry.sources || []).some((source) => source.startsWith("https://learn.microsoft.com")), `${prefix}: missing Microsoft Learn source`);
+  requireCondition(!Object.hasOwn(entry, "availability"), `${prefix}: retained removed availability metadata`);
   for (const parameter of entry.parameters || []) {
     requireCondition(
       parameter.explanation !== "Use the value required by the Microsoft contract.",
@@ -177,10 +178,6 @@ for (const name of ["CreateProcessW", "CreateProcessA"]) {
 }
 
 const wow64 = variants.get("IsWow64Process2");
-requireCondition(
-  wow64?.availability.includes("Windows 10, version 1709") && wow64?.availability.includes("Windows Server 2016, version 1709"),
-  "IsWow64Process2: availability must state both version 1709 client and server minimums",
-);
 
 const requiredStructures = new Map([
   ["GetSystemInfo", ["SYSTEM_INFO"]],

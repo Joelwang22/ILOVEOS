@@ -636,188 +636,132 @@
   const variantMetadata = {
     CreateEventW: {
       useWhen: "Use the Unicode CreateEvent form for normal named or unnamed event creation.",
-      availability: "Windows XP and later",
       keyBehaviors: ["A matching named event opens instead of creating a second object."],
     },
     CreateEventA: {
       useWhen: "Use only when an existing byte-oriented caller must supply an ANSI event name.",
-      availability: "Windows XP and later",
       keyBehaviors: ["ANSI names use the system code page; prefer CreateEventW for Unicode names."],
     },
     CreateEventExW: {
       useWhen: "Use when CREATE_EVENT_* flags or explicit desired access must be selected.",
-      availability: "Windows Vista and later",
       keyBehaviors: ["CREATE_EVENT_* flags select event behavior while desired access controls the returned handle."],
     },
     CreateEventExA: {
       useWhen: "Use only when extended event options need a byte-oriented ANSI object name.",
-      availability: "Windows Vista and later",
       keyBehaviors: ["ANSI names use the system code page; CREATE_EVENT_* flags and desired access remain explicit."],
     },
     CreateNamedPipeW: {
       useWhen: "Use the Unicode form to create one server instance of a named pipe.",
-      availability: "Windows 2000 and later (desktop apps)",
       keyBehaviors: ["Every additional server instance must repeat compatible type, instance-count, and timeout values."],
     },
     CreateNamedPipeA: {
       useWhen: "Use only for a legacy caller that supplies the pipe name as ANSI bytes.",
-      availability: "Windows 2000 and later (desktop apps)",
       keyBehaviors: ["ANSI pipe names use the system code page; prefer CreateNamedPipeW for normal Python strings."],
     },
     MessageBoxW: {
       useWhen: "Use the Unicode form for a simple modal message whose selected button must be handled.",
-      availability: "Windows 2000 and later (desktop apps)",
       keyBehaviors: ["Decode the returned ID according to the button group selected in uType."],
     },
     MessageBoxA: {
       useWhen: "Use only when a legacy caller already owns ANSI message and caption bytes.",
-      availability: "Windows 2000 and later (desktop apps)",
       keyBehaviors: ["ANSI text uses the system code page; prefer MessageBoxW for normal Unicode text."],
     },
     SetWindowsHookExW: {
       useWhen: "Use the Unicode form for an authorized hook with an ABI-correct, short-lived callback.",
-      availability: "Windows 2000 and later (desktop apps)",
       keyBehaviors: ["A global hook may require the callback in an architecture-matched DLL."],
     },
     SetWindowsHookExA: {
       useWhen: "Use only when the selected hook contract requires legacy ANSI character handling.",
-      availability: "Windows 2000 and later (desktop apps)",
       keyBehaviors: ["Callback ABI, scope, module placement, chain forwarding, and lifetime rules are unchanged."],
     },
     CreateFileMappingA: {
       useWhen: "Use only when an existing caller must name the mapping with ANSI bytes.",
-      availability: "Windows XP and later (desktop apps)",
       keyBehaviors: ["INVALID_HANDLE_VALUE selects paging-file backing; null selects an unnamed mapping."],
     },
     MapViewOfFileEx: {
       useWhen: "Use only when a compatible suggested base address is materially required.",
-      availability: "Windows XP and later (desktop apps)",
       keyBehaviors: ["Microsoft recommends letting Windows choose the base unless the fixed-address constraint is necessary."],
     },
     OpenFileMappingA: {
       useWhen: "Use only when an existing caller must look up the mapping with ANSI bytes.",
-      availability: "Windows XP and later (desktop apps)",
       keyBehaviors: ["The returned handle owns a mapping-object reference, not a mapped view."],
     },
     EnumProcessModulesEx: {
       useWhen: "Use when a 64-bit inspection tool needs an explicit module architecture filter.",
-      availability: "Windows Vista and later (desktop apps)",
       keyBehaviors: ["A 32-bit caller under WOW64 does not gain cross-bitness enumeration from the filter."],
     },
     GetModuleFileNameExA: {
       useWhen: "Use only for another-process module paths that must be returned as ANSI bytes.",
-      availability: "Windows XP and later (desktop apps)",
       keyBehaviors: ["The module handle is borrowed; the caller owns and sizes only the output buffer."],
     },
     GetModuleFileNameA: {
       useWhen: "Use only for current-process module paths that must be returned as ANSI bytes.",
-      availability: "Windows XP and later (desktop apps)",
       keyBehaviors: ["A null module selects the current executable; handle a full buffer as truncation."],
     },
     GetModuleHandleA: {
       useWhen: "Use only when an existing caller identifies a loaded module with ANSI bytes.",
-      availability: "Windows XP and later (desktop apps)",
       keyBehaviors: ["The result does not add a module reference and can become invalid after another unload."],
     },
     LoadLibraryExA: {
       useWhen: "Use only when extended load flags accompany an ANSI module path.",
-      availability: "Windows XP and later (desktop apps)",
       keyBehaviors: ["Some data-file modes return handles that are not suitable for GetProcAddress."],
     },
     CreateMutexW: {
       useWhen: "Use the Unicode base form when initial ownership and an optional name are sufficient.",
-      availability: "Windows XP and later",
       keyBehaviors: ["Initial ownership applies only when this call creates the mutex."],
     },
     CreateMutexA: {
       useWhen: "Use only when the base mutex form needs an ANSI object name.",
-      availability: "Windows XP and later",
       keyBehaviors: ["ANSI names use the system code page; prefer CreateMutexW for Unicode names."],
     },
     CreateMutexExW: {
       useWhen: "Use when mutex creation flags or explicit desired access must be selected.",
-      availability: "Windows Vista and later",
       keyBehaviors: ["Initial ownership applies only when the named mutex did not already exist."],
     },
     CreateMutexExA: {
       useWhen: "Use only when extended mutex options need an ANSI object name.",
-      availability: "Windows Vista and later",
       keyBehaviors: ["ANSI names use the system code page; flags and desired access remain explicit."],
     },
     CreateProcessA: {
       useWhen: "Use only for a legacy launch path that deliberately uses ANSI buffers and environment data.",
-      availability: "Windows XP and later (desktop apps)",
       keyBehaviors: ["The command-line buffer is writable and encoding must match the selected environment contract."],
     },
     CreateRemoteThreadEx: {
       useWhen: "Use when an authorized remote-thread design requires a processor-group or other supported attribute.",
-      availability: "Windows 7 and later (desktop apps)",
       keyBehaviors: ["With a null attribute list, its behavior matches CreateRemoteThread."],
     },
     DuplicateTokenEx: {
       useWhen: "Use when duplicate access, security attributes, or primary-versus-impersonation token type must be selected.",
-      availability: "Windows XP and later (desktop apps)",
       keyBehaviors: ["The source handle needs TOKEN_DUPLICATE; the returned token is independently owned."],
     },
     GetNamedSecurityInfoA: {
       useWhen: "Use only when a named securable object must be identified with ANSI bytes.",
-      availability: "Windows 2000 and later (desktop apps)",
       keyBehaviors: ["All returned component pointers reside inside the one descriptor allocation."],
     },
     OpenSCManagerA: {
       useWhen: "Use only when optional machine or database names must be supplied as ANSI bytes.",
-      availability: "Windows 2000 and later (desktop apps)",
       keyBehaviors: ["Request only the SC_MANAGER_* rights required by the following operation."],
     },
     OpenServiceA: {
       useWhen: "Use only when the service's internal name must be supplied as ANSI bytes.",
-      availability: "Windows 2000 and later (desktop apps)",
       keyBehaviors: ["The service handle and its parent SCM handle have independent ownership."],
     },
     QueryServiceStatus: {
       useWhen: "Use only when basic SERVICE_STATUS fields are sufficient; prefer Ex when PID is needed.",
-      availability: "Windows XP and later (desktop apps)",
       keyBehaviors: ["The value is the most recent status reported to the Service Control Manager."],
     },
     RegOpenKeyExA: {
       useWhen: "Use only when a Registry subkey path must be supplied as ANSI bytes.",
-      availability: "Windows 2000 and later (desktop apps)",
       keyBehaviors: ["This call never creates a missing key and returns its error code directly."],
     },
     StartServiceA: {
       useWhen: "Use only when optional service arguments must be supplied as ANSI byte strings.",
-      availability: "Windows 2000 and later (desktop apps)",
       keyBehaviors: ["Success accepts the start request; poll status through pending states before claiming RUNNING."],
     },
     GetWindowsDirectoryA: {
       useWhen: "Use only when the Windows directory must be returned in an ANSI byte buffer.",
-      availability: "Windows 2000 and later (desktop apps)",
       keyBehaviors: ["A result larger than capacity is the required size, including the terminator."],
     },
-  };
-
-  const auditedAvailability = {
-    CreateFileMappingW: "Windows XP and later (desktop apps)",
-    MapViewOfFile: "Windows XP and later (desktop apps)",
-    OpenFileMappingW: "Windows XP and later (desktop apps)",
-    EnumProcessModules: "Windows XP and later (desktop apps)",
-    GetModuleFileNameExW: "Windows XP and later (desktop apps)",
-    GetModuleFileNameW: "Windows XP and later (desktop apps)",
-    GetModuleHandleW: "Windows XP and later (desktop apps)",
-    LoadLibraryW: "Windows XP and later (desktop apps)",
-    LoadLibraryA: "Windows XP and later (desktop apps)",
-    LoadLibraryExW: "Windows XP and later (desktop apps)",
-    CreateProcessW: "Windows XP and later (desktop apps)",
-    IsWow64Process2: "Windows 10, version 1709 / Windows Server 2016, version 1709 and later",
-    CreateRemoteThread: "Windows XP and later (desktop apps)",
-    DuplicateToken: "Windows XP and later (desktop apps)",
-    GetNamedSecurityInfoW: "Windows 2000 and later (desktop apps)",
-    OpenSCManagerW: "Windows 2000 and later (desktop apps)",
-    OpenServiceW: "Windows 2000 and later (desktop apps)",
-    QueryServiceStatusEx: "Windows XP and later (desktop apps)",
-    RegOpenKeyExW: "Windows 2000 and later (desktop apps)",
-    StartServiceW: "Windows 2000 and later (desktop apps)",
-    GetWindowsDirectoryW: "Windows 2000 and later (desktop apps)",
   };
 
   const examplesByName = {
@@ -1396,7 +1340,6 @@ class PROCESS_INFORMATION(ctypes.Structure):
       pywin32: pywin32Names[name] || "No direct pywin32 wrapper is used by this course; use the ctypes declaration when this operation is required.",
       sources: canonicalVariantSources[name] ? [canonicalVariantSources[name]] : record.sources,
       useWhen: metadata.useWhen || defaultUseWhen(name),
-      availability: metadata.availability || auditedAvailability[name] || "See the linked Microsoft Learn Requirements section.",
       keyBehaviors: metadata.keyBehaviors || [],
     };
   }).sort((left, right) => left.category.localeCompare(right.category) || left.name.localeCompare(right.name));

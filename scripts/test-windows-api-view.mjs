@@ -51,12 +51,28 @@ const dialogHtml = view.filterFamilies ? view.renderDialog?.(createEvent, "Creat
 requireCondition(dialogHtml.includes('role="tablist"'), "family popup is missing its variant tab list");
 requireCondition((dialogHtml.match(/data-api-variant=/g) || []).length === 4, "family popup does not render four variant buttons");
 requireCondition((dialogHtml.match(/aria-selected="true"/g) || []).length === 1, "family popup does not expose exactly one selected variant");
-requireCondition(dialogHtml.includes("Recommended") && dialogHtml.includes("CreateEventW"), "recommended CreateEventW marker is missing");
+const variantTabsHtml = dialogHtml.match(/<div class="api-family-variants"[\s\S]*?<\/div>/)?.[0] || "";
+requireCondition(!variantTabsHtml.includes("Recommended") && !variantTabsHtml.includes("api-variant-recommended"), "family popup still renders a visible recommended marker");
 requireCondition(!dialogHtml.includes("<dialog") && !dialogHtml.includes("<details") && !dialogHtml.includes("<summary"), "family popup contains a nested disclosure or dialog");
 requireCondition(dialogHtml.includes("CreateEventExA.argtypes"), "selected variant Python signature is absent");
 requireCondition(dialogHtml.includes("CreateEventExA("), "selected variant native signature is absent");
 requireCondition(!dialogHtml.includes("CreateEventW.argtypes") && !dialogHtml.includes("CreateEventExW.argtypes"), "family popup leaks a non-selected variant signature");
 requireCondition(!dialogHtml.includes("nf-synchapi-createeventw"), "family popup leaks a non-selected variant source");
+requireCondition(!dialogHtml.includes("api-variant-availability") && !dialogHtml.includes("<strong>Availability</strong>"), "family popup still renders an Availability section");
+requireCondition(/<strong>Aliases<\/strong>\s*<div class="api-variant-alias-list">/.test(dialogHtml), "Aliases label is not on its own row above the alias mappings");
+
+const defaultDialogHtml = view.renderDialog?.(createEvent) || "";
+requireCondition(defaultDialogHtml.includes("CreateEvent · CreateEventW"), "removing the visible marker changed the preferred default variant");
+
+const availabilityOnlyFamily = {
+  ...createEvent,
+  id: "availability-only-fixture",
+  name: "AvailabilityOnlyFixture",
+  summary: "Fixture without the search phrase.",
+  aliases: [],
+  variants: createEvent.variants.map((variant) => ({ ...variant, availability: "UniqueAvailabilitySearchToken" })),
+};
+requireCondition((view.filterFamilies?.([availabilityOnlyFamily], "UniqueAvailabilitySearchToken") || []).length === 0, "removed availability metadata is still included in guide search");
 
 // This catches dynamic family text being interpolated into the dialog without escaping.
 const unsafeFamily = {
@@ -128,12 +144,12 @@ for (const expected of [
   "trigger.dataset.windowsApiFamily",
   "trigger.dataset.windowsApiVariant",
 ]) requireCondition(appSource.includes(expected), `family popup integration is missing: ${expected}`);
-for (const selector of [".api-family-variants", ".api-variant-tab", ".api-variant-aliases", ".api-variant-availability", ".api-key-behaviors"]) {
+for (const selector of [".api-family-variants", ".api-variant-tab", ".api-variant-aliases", ".api-variant-alias-list", ".api-key-behaviors"]) {
   requireCondition(styles.includes(selector), `family selector stylesheet is missing ${selector}`);
 }
 
 const versions = [...indexHtml.matchAll(/(?:href|src)="[^"]+\?v=([^"]+)"/g)];
-requireCondition(versions.length > 0 && versions.every((match) => match[1] === "windows-api-families-4"), "every tied asset must use the windows-api-families-4 release key");
+requireCondition(versions.length > 0 && versions.every((match) => match[1] === "windows-api-families-5"), "every tied asset must use the windows-api-families-5 release key");
 
 console.log(`family matches: ${exaMatches.length}`);
 console.log(`errors: ${errors.length}`);

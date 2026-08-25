@@ -26,7 +26,7 @@
     });
     return [
       variant.name, variant.category, variant.dll, variant.summary, variant.nativeSignature, variant.python,
-      variant.example, variant.result, variant.cleanup, variant.pywin32, variant.useWhen, variant.availability,
+      variant.example, variant.result, variant.cleanup, variant.pywin32, variant.useWhen,
       ...(variant.sources || []),
       ...(variant.keyBehaviors || []),
       ...(variant.parameters || []).flatMap((parameter) => [parameter.name, parameter.direction, parameter.native, parameter.python, parameter.explanation]),
@@ -155,7 +155,7 @@
   function renderAliases(family) {
     if (!family.aliases.length) return "";
     return `<div class="api-variant-aliases" aria-label="Aliases">
-      <strong>Aliases</strong>${family.aliases.map((alias) => `<span><code>${escapeHtml(alias.name)}</code> → <code>${escapeHtml(alias.target)}</code>${alias.note ? `: ${escapeHtml(alias.note)}` : ""}</span>`).join("")}
+      <strong>Aliases</strong><div class="api-variant-alias-list">${family.aliases.map((alias) => `<span><code>${escapeHtml(alias.name)}</code> → <code>${escapeHtml(alias.target)}</code>${alias.note ? `: ${escapeHtml(alias.note)}` : ""}</span>`).join("")}</div>
     </div>`;
   }
 
@@ -165,7 +165,7 @@
       ${family.variants.map((variant) => {
         const isSelected = variant.name === selectedName;
         return `<button class="api-variant-tab" type="button" role="tab" data-api-variant="${escapeHtml(variant.name)}"
-          aria-selected="${isSelected}" tabindex="${isSelected ? "0" : "-1"}">${escapeHtml(variant.name)}${variant.name === family.recommendedVariant ? ' <span class="api-variant-recommended">Recommended</span>' : ""}</button>`;
+          aria-selected="${isSelected}" tabindex="${isSelected ? "0" : "-1"}">${escapeHtml(variant.name)}</button>`;
       }).join("")}
     </div>`;
   }
@@ -182,7 +182,6 @@
       ${renderAliases(family)}
       ${renderTabs(family, variant.name)}
       <section class="api-dialog-summary"><p>${escapeHtml(variant.useWhen)}</p><span>Use when</span></section>
-      <div class="api-variant-availability"><strong>Availability</strong><span>${escapeHtml(variant.availability)}</span></div>
       <section class="api-dialog-summary"><p>${escapeHtml(variant.pywin32)}</p><span>Recommended Python path</span></section>
       <section class="signature-block windows-contract-block">
         <div class="windows-signature-grid"><section><h3>Native declaration</h3><pre><code>${escapeHtml(variant.nativeSignature)}</code></pre></section>

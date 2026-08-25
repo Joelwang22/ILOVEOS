@@ -135,7 +135,7 @@ for (const name of Object.keys(familyReviews)) {
   if (!expectedLegacyNames.includes(name)) completenessErrors.push(`orphan familyReview: ${name}`);
 }
 
-const completeContractFields = ["summary", "useWhen", "availability", "dll", "nativeSignature", "python", "example", "result", "cleanup"];
+const completeContractFields = ["summary", "useWhen", "dll", "nativeSignature", "python", "example", "result", "cleanup"];
 for (const variant of liveVariants) {
   for (const field of completeContractFields) {
     if (typeof variant?.[field] !== "string" || !variant[field].trim()) completenessErrors.push(`incomplete variant ${variant?.name || "unnamed"}: ${field}`);
@@ -172,7 +172,6 @@ const contract = (name) => ({
   name,
   summary: "A concise contract summary.",
   useWhen: "Use this contract when the operation is needed.",
-  availability: "Windows 10 and later",
   keyBehaviors: [],
   sources: [source],
   parameters: [],
