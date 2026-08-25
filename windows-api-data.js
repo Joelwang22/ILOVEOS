@@ -202,7 +202,7 @@
         { name: "lpSecurityAttributes", type: "ctypes.POINTER(SECURITY_ATTRIBUTES) | None", description: "Optional security and inheritance attributes." },
       ],
       returns: "wintypes.HANDLE",
-      source: "https://learn.microsoft.com/en-us/windows/win32/api/namedpipeapi/nf-namedpipeapi-createnamedpipea",
+      source: "https://learn.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-createnamedpipea",
     },
     MessageBoxW: {
       parameters: [

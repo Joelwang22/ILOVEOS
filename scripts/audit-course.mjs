@@ -3,6 +3,7 @@ import path from "node:path";
 import vm from "node:vm";
 import { fileURLToPath } from "node:url";
 import { practiceDownloads, validatePractice } from "./practice-audit.mjs";
+import { checkSourceLink } from "./source-link-check.mjs";
 
 
 const scriptsDirectory = path.dirname(fileURLToPath(import.meta.url));
@@ -169,7 +170,7 @@ for (const item of sourceUrls) {
 }
 
 const textFiles = fs.readdirSync(root, { recursive: true }).filter((relative) => {
-  if (relative.startsWith(".git") || relative.startsWith(".superpowers") || relative.startsWith(".worktrees") || relative.includes("node_modules")) return false;
+  if (relative.startsWith(".git") || relative.startsWith(".superpowers") || relative.startsWith(".worktrees") || relative.startsWith("_site") || relative.startsWith("validation") || relative.includes("node_modules")) return false;
   return /\.(?:js|mjs|html|css|md|py)$/.test(relative);
 });
 const disallowedDash = String.fromCodePoint(0x2014);
@@ -178,28 +179,17 @@ for (const relative of textFiles) {
   if (source.includes(disallowedDash)) errors.push(`${relative}: contains a disallowed em dash`);
 }
 
-async function checkUrl(item) {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 15_000);
-  try {
-    let response = await fetch(item.url, { method: "HEAD", redirect: "follow", signal: controller.signal });
-    if (response.status === 405 || response.status === 403) {
-      response = await fetch(item.url, { method: "GET", redirect: "follow", signal: controller.signal });
-    }
-    if (response.body) await response.body.cancel();
-    if (response.status >= 400) errors.push(`${item.owner}: source returned HTTP ${response.status}: ${item.url}`);
-  } catch (error) {
-    warnings.push(`${item.owner}: source check failed (${error.name}): ${item.url}`);
-  } finally {
-    clearTimeout(timer);
-  }
-}
-
 if (process.argv.includes("--check-links")) {
   const unique = [...new Map(sourceUrls.map((item) => [item.url, item])).values()];
   const queue = [...unique];
   const workers = Array.from({ length: 8 }, async () => {
-    while (queue.length) await checkUrl(queue.shift());
+    while (queue.length) {
+      try {
+        await checkSourceLink(queue.shift());
+      } catch (error) {
+        errors.push(error.message);
+      }
+    }
   });
   await Promise.all(workers);
 }

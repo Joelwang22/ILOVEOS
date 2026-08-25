@@ -1,38 +1,92 @@
-name: Deploy to GitHub Pages
+name: Validate and deploy GitHub Pages
 
 on:
+  pull_request:
   push:
-    branches:
-      - main
+    branches: [main]
   workflow_dispatch:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
 concurrency:
-  group: pages
+  group: pages-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
+  validate-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.14"
+      - name: Structural, syntax, and source-link validation
+        run: node scripts/release-gate.mjs --skip-tests --check-links
+
+  validate-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.14"
+      - name: Install pywin32 for environment validation
+        run: python -m pip install pywin32
+      - name: Full Edge, manifest, JavaScript, and Python gate
+        run: node scripts/release-gate.mjs
+      - name: Runtime manifest and non-executing environment checks
+        run: |
+          node scripts/test-runtime-validation-data.mjs
+          node scripts/run-runtime-validation.mjs --check-environment --python python
+
+  build:
+    if: github.event_name != 'pull_request'
+    needs: [validate-linux, validate-windows]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+      - run: node scripts/prepare-pages-artifact.mjs
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: _site
+
   deploy:
+    if: github.event_name != 'pull_request'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
+    outputs:
+      page_url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@v6
-
-      - name: Configure Pages
-        uses: actions/configure-pages@v5
-
-      - name: Upload site
-        uses: actions/upload-pages-artifact@v4
-        with:
-          path: .
-
-      - name: Deploy
+      - name: Deploy exact validated artifact
         id: deployment
         uses: actions/deploy-pages@v4
+
+  verify-public:
+    if: github.event_name != 'pull_request'
+    needs: deploy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+      - run: node scripts/prepare-pages-artifact.mjs
+      - name: Verify public bytes for ${{ github.sha }}
+        run: node scripts/verify-pages-assets.mjs --url "${{ needs.deploy.outputs.page_url }}"

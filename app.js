@@ -28,6 +28,7 @@
   const settingsPanel = document.querySelector("#settings-panel");
   const settingsClose = document.querySelector("#settings-close");
   const sizeOptions = [...document.querySelectorAll("[data-content-size]")];
+  let apiDialogInvoker = null;
 
   const icons = {
     arrow: '<svg aria-hidden="true" viewBox="0 0 24 24"><path d="M5 12h14m-5-5 5 5-5 5"/></svg>',
@@ -480,7 +481,7 @@ handle = <span class="code-function">win32process.GetCurrentProcess</span>()
         <div class="lab-head">
           <div><small>Guided investigation</small><h3>${escapeHtml(practice.title)}</h3></div>
           <div class="lab-actions">
-            ${downloads.map((artifact) => `<a class="download-button" href="${escapeHtml(artifact[0])}" download="${escapeHtml(artifact[1])}"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 3v12m-5-5 5 5 5-5M5 20h14"/></svg><span>${escapeHtml(artifact[2] || "Download starter")}</span></a>`).join("")}
+            ${downloads.map((artifact) => `<a class="download-button" href="${escapeHtml(artifact[0])}" download="${escapeHtml(artifact[1])}" aria-label="${escapeHtml(`${artifact[2] || "Download starter"}: ${artifact[1]}`)}"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 3v12m-5-5 5 5 5-5M5 20h14"/></svg><span>${escapeHtml(artifact[2] || "Download starter")}</span></a>`).join("")}
             <span class="lab-time">${escapeHtml(practice.time)}</span>
           </div>
         </div>
@@ -1296,8 +1297,12 @@ except pywintypes.error as error:
 
   function showApiDialog(resetScroll = true) {
     apiDetailContent.querySelector(".api-dialog-close").addEventListener("click", () => apiDialog.close());
-    if (!apiDialog.open) apiDialog.showModal();
+    if (!apiDialog.open) {
+      if (document.activeElement && !apiDialog.contains(document.activeElement)) apiDialogInvoker = document.activeElement;
+      apiDialog.showModal();
+    }
     if (resetScroll) apiDialog.scrollTop = 0;
+    apiDetailContent.querySelector(".api-dialog-close")?.focus({ preventScroll: true });
   }
 
   function renderPywin32ParameterChoices(moduleName, signature, signatureIndex, parameter, parameterIndex) {
@@ -1343,7 +1348,7 @@ except pywintypes.error as error:
     apiDetailContent.innerHTML = windowsApiView.renderDialog(family, variantName);
     showApiDialog(!preserveScroll);
     if (preserveScroll) apiDialog.scrollTop = scrollTop;
-    apiDetailContent.querySelector(`[data-api-variant="${CSS.escape(variantName)}"]`)?.focus({ preventScroll: true });
+    if (preserveScroll) apiDetailContent.querySelector(`[data-api-variant="${CSS.escape(variantName)}"]`)?.focus({ preventScroll: true });
   }
 
   function openWindowsApiDetails(familyId, variantName) {
@@ -1431,6 +1436,7 @@ except pywintypes.error as error:
   function setSettingsOpen(open) {
     settingsPanel.hidden = !open;
     settingsTrigger.setAttribute("aria-expanded", String(open));
+    if (open) settingsClose.focus();
   }
 
   function allSearchItems() {
@@ -1499,7 +1505,28 @@ except pywintypes.error as error:
 
   function updateSearch(query = "") {
     const term = query.trim().toLowerCase();
-    const items = allSearchItems().filter((item) => !term || containsEveryToken(`${item.title} ${item.detail} ${item.kind} ${item.searchText || ""}`, term)).slice(0, 10);
+    const tokens = term.split(/\s+/).filter(Boolean);
+    const score = (item) => {
+      const title = item.title.toLowerCase();
+      const kind = item.kind.toLowerCase();
+      const detail = item.detail.toLowerCase();
+      let value = title === term ? 1000 : title.startsWith(term) ? 600 : title.includes(term) ? 400 : 0;
+      if (kind === term) value += 250;
+      else if (kind.includes(term)) value += 120;
+      if (detail.includes(term)) value += 100;
+      for (const token of tokens) {
+        if (title.includes(token)) value += 45;
+        if (kind.includes(token)) value += 20;
+        if (detail.includes(token)) value += 10;
+      }
+      return value;
+    };
+    const items = allSearchItems()
+      .map((item, index) => ({ item, index }))
+      .filter(({ item }) => !term || containsEveryToken(`${item.title} ${item.detail} ${item.kind} ${item.searchText || ""}`, term))
+      .sort((left, right) => score(right.item) - score(left.item) || left.index - right.index)
+      .slice(0, 10)
+      .map(({ item }) => item);
     searchResults.innerHTML = items.length ? items.map((item) => `
       <a class="search-result" href="${item.href}">
         <span><strong>${item.title}</strong><small>${item.detail}</small></span>
@@ -1533,11 +1560,13 @@ except pywintypes.error as error:
   main.addEventListener("click", (event) => {
     const overviewTrigger = event.target.closest("[data-reference-overview]");
     if (overviewTrigger) {
+      apiDialogInvoker = overviewTrigger;
       openReferenceOverview(overviewTrigger.dataset.referenceOverview);
       return;
     }
     const trigger = event.target.closest(".api-detail-trigger");
     if (!trigger) return;
+    apiDialogInvoker = trigger;
     if (trigger.dataset.windowsApiFamily) openWindowsApiDetails(trigger.dataset.windowsApiFamily, trigger.dataset.windowsApiVariant);
     else openApiDetails(trigger.dataset.apiModule, trigger.dataset.apiFeature);
   });
@@ -1572,7 +1601,36 @@ except pywintypes.error as error:
     const family = windowsApiGuide.families.find((item) => item.id === openWindowsApiFamilyId);
     if (family) renderWindowsApiDetails(family, variant.dataset.apiVariant, true);
   });
+  apiDialog.addEventListener("cancel", (event) => {
+    event.preventDefault();
+    const invoker = apiDialogInvoker;
+    apiDialog.close();
+    if (invoker?.isConnected) invoker.focus({ preventScroll: true });
+  });
+  apiDialog.addEventListener("close", () => {
+    const invoker = apiDialogInvoker;
+    if (invoker?.isConnected) window.setTimeout(() => invoker.focus({ preventScroll: true }), 0);
+    apiDialogInvoker = null;
+  });
   apiDialog.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
+      event.preventDefault();
+      const invoker = apiDialogInvoker;
+      apiDialog.close();
+      if (invoker?.isConnected) invoker.focus({ preventScroll: true });
+      return;
+    }
+    if (event.key === "Tab") {
+      const focusable = [...apiDialog.querySelectorAll('button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])')]
+        .filter((element) => element.getClientRects().length);
+      const first = focusable[0];
+      const last = focusable.at(-1);
+      if (first && (focusable.length === 1 || (event.shiftKey && document.activeElement === first) || (!event.shiftKey && document.activeElement === last))) {
+        event.preventDefault();
+        (event.shiftKey ? last : first).focus();
+      }
+      return;
+    }
     const currentTab = event.target.closest("[data-api-variant]");
     if (!currentTab || !currentTab.closest('[role="tablist"]')) return;
     const tabs = [...currentTab.closest('[role="tablist"]').querySelectorAll("[data-api-variant]")];
@@ -1588,6 +1646,13 @@ except pywintypes.error as error:
     if (family) renderWindowsApiDetails(family, tabs[nextIndex].dataset.apiVariant, true);
   });
   document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && apiDialog.open) {
+      event.preventDefault();
+      const invoker = apiDialogInvoker;
+      apiDialog.close();
+      if (invoker?.isConnected) invoker.focus({ preventScroll: true });
+      return;
+    }
     if (event.key === "Escape" && sidebar.classList.contains("open") && isMobileSidebar()) {
       event.preventDefault();
       closeSidebar({ restoreFocus: true });

@@ -25,7 +25,7 @@ const probe = `<script>
     const checks = {};
     const wait = () => new Promise((resolve) => setTimeout(resolve, 50));
     const selected = () => document.querySelector('[data-api-variant][aria-selected="true"]');
-    const selectionState = (expectedName) => {
+    const selectionState = (expectedName, expectTabFocus = true) => {
       const tabs = [...document.querySelectorAll("[data-api-variant]")];
       const selectedTabs = tabs.filter((tab) => tab.getAttribute("aria-selected") === "true");
       const selectedTab = selectedTabs[0];
@@ -35,7 +35,7 @@ const probe = `<script>
         && tabs.filter((tab) => tab !== selectedTab).every((tab) => tab.tabIndex === -1)
         && document.querySelector("#api-detail-title")?.textContent.includes(expectedName)
         && document.querySelector(".windows-contract-block")?.textContent.includes(expectedName + ".argtypes")
-        && document.activeElement === selectedTab;
+        && (expectTabFocus ? document.activeElement === selectedTab : document.activeElement === document.querySelector('.api-dialog-close'));
     };
     try {
       await wait();
@@ -47,7 +47,7 @@ const probe = `<script>
       await wait();
       const dialog = document.querySelector("#api-detail-dialog");
       checks.clickOpensOneDialog = dialog?.open === true && document.querySelectorAll("#api-detail-dialog dialog").length === 0;
-      checks.clickStartsRecommended = selectionState("CreateEventW");
+      checks.clickStartsRecommended = selectionState("CreateEventW", false);
       document.querySelector('[data-api-variant="CreateEventExA"]')?.click();
       await wait();
       checks.variantClickSelectsExact = selectionState("CreateEventExA");
@@ -66,11 +66,11 @@ const probe = `<script>
       dialog?.querySelector(".api-dialog-close")?.click();
       createEventRow?.click();
       await wait();
-      checks.reopenResetsToRecommended = selectionState("CreateEventW");
+      checks.reopenResetsToRecommended = selectionState("CreateEventW", false);
       dialog?.querySelector(".api-dialog-close")?.click();
       window.location.hash = "#/reference/windows-api?q=CreateEventExA";
       await wait();
-      checks.filteredRouteSelectsExactVariant = dialog?.open === true && selectionState("CreateEventExA");
+      checks.filteredRouteSelectsExactVariant = dialog?.open === true && selectionState("CreateEventExA", false);
     } catch (error) { checks.exception = error.message; }
     document.body.innerHTML = '<pre id="api-family-browser-result">' + JSON.stringify(checks) + "</pre>";
   };

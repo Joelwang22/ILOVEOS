@@ -31,3 +31,13 @@ Then open `http://localhost:8000`.
 - A repeatable course audit covering all lesson structures, downloads, reference entries, API signatures, Windows API translations, source links, and prohibited punctuation.
 
 See [PLAN.md](PLAN.md) for the full curriculum and product direction.
+
+## Release validation
+
+Run the complete local gate from the repository root with `node scripts/release-gate.mjs`. It checks JavaScript syntax, the structural course audit, every sorted `test-*.mjs` suite, and all 41 Python downloads without importing them. Headless browser suites require Microsoft Edge, Chrome, or Chromium; Windows runtime checks use 64-bit CPython with matching pywin32.
+
+`node scripts/prepare-pages-artifact.mjs` builds a clean `_site/` containing only the index, its local CSS/JavaScript, `.nojekyll`, and `downloads/**`. `node scripts/verify-pages-assets.mjs --url <pages-url>` retries transient responses and compares every public byte with that artifact.
+
+The runtime runner is read-only by default. Use `node scripts/run-runtime-validation.mjs --check-environment --python <absolute-python>` before an explicit `--profile automated-safe`. Service mutation, token work, multi-terminal exercises, optional Registry writes, and Sysinternals checkpoints remain operator-controlled under [the Stage 8 protocol](docs/stage-8-runtime-validation.md).
+
+GitHub Actions validates pull requests on Ubuntu and Windows without Pages write permission. Validated `main` or manual runs build `_site`, deploy that exact artifact, and verify the returned Pages URL byte-for-byte before the workflow succeeds.

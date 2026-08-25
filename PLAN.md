@@ -720,6 +720,8 @@ Windows API family and contextual-parameter audit, 24 August 2026:
 
 ### Stage 8: Clean-machine validation and release quality
 
+Status: automated release quality completed locally on 25 August 2026; clean-lab operator validation and public deployment verification remain pending.
+
 - Run every relevant guided practice and downloadable artifact in a clean Windows lab environment with the intended Python architecture and permissions.
 - For each practice, record the stable expected outcome, machine-dependent values, expected non-success branches, observable Sysinternals evidence, and verified cleanup state.
 - Check the repository practice coverage matrix against the final lesson sequence and record any corrected script assumptions, leaks, fragile behavior, or version-specific differences.
@@ -729,6 +731,16 @@ Windows API family and contextual-parameter audit, 24 August 2026:
 - Run the structural course audit, Python parsing checks, JavaScript syntax checks, source-link audit, and live GitHub Pages asset checks as one repeatable release gate.
 - Automate the non-interactive audit checks during repository deployment where practical.
 - Update the final audit record after runtime validation, then mark the complete course release as verified.
+
+Current audit record:
+
+- The repeatable local release gate passes JavaScript syntax, the structural course audit, every sorted `test-*.mjs` suite, 41-download Python compilation, and exact Pages artifact staging. The audit reports 62 lessons, 55 download references, 347 reference features, 96 Windows API variants, 0 errors, and 0 warnings.
+- Browser validation covers all 62 lesson routes and every top-level route at 1440, 900, 500, and 390 CSS pixels with default and large text: 704 combinations with no page overflow, clipped primary controls, or reversed layout order. All 62 diagrams expose names and ordered text and remain contained at 390 pixels with large text.
+- Search ranking, dialog lifecycle, keyboard navigation, content-size persistence/fallback, colour contrast, focus indicators, and all 41 downloadable controls pass their focused release tests. Download targets are at least 40 pixels and expose filename-aware accessible names.
+- The clean Pages artifact contains exactly 67 files: `index.html`, `.nojekyll`, 24 index-linked CSS/JavaScript assets, and all 41 Python downloads. Private plans, documentation, tests, and validation results are excluded.
+- The runtime manifest covers all 41 physical downloads and all 55 lesson references. Seven genuinely non-interactive `automated-safe` rows passed with 64-bit CPython 3.14 and pywin32. Pause-driven/Sysinternals, multi-terminal, controlled-target, optional HKCU write, 32-bit comparison, service, and token rows remain explicitly pending.
+- The GitHub Actions contract now provides validation-only pull requests, Ubuntu source-link validation, the complete Windows Edge/Python gate, gated `_site` deployment, scoped Pages permissions, and post-deploy byte verification. It has not yet been pushed and observed for this exact revision, so no live release is claimed.
+- Stage 8 remains pending until the operator-assisted clean Windows matrix and the exact commit's deployed/public verification are recorded. Automated evidence is not used as a substitute for unexecuted runtime or external-tool observations.
 
 ### Completion gate for each stage
 

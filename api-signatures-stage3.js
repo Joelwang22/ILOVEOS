@@ -66,7 +66,7 @@ Object.assign(window.ILOVEOS_API_SIGNATURES, {
       { name: "bInheritHandle", type: "wintypes.BOOL", optional: false, description: "Whether child processes may inherit the returned handle." },
       { name: "lpName", type: "wintypes.LPCWSTR", optional: false, description: "Existing named file-mapping object." }
     ], returns: "wintypes.HANDLE | None" }],
-    sources: ["https://learn.microsoft.com/windows/win32/api/winbase/nf-winbase-openfilemappingw"]
+    sources: ["https://learn.microsoft.com/windows/win32/api/memoryapi/nf-memoryapi-openfilemappingw"]
   },
   "ctypes / ctypes.wintypes::MapViewOfFile": {
     kind: "function",

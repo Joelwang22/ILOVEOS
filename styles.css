@@ -33,7 +33,7 @@
 html[data-content-size="small"] .hero-lead,
 html[data-content-size="small"] .lessons-hero p,
 html[data-content-size="small"] .lesson-copy .lesson-lead,
-html[data-content-size="small"] .reference-hero > p { font-size: 15px !important; }
+html[data-content-size="small"] .reference-hero > p { font-size: 13px !important; }
 html[data-content-size="large"] .hero-lead,
 html[data-content-size="large"] .lessons-hero p,
 html[data-content-size="large"] .lesson-copy .lesson-lead,
@@ -44,7 +44,7 @@ html[data-content-size="small"] .learning-block > p,
 html[data-content-size="small"] .learning-block > ul > li,
 html[data-content-size="small"] .take-forward li,
 html[data-content-size="small"] .lesson-copy > section:not(.lesson-phase) > p,
-html[data-content-size="small"] .lesson-copy > section:not(.lesson-phase) > ul > li { font-size: 13px !important; }
+html[data-content-size="small"] .lesson-copy > section:not(.lesson-phase) > ul > li { font-size: 12px !important; }
 html[data-content-size="large"] .feature-card > p,
 html[data-content-size="large"] .learning-block > p,
 html[data-content-size="large"] .learning-block > ul > li,
@@ -85,7 +85,7 @@ html[data-content-size="small"] .practice-expectation > p,
 html[data-content-size="small"] .quiz-feedback,
 html[data-content-size="small"] .api-purpose p,
 html[data-content-size="small"] .tool-intro p,
-html[data-content-size="small"] .api-dialog-summary p { font-size: 10.5px !important; }
+html[data-content-size="small"] .api-dialog-summary p { font-size: 9.5px !important; }
 html[data-content-size="large"] .section-heading p,
 html[data-content-size="large"] .module-description,
 html[data-content-size="large"] .reference-card p,
@@ -1538,6 +1538,7 @@ pre {
 .quiz-option {
   display: flex;
   width: 100%;
+  min-width: 0;
   align-items: center;
   gap: 11px;
   padding: 12px 14px;
@@ -1546,6 +1547,7 @@ pre {
   color: var(--muted);
   background: var(--bg-raised);
   text-align: left;
+  overflow-wrap: anywhere;
   cursor: pointer;
 }
 
@@ -1612,6 +1614,8 @@ pre {
 .lab-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 10px; }
 .download-button {
   display: inline-flex;
+  min-width: 40px;
+  min-height: 40px;
   align-items: center;
   gap: 7px;
   padding: 7px 10px;
@@ -2949,6 +2953,12 @@ html[data-content-size="large"] .assessment-page {
   .mobile-lesson-sections a span { color: var(--violet); font: 700 9px/1 "Cascadia Code", Consolas, monospace; }
   .mobile-lesson-sections a:hover { color: var(--text); }
   .feature-split { grid-template-columns: 1fr; }
+  .feature-head { display: none; }
+  .feature-row { grid-template-columns: 1fr; padding: 13px 14px; gap: 5px; }
+  .feature-row > * { padding: 0; }
+  .feature-row > * + * { border-left: 0; }
+  .api-detail-trigger { position: relative; padding-right: 40px; }
+  .api-detail-trigger > .feature-open { position: absolute; top: 50%; right: 13px; width: 24px; height: 24px; transform: translateY(-50%); }
 }
 
 @media (max-width: 780px) {

@@ -1,0 +1,23 @@
+import assert from "node:assert/strict";
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const workflow = fs.readFileSync(path.join(root, ".github", "workflows", "pages.yml"), "utf8");
+for (const job of ["validate-linux", "validate-windows", "build", "deploy", "verify-public"]) assert.match(workflow, new RegExp(`^  ${job}:`, "m"));
+assert.match(workflow, /^  pull_request:/m);
+assert.match(workflow, /node-version: 22/g);
+assert.match(workflow, /runs-on: windows-latest/);
+assert.match(workflow, /python-version: "3\.14"/);
+assert.match(workflow, /release-gate\.mjs/);
+assert.match(workflow, /--check-links/);
+assert.match(workflow, /test-runtime-validation-data\.mjs/);
+assert.match(workflow, /prepare-pages-artifact\.mjs/);
+assert.match(workflow, /path: _site/);
+assert.match(workflow, /needs: \[validate-linux, validate-windows\]/);
+assert.match(workflow, /verify-pages-assets\.mjs/);
+assert.match(workflow, /permissions:\n      pages: write\n      id-token: write/);
+assert.doesNotMatch(workflow.split("jobs:")[0], /pages: write|id-token: write/);
+assert.match(workflow, /if: github\.event_name != 'pull_request'/g);
+console.log("Pages workflow: validation-only PRs and gated exact-artifact deployment verified");
