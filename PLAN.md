@@ -57,14 +57,13 @@ Lessons will use simple sequential navigation:
 
 `Previous lesson` | `Module contents` | `Next lesson`
 
-Supporting pages will be limited to those that directly aid learning:
+Supporting pages will be limited to task-oriented references that directly aid learning:
 
-- **Setup:** Python, pywin32, Sysinternals Suite, and a suitable Windows lab environment.
+- **pywin32 guide:** purpose-first wrappers, signatures, parameters, contextual constants, results, failure handling, and cleanup.
 - **Toolbox:** concise guidance for the Sysinternals tools used throughout the course.
-- **Windows API guide:** plain-English native contracts, recommended pywin32 paths, complete `ctypes` translations where required, parameter mappings, result rules, ownership, cleanup, and primary Microsoft sources.
-- **Glossary:** important operating-system and Windows-internals terminology.
-- **Revision:** consolidated questions, practical review activities, and a final assessment.
-- **Sources:** the original repository materials and any authoritative external references used.
+- **Windows API guide:** plain-English native contracts, Python translations, parameter mappings, result rules, ownership, cleanup, and primary Microsoft sources.
+
+Setup instructions remain beside the interface, tool, or investigation that needs them. Terms are introduced where they are taught and remain discoverable through global search and the reference guides. Revision stays attached to each module and the consolidated final assessment, while primary sources remain beside the relevant lesson, API, or tool. Separate Setup, Glossary, Revision, and Sources pages are intentionally excluded because they would duplicate those existing paths and add navigation without adding teaching value.
 
 ## 5. Recurring lesson format
 
@@ -674,7 +673,7 @@ Final audit record:
 
 ## 16. Post-overhaul roadmap
 
-The six-stage lesson-depth overhaul is complete. The remaining work extends the finished curriculum with course-level revision, focused supporting pages, systematic lab validation, and final product quality assurance. It does not reopen the completed module structure or introduce dashboards, accounts, stored progress, or gamification.
+The six-stage lesson-depth overhaul and course-level revision are complete. The only remaining planned stage is systematic lab validation and final product quality assurance. It does not reopen the completed module structure or introduce dashboards, accounts, stored progress, gamification, or duplicate supporting hubs.
 
 The searchable Windows API guide was completed on 23 August 2026 ahead of the remaining roadmap because current assignments required a direct bridge from Microsoft native declarations to safe Python calls. Its initial catalogue covers all native API contracts already represented by the course plus the missing DLL-injection assignment chain. Future lesson or practice APIs must be added to this guide and its automated coverage audit in the same change.
 
@@ -717,18 +716,9 @@ Windows API family and contextual-parameter audit, 24 August 2026:
 - The contextual parameter catalogue contains 95 reusable choice sets with 351 documented values and 236 exact-key bindings: 70 native bindings and 166 Python/reference bindings. Another 46 correctness-bearing candidates have explicit `plain` decisions, for 282 exact parameter reviews overall. Large masks stay course-focused and link to Microsoft's full authoritative lists; output-only parameters explain returned constants without input-choice controls on either the native or Python/reference surface.
 - `docs/windows-api-source-audit.md` records the official Microsoft Learn review for every baseline contract, including included siblings and similar operations deliberately kept separate.
 - The completion gate covers `test-windows-api-families.mjs`, `test-windows-api-guide.mjs`, `test-windows-api-view.mjs`, `test-api-parameter-choices.mjs`, `test-windows-api-family-layout.mjs`, `test-api-dialog-scroll.mjs`, the complete sorted `test-*.mjs` suite, the course audit, JavaScript syntax, Python download parsing, and whitespace validation.
-- Final reviewed feature head: `a19b55b47c4b85d3ba801b4d788fce5b9254c7e9`, including both review-fix rounds. GitHub Pages run `32753694224` completed successfully for that exact SHA. The public site served the `windows-api-families-4` asset key, the 69-record family review, audited sibling variants, removed output-only `IsWow64Process2` choice bindings, and the canonical `CreateFileMappingW` source.
+- Subsequent presentation refinements retained the audited family and parameter coverage while removing redundant availability, recommendation, alias-description, constant-summary, and category-tag UI. The current published revision is tracked by `main` and its matching GitHub Pages workflow rather than duplicating a release SHA and cache key in this long-lived plan.
 
-### Stage 8: Supporting study pages
-
-- Add a concise Setup page covering Python, pywin32, the Sysinternals Suite, permissions, architecture checks, and preparation of a safe Windows lab environment.
-- Add a searchable Glossary for operating-system, Windows-internals, Win32, pywin32, `ctypes`, PE, and Sysinternals terminology used by the lessons.
-- Add a Revision page that provides the module reviews, final assessment, and practical review activities in one predictable location.
-- Add a consolidated Sources page grouped by module, API family, and tool while retaining primary sources beside the lessons that use them.
-- Integrate these pages into the existing navigation and search without creating a dashboard or duplicating lesson explanations.
-- Keep the pywin32 guide and Sysinternals toolbox as the main task-oriented references rather than moving their content into the new pages.
-
-### Stage 9: Clean-machine validation and release quality
+### Stage 8: Clean-machine validation and release quality
 
 - Run every relevant guided practice and downloadable artifact in a clean Windows lab environment with the intended Python architecture and permissions.
 - For each practice, record the stable expected outcome, machine-dependent values, expected non-success branches, observable Sysinternals evidence, and verified cleanup state.
