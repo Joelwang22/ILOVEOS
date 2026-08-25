@@ -469,59 +469,6 @@
     "Wintrust.dll": new Set(["WinVerifyTrust"]),
   };
 
-  const pywin32Names = {
-    OpenProcess: "win32api.OpenProcess",
-    GetCurrentProcess: "win32api.GetCurrentProcess",
-    GetExitCodeProcess: "win32process.GetExitCodeProcess",
-    GetModuleHandleW: "win32api.GetModuleHandle",
-    GetModuleHandleA: "win32api.GetModuleHandle",
-    GetProcAddress: "win32api.GetProcAddress",
-    LoadLibraryW: "win32api.LoadLibrary",
-    LoadLibraryA: "win32api.LoadLibrary",
-    LoadLibraryExW: "win32api.LoadLibraryEx",
-    LoadLibraryExA: "win32api.LoadLibraryEx",
-    FreeLibrary: "win32api.FreeLibrary",
-    EnumProcessModules: "win32process.EnumProcessModules",
-    EnumProcessModulesEx: "win32process.EnumProcessModulesEx",
-    GetModuleFileNameExW: "win32process.GetModuleFileNameEx",
-    GetModuleFileNameExA: "win32process.GetModuleFileNameEx",
-    GetModuleFileNameW: "win32api.GetModuleFileName",
-    GetModuleFileNameA: "win32api.GetModuleFileName",
-    CreateProcessW: "win32process.CreateProcess",
-    CreateProcessA: "win32process.CreateProcess",
-    CreateRemoteThread: "win32process.CreateRemoteThread",
-    WaitForSingleObject: "win32event.WaitForSingleObject",
-    CloseHandle: "win32api.CloseHandle or PyHANDLE.Close",
-    VirtualAllocEx: "win32process.VirtualAllocEx",
-    VirtualFreeEx: "win32process.VirtualFreeEx",
-    WriteProcessMemory: "win32process.WriteProcessMemory",
-    GetLastError: "win32api.GetLastError",
-    GetNativeSystemInfo: "win32api.GetNativeSystemInfo",
-    GetWindowsDirectoryW: "win32api.GetWindowsDirectory",
-    GetWindowsDirectoryA: "win32api.GetWindowsDirectory",
-    OpenProcessToken: "win32security.OpenProcessToken",
-    DuplicateToken: "win32security.DuplicateToken",
-    DuplicateTokenEx: "win32security.DuplicateTokenEx",
-    GetNamedSecurityInfoW: "win32security.GetNamedSecurityInfo",
-    GetNamedSecurityInfoA: "win32security.GetNamedSecurityInfo",
-    RegOpenKeyExW: "winreg.OpenKey",
-    RegOpenKeyExA: "winreg.OpenKey",
-    OpenSCManagerW: "win32service.OpenSCManager",
-    OpenSCManagerA: "win32service.OpenSCManager",
-    OpenServiceW: "win32service.OpenService",
-    OpenServiceA: "win32service.OpenService",
-    StartServiceW: "win32service.StartService",
-    StartServiceA: "win32service.StartService",
-    ControlService: "win32service.ControlService",
-    QueryServiceStatusEx: "win32service.QueryServiceStatusEx",
-    QueryServiceStatus: "win32service.QueryServiceStatus",
-    CloseServiceHandle: "PySC_HANDLE.Close",
-    CreateNamedPipeW: "win32pipe.CreateNamedPipe",
-    CreateNamedPipeA: "win32pipe.CreateNamedPipe",
-    MessageBoxW: "win32api.MessageBox",
-    MessageBoxA: "win32api.MessageBox",
-  };
-
   const cleanupByName = {
     OpenProcess: "An owned process handle must be released once with CloseHandle, normally in finally.",
     CreateProcessW: "Close both hThread and hProcess from PROCESS_INFORMATION with CloseHandle.",
@@ -635,131 +582,99 @@
 
   const variantMetadata = {
     CreateEventW: {
-      useWhen: "Use the Unicode CreateEvent form for normal named or unnamed event creation.",
       keyBehaviors: ["A matching named event opens instead of creating a second object."],
     },
     CreateEventA: {
-      useWhen: "Use only when an existing byte-oriented caller must supply an ANSI event name.",
       keyBehaviors: ["ANSI names use the system code page; prefer CreateEventW for Unicode names."],
     },
     CreateEventExW: {
-      useWhen: "Use when CREATE_EVENT_* flags or explicit desired access must be selected.",
       keyBehaviors: ["CREATE_EVENT_* flags select event behavior while desired access controls the returned handle."],
     },
     CreateEventExA: {
-      useWhen: "Use only when extended event options need a byte-oriented ANSI object name.",
       keyBehaviors: ["ANSI names use the system code page; CREATE_EVENT_* flags and desired access remain explicit."],
     },
     CreateNamedPipeW: {
-      useWhen: "Use the Unicode form to create one server instance of a named pipe.",
       keyBehaviors: ["Every additional server instance must repeat compatible type, instance-count, and timeout values."],
     },
     CreateNamedPipeA: {
-      useWhen: "Use only for a legacy caller that supplies the pipe name as ANSI bytes.",
       keyBehaviors: ["ANSI pipe names use the system code page; prefer CreateNamedPipeW for normal Python strings."],
     },
     MessageBoxW: {
-      useWhen: "Use the Unicode form for a simple modal message whose selected button must be handled.",
       keyBehaviors: ["Decode the returned ID according to the button group selected in uType."],
     },
     MessageBoxA: {
-      useWhen: "Use only when a legacy caller already owns ANSI message and caption bytes.",
       keyBehaviors: ["ANSI text uses the system code page; prefer MessageBoxW for normal Unicode text."],
     },
     SetWindowsHookExW: {
-      useWhen: "Use the Unicode form for an authorized hook with an ABI-correct, short-lived callback.",
       keyBehaviors: ["A global hook may require the callback in an architecture-matched DLL."],
     },
     SetWindowsHookExA: {
-      useWhen: "Use only when the selected hook contract requires legacy ANSI character handling.",
       keyBehaviors: ["Callback ABI, scope, module placement, chain forwarding, and lifetime rules are unchanged."],
     },
     CreateFileMappingA: {
-      useWhen: "Use only when an existing caller must name the mapping with ANSI bytes.",
       keyBehaviors: ["INVALID_HANDLE_VALUE selects paging-file backing; null selects an unnamed mapping."],
     },
     MapViewOfFileEx: {
-      useWhen: "Use only when a compatible suggested base address is materially required.",
       keyBehaviors: ["Microsoft recommends letting Windows choose the base unless the fixed-address constraint is necessary."],
     },
     OpenFileMappingA: {
-      useWhen: "Use only when an existing caller must look up the mapping with ANSI bytes.",
       keyBehaviors: ["The returned handle owns a mapping-object reference, not a mapped view."],
     },
     EnumProcessModulesEx: {
-      useWhen: "Use when a 64-bit inspection tool needs an explicit module architecture filter.",
       keyBehaviors: ["A 32-bit caller under WOW64 does not gain cross-bitness enumeration from the filter."],
     },
     GetModuleFileNameExA: {
-      useWhen: "Use only for another-process module paths that must be returned as ANSI bytes.",
       keyBehaviors: ["The module handle is borrowed; the caller owns and sizes only the output buffer."],
     },
     GetModuleFileNameA: {
-      useWhen: "Use only for current-process module paths that must be returned as ANSI bytes.",
       keyBehaviors: ["A null module selects the current executable; handle a full buffer as truncation."],
     },
     GetModuleHandleA: {
-      useWhen: "Use only when an existing caller identifies a loaded module with ANSI bytes.",
       keyBehaviors: ["The result does not add a module reference and can become invalid after another unload."],
     },
     LoadLibraryExA: {
-      useWhen: "Use only when extended load flags accompany an ANSI module path.",
       keyBehaviors: ["Some data-file modes return handles that are not suitable for GetProcAddress."],
     },
     CreateMutexW: {
-      useWhen: "Use the Unicode base form when initial ownership and an optional name are sufficient.",
       keyBehaviors: ["Initial ownership applies only when this call creates the mutex."],
     },
     CreateMutexA: {
-      useWhen: "Use only when the base mutex form needs an ANSI object name.",
       keyBehaviors: ["ANSI names use the system code page; prefer CreateMutexW for Unicode names."],
     },
     CreateMutexExW: {
-      useWhen: "Use when mutex creation flags or explicit desired access must be selected.",
       keyBehaviors: ["Initial ownership applies only when the named mutex did not already exist."],
     },
     CreateMutexExA: {
-      useWhen: "Use only when extended mutex options need an ANSI object name.",
       keyBehaviors: ["ANSI names use the system code page; flags and desired access remain explicit."],
     },
     CreateProcessA: {
-      useWhen: "Use only for a legacy launch path that deliberately uses ANSI buffers and environment data.",
       keyBehaviors: ["The command-line buffer is writable and encoding must match the selected environment contract."],
     },
     CreateRemoteThreadEx: {
-      useWhen: "Use when an authorized remote-thread design requires a processor-group or other supported attribute.",
       keyBehaviors: ["With a null attribute list, its behavior matches CreateRemoteThread."],
     },
     DuplicateTokenEx: {
-      useWhen: "Use when duplicate access, security attributes, or primary-versus-impersonation token type must be selected.",
       keyBehaviors: ["The source handle needs TOKEN_DUPLICATE; the returned token is independently owned."],
     },
     GetNamedSecurityInfoA: {
-      useWhen: "Use only when a named securable object must be identified with ANSI bytes.",
       keyBehaviors: ["All returned component pointers reside inside the one descriptor allocation."],
     },
     OpenSCManagerA: {
-      useWhen: "Use only when optional machine or database names must be supplied as ANSI bytes.",
       keyBehaviors: ["Request only the SC_MANAGER_* rights required by the following operation."],
     },
     OpenServiceA: {
-      useWhen: "Use only when the service's internal name must be supplied as ANSI bytes.",
       keyBehaviors: ["The service handle and its parent SCM handle have independent ownership."],
     },
     QueryServiceStatus: {
-      useWhen: "Use only when basic SERVICE_STATUS fields are sufficient; prefer Ex when PID is needed.",
       keyBehaviors: ["The value is the most recent status reported to the Service Control Manager."],
     },
     RegOpenKeyExA: {
-      useWhen: "Use only when a Registry subkey path must be supplied as ANSI bytes.",
       keyBehaviors: ["This call never creates a missing key and returns its error code directly."],
     },
     StartServiceA: {
-      useWhen: "Use only when optional service arguments must be supplied as ANSI byte strings.",
       keyBehaviors: ["Success accepts the start request; poll status through pending states before claiming RUNNING."],
     },
     GetWindowsDirectoryA: {
-      useWhen: "Use only when the Windows directory must be returned in an ANSI byte buffer.",
       keyBehaviors: ["A result larger than capacity is the required size, including the terminator."],
     },
   };
@@ -1299,22 +1214,6 @@ class PROCESS_INFORMATION(ctypes.Structure):
   };
   const familyDefinitionFor = (name) => familyData.familyDefinitions.find((definition) => definition.variantNames.includes(name));
   const familyPurpose = (name) => familyDefinitionFor(name)?.summary || `Perform the documented ${name} operation.`;
-  function defaultUseWhen(name) {
-    const definition = familyDefinitionFor(name);
-    const purpose = familyPurpose(name).replace(/[.]$/, "").replace(/^./, (character) => character.toLowerCase());
-    const names = definition?.variantNames || [name];
-    if (name.endsWith("A") && names.includes(`${name.slice(0, -1)}W`)) {
-      return `Use only for an existing ANSI byte-oriented caller that must ${purpose}.`;
-    }
-    if (name.endsWith("W") && names.includes(`${name.slice(0, -1)}A`)) {
-      return `Use the Unicode form when you need to ${purpose}.`;
-    }
-    const baseName = name.replace(/Ex$/, "");
-    if (name.endsWith("Ex") && names.includes(baseName)) {
-      return `Use the extended form when its additional parameters are required to ${purpose}.`;
-    }
-    return `Use this contract when you need to ${purpose}.`;
-  }
   const entries = [...nativeRecords.entries()].map(([name, record]) => {
     const dll = dllFor(name);
     const feature = featureIndex.get(name)?.[0];
@@ -1337,9 +1236,7 @@ class PROCESS_INFORMATION(ctypes.Structure):
       })),
       result: resultByName[name] || defaultResult(record.signature),
       cleanup: defaultCleanup(name),
-      pywin32: pywin32Names[name] || "No direct pywin32 wrapper is used by this course; use the ctypes declaration when this operation is required.",
       sources: canonicalVariantSources[name] ? [canonicalVariantSources[name]] : record.sources,
-      useWhen: metadata.useWhen || defaultUseWhen(name),
       keyBehaviors: metadata.keyBehaviors || [],
     };
   }).sort((left, right) => left.category.localeCompare(right.category) || left.name.localeCompare(right.name));

@@ -1585,13 +1585,6 @@
         if (!(Array.isArray(variant.sources) && variant.sources.some((source) => typeof source === "string" && source.startsWith("https://learn.microsoft.com/")))) {
           errors.push(`variant missing Microsoft Learn source: ${name}`);
         }
-        if (typeof variant.useWhen !== "string") {
-          errors.push(`useWhen must be a string: ${name}`);
-        } else if (!variant.useWhen.trim()) {
-          errors.push(`variant missing useWhen: ${name}`);
-        } else if (words(variant.useWhen).length > 24) {
-          errors.push(`useWhen exceeds 24 words: ${name}`);
-        }
         if (!Array.isArray(variant.keyBehaviors)) {
           errors.push(`keyBehaviors must be an array: ${name}`);
         } else {

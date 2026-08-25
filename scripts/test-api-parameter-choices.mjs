@@ -18,6 +18,11 @@ for (const filename of [
 
 const guide = window.ILOVEOS_WINDOWS_API_GUIDE;
 const view = window.ILOVEOS_WINDOWS_API_VIEW;
+assert.deepEqual(
+  window.ILOVEOS_REFERENCE.pywin32Modules.filter((module) => Object.hasOwn(module, "constants")).map((module) => module.name),
+  [],
+  "pywin32 modules must not retain redundant constants-strip data",
+);
 const byVariant = (name) => guide.families.find((family) => family.variants.some((variant) => variant.name === name));
 const renderNative = (name) => view.renderDialog(byVariant(name), name);
 
@@ -120,6 +125,10 @@ const probe = `<script>
       ).includes("api-parameter-choices");
 
       await changeRoute("#/reference/pywin32?api=OpenProcessToken");
+      const renderedMain = document.querySelector("main");
+      checks.pywin32ConstantsStripRemoved = !renderedMain?.querySelector(".constant-strip") && !renderedMain?.innerText.includes("Constants you will meet");
+      const pywin32Summary = document.querySelector("#api-detail-content > .api-dialog-body > .api-dialog-summary");
+      checks.pywin32PopupCategoryTagsRemoved = Boolean(pywin32Summary?.querySelector("p")) && !pywin32Summary.querySelector(":scope > span");
       const pyRow = parameterRow("desiredAccess");
       checks.pywin32OpenProcessTokenAssociation = hasOnly(choiceSection(pyRow), ["win32security.TOKEN_QUERY", "win32security.TOKEN_DUPLICATE", "win32security.TOKEN_ADJUST_PRIVILEGES"], ["win32security.SecurityAnonymous", "win32security.TokenPrimary"]);
       let copied = "";

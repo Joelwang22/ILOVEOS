@@ -171,9 +171,8 @@ try {
         const selector = dialog.querySelector(".api-family-variants");
         const contract = dialog.querySelector(".windows-contract-block");
         const selectorRect = selector?.getBoundingClientRect();
-        const firstSummaryRect = dialog.querySelector(".api-dialog-summary")?.getBoundingClientRect();
+        const firstContentRect = contract?.getBoundingClientRect();
         const body = dialog.querySelector(".windows-api-dialog-body");
-        const prose = dialog.querySelector(".api-dialog-summary p");
         const baseChecks = {
           dialogWithinViewport: withinViewport(dialog),
           headerWithinViewport: withinViewport(dialog.querySelector(".api-dialog-head")),
@@ -186,9 +185,9 @@ try {
           sourcesWithinViewport: withinViewport(dialog.querySelector(".api-source-links")),
           noPageHorizontalOverflow: document.documentElement.scrollWidth <= window.innerWidth + 1,
           variantTargetsAtLeast40: [...dialog.querySelectorAll(".api-variant-tab")].every((button) => button.getBoundingClientRect().height >= 39.5),
-          selectorDoesNotOverlap: Boolean(selectorRect && firstSummaryRect && selectorRect.bottom <= firstSummaryRect.top + 1),
+          selectorDoesNotOverlap: Boolean(selectorRect && firstContentRect && selectorRect.bottom <= firstContentRect.top + 1),
           codeContained: [...dialog.querySelectorAll("pre")].every((pre) => pre.scrollWidth <= pre.clientWidth + 1 || ["auto", "scroll"].includes(getComputedStyle(pre).overflowX)),
-          popupUsesAvailableTextWidth: Boolean(body && prose && prose.getBoundingClientRect().width >= body.clientWidth * 0.88),
+          popupUsesAvailableTextWidth: Boolean(body && contract && contract.getBoundingClientRect().width >= body.clientWidth * 0.88),
         };
         const switchedSources = {};
         for (const variant of mostVariants.variants) {

@@ -46,6 +46,7 @@ const familyRows = view.renderEntries?.(exaMatches, true) || "";
 requireCondition(familyRows.includes('data-windows-api-family="create-event"'), "family row is missing its family data attribute");
 requireCondition(familyRows.includes('data-windows-api-variant="CreateEventExA"'), "family row is missing its selected-variant data attribute");
 requireCondition(familyRows.includes("CreateEventExA"), "family row omits compact variant labels");
+requireCondition(!familyRows.includes("Native Windows contracts and Python translations"), "Windows API category header repeats the guide purpose subtitle");
 
 const dialogHtml = view.filterFamilies ? view.renderDialog?.(createEvent, "CreateEventExA") || "" : "";
 requireCondition(dialogHtml.includes('role="tablist"'), "family popup is missing its variant tab list");
@@ -59,6 +60,7 @@ requireCondition(dialogHtml.includes("CreateEventExA("), "selected variant nativ
 requireCondition(!dialogHtml.includes("CreateEventW.argtypes") && !dialogHtml.includes("CreateEventExW.argtypes"), "family popup leaks a non-selected variant signature");
 requireCondition(!dialogHtml.includes("nf-synchapi-createeventw"), "family popup leaks a non-selected variant source");
 requireCondition(!dialogHtml.includes("api-variant-availability") && !dialogHtml.includes("<strong>Availability</strong>"), "family popup still renders an Availability section");
+requireCondition(!dialogHtml.includes("<span>Use when</span>") && !dialogHtml.includes("<span>Recommended Python path</span>"), "family popup still renders removed guidance panels");
 requireCondition(/<strong>Aliases<\/strong>\s*<div class="api-variant-alias-list">/.test(dialogHtml), "Aliases label is not on its own row above the alias mappings");
 
 const defaultDialogHtml = view.renderDialog?.(createEvent) || "";
@@ -70,9 +72,16 @@ const availabilityOnlyFamily = {
   name: "AvailabilityOnlyFixture",
   summary: "Fixture without the search phrase.",
   aliases: [],
-  variants: createEvent.variants.map((variant) => ({ ...variant, availability: "UniqueAvailabilitySearchToken" })),
+  variants: createEvent.variants.map((variant) => ({
+    ...variant,
+    availability: "UniqueAvailabilitySearchToken",
+    useWhen: "UniqueUseWhenSearchToken",
+    pywin32: "UniquePythonPathSearchToken",
+  })),
 };
 requireCondition((view.filterFamilies?.([availabilityOnlyFamily], "UniqueAvailabilitySearchToken") || []).length === 0, "removed availability metadata is still included in guide search");
+requireCondition((view.filterFamilies?.([availabilityOnlyFamily], "UniqueUseWhenSearchToken") || []).length === 0, "removed useWhen metadata is still included in guide search");
+requireCondition((view.filterFamilies?.([availabilityOnlyFamily], "UniquePythonPathSearchToken") || []).length === 0, "removed pywin32-path metadata is still included in guide search");
 
 // This catches dynamic family text being interpolated into the dialog without escaping.
 const unsafeFamily = {
@@ -149,7 +158,7 @@ for (const selector of [".api-family-variants", ".api-variant-tab", ".api-varian
 }
 
 const versions = [...indexHtml.matchAll(/(?:href|src)="[^"]+\?v=([^"]+)"/g)];
-requireCondition(versions.length > 0 && versions.every((match) => match[1] === "windows-api-families-5"), "every tied asset must use the windows-api-families-5 release key");
+requireCondition(versions.length > 0 && versions.every((match) => match[1] === "windows-api-families-6"), "every tied asset must use the windows-api-families-6 release key");
 
 console.log(`family matches: ${exaMatches.length}`);
 console.log(`errors: ${errors.length}`);

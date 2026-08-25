@@ -893,7 +893,7 @@ user = <span class="code-function">win32api.GetUserName</span>()
   }
 
   function moduleSearchText(module) {
-    return [module.name, module.category, module.label, module.description, module.useWhen, module.course, ...(module.constants || [])].join(" ").toLowerCase();
+    return [module.name, module.category, module.label, module.description, module.useWhen, module.course].join(" ").toLowerCase();
   }
 
   function featureChoiceSearchText(module, feature) {
@@ -971,7 +971,6 @@ user = <span class="code-function">win32api.GetUserName</span>()
             <p><strong>Use it when:</strong> ${escapeHtml(module.useWhen)}</p>
             <div class="api-context"><span>${escapeHtml(module.category)}</span><span>${escapeHtml(module.course)}</span></div>
           </div>
-          ${(module.constants || []).length ? `<div class="constant-strip"><strong>Constants you will meet</strong><div class="call-chips">${module.constants.map((constant) => `<code class="call-chip">${escapeHtml(constant)}</code>`).join("")}</div></div>` : ""}
           <div class="feature-table" role="table" aria-label="${escapeHtml(module.name)} functions and concepts">
             <div class="feature-row feature-head" role="row"><span>API / concept</span><span>What you use it for</span><span>What to know</span><span></span></div>
             ${features.map((feature) => `<button class="feature-row api-detail-trigger" type="button" data-api-module="${escapeHtml(module.name)}" data-api-feature="${escapeHtml(feature.name)}" aria-label="View parameters and return types for ${escapeHtml(feature.name)}"><code>${escapeHtml(feature.name)}</code><strong>${escapeHtml(feature.task)}</strong><span>${escapeHtml(feature.detail)}</span><span class="feature-open" aria-hidden="true">+</span></button>`).join("")}
@@ -1314,7 +1313,7 @@ except pywintypes.error as error:
         <button class="api-dialog-close" type="button" aria-label="Close API details">×</button>
       </header>
       <div class="api-dialog-body">
-        <section class="api-dialog-summary"><p>${escapeHtml(feature.detail)}</p><span>${escapeHtml(module.category)} · ${escapeHtml(module.course)}</span></section>
+        <section class="api-dialog-summary"><p>${escapeHtml(feature.detail)}</p></section>
         ${signatures.length ? signatures.map((signature, index) => `
           <section class="signature-block">
             ${signatures.length > 1 ? `<h3>${escapeHtml(signature.name)}${index > 0 && signature.name === signatures[index - 1]?.name ? `, overload ${index + 1}` : ""}</h3>` : ""}

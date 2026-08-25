@@ -26,7 +26,7 @@
     });
     return [
       variant.name, variant.category, variant.dll, variant.summary, variant.nativeSignature, variant.python,
-      variant.example, variant.result, variant.cleanup, variant.pywin32, variant.useWhen,
+      variant.example, variant.result, variant.cleanup,
       ...(variant.sources || []),
       ...(variant.keyBehaviors || []),
       ...(variant.parameters || []).flatMap((parameter) => [parameter.name, parameter.direction, parameter.native, parameter.python, parameter.explanation]),
@@ -142,7 +142,7 @@
     }
     if (!matches.length) return '<div class="search-empty">No matching Windows API family. Try its family name, variant, alias, DLL, type, parameter, result, or cleanup rule.</div>';
     return [...groups.entries()].map(([category, categoryMatches]) => `<details class="api-module windows-api-module" style="--reference-color: var(--${categoryAccent(category)})" ${openCategories ? "open" : ""}>
-      <summary><span class="api-module-title"><code>${escapeHtml(category)}</code><span>Native Windows contracts and Python translations</span></span>
+      <summary><span class="api-module-title"><code>${escapeHtml(category)}</code></span>
         <span class="api-summary-meta"><span class="entry-count">${categoryMatches.length} ${categoryMatches.length === 1 ? "family" : "families"}</span><span class="details-chevron">⌄</span></span>
       </summary>
       <div class="api-module-body windows-api-module-body"><div class="feature-table">
@@ -181,8 +181,6 @@
     <div class="api-dialog-body windows-api-dialog-body" style="--reference-color: var(--${categoryAccent(variant.category)})">
       ${renderAliases(family)}
       ${renderTabs(family, variant.name)}
-      <section class="api-dialog-summary"><p>${escapeHtml(variant.useWhen)}</p><span>Use when</span></section>
-      <section class="api-dialog-summary"><p>${escapeHtml(variant.pywin32)}</p><span>Recommended Python path</span></section>
       <section class="signature-block windows-contract-block">
         <div class="windows-signature-grid"><section><h3>Native declaration</h3><pre><code>${escapeHtml(variant.nativeSignature)}</code></pre></section>
           <section><h3>Python translation</h3><pre><code>${escapeHtml(variant.python)}</code></pre></section></div>

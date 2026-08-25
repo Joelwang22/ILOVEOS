@@ -135,7 +135,7 @@ for (const name of Object.keys(familyReviews)) {
   if (!expectedLegacyNames.includes(name)) completenessErrors.push(`orphan familyReview: ${name}`);
 }
 
-const completeContractFields = ["summary", "useWhen", "dll", "nativeSignature", "python", "example", "result", "cleanup"];
+const completeContractFields = ["summary", "dll", "nativeSignature", "python", "example", "result", "cleanup"];
 for (const variant of liveVariants) {
   for (const field of completeContractFields) {
     if (typeof variant?.[field] !== "string" || !variant[field].trim()) completenessErrors.push(`incomplete variant ${variant?.name || "unnamed"}: ${field}`);
@@ -171,7 +171,6 @@ const source = "https://learn.microsoft.com/windows/win32/api/example";
 const contract = (name) => ({
   name,
   summary: "A concise contract summary.",
-  useWhen: "Use this contract when the operation is needed.",
   keyBehaviors: [],
   sources: [source],
   parameters: [],
@@ -202,12 +201,9 @@ errorFor(guide({ legacyApiNames: ["MissingW"] }), "missing legacy contract: Miss
 errorFor(guide({ legacyApiNames: ["SampleW", "SampleW"] }), "duplicate legacy contract: SampleW");
 errorFor(guide({ families: [family({ variants: [{ ...contract("SampleW"), sources: [] }] })] }), "variant missing Microsoft Learn source: SampleW");
 errorFor(guide({ families: [family({ variants: [{ ...contract("SampleW"), sources: ["https://example.test/learn.microsoft.com"] }] })] }), "variant missing Microsoft Learn source: SampleW");
-errorFor(guide({ families: [family({ variants: [{ ...contract("SampleW"), useWhen: "" }] })] }), "variant missing useWhen: SampleW");
-errorFor(guide({ families: [family({ variants: [{ ...contract("SampleW"), useWhen: 42 }] })] }), "useWhen must be a string: SampleW");
 errorFor(guide({ families: [family({ variants: [{ ...contract("SampleW"), keyBehaviors: Array.from({ length: 6 }, () => "Short behavior.") }] })] }), "too many key behaviors: SampleW");
 errorFor(guide({ families: [family({ variants: [{ ...contract("SampleW"), keyBehaviors: "Short behavior." }] })] }), "keyBehaviors must be an array: SampleW");
 errorFor(guide({ families: [family({ variants: [{ ...contract("SampleW"), keyBehaviors: [42] }] })] }), "key behavior must be a string: SampleW");
-errorFor(guide({ families: [family({ variants: [{ ...contract("SampleW"), useWhen: Array.from({ length: 25 }, (_, index) => `word${index + 1}`).join(" ") }] })] }), "useWhen exceeds 24 words: SampleW");
 errorFor(guide({ families: [family({ variants: [{ ...contract("SampleW"), keyBehaviors: [Array.from({ length: 31 }, (_, index) => `word${index + 1}`).join(" ")] }] })] }), "key behavior exceeds 30 words: SampleW");
 errorFor(guide({ families: [family({ variants: [{ ...contract("SampleW"), parameters: [{ name: "value", choiceSet: "missing", choices: ["VALUE"] }] }] })] }), "unknown choice set: missing");
 errorFor(guide({ choiceSets: { values: { values: { KNOWN: {} } } }, families: [family({ variants: [{ ...contract("SampleW"), parameters: [{ name: "value", choiceSet: "values", choices: ["MISSING"] }] }] })] }), "unknown choice value: values/MISSING");

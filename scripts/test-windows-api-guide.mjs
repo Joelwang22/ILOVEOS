@@ -107,6 +107,8 @@ for (const entry of variants.values()) {
   requireCondition(Boolean(entry.cleanup), `${prefix}: missing ownership or cleanup guidance`);
   requireCondition((entry.sources || []).some((source) => source.startsWith("https://learn.microsoft.com")), `${prefix}: missing Microsoft Learn source`);
   requireCondition(!Object.hasOwn(entry, "availability"), `${prefix}: retained removed availability metadata`);
+  requireCondition(!Object.hasOwn(entry, "useWhen"), `${prefix}: retained removed useWhen metadata`);
+  requireCondition(!Object.hasOwn(entry, "pywin32"), `${prefix}: retained removed pywin32-path metadata`);
   for (const parameter of entry.parameters || []) {
     requireCondition(
       parameter.explanation !== "Use the value required by the Microsoft contract.",
