@@ -61,7 +61,8 @@ requireCondition(!dialogHtml.includes("CreateEventW.argtypes") && !dialogHtml.in
 requireCondition(!dialogHtml.includes("nf-synchapi-createeventw"), "family popup leaks a non-selected variant source");
 requireCondition(!dialogHtml.includes("api-variant-availability") && !dialogHtml.includes("<strong>Availability</strong>"), "family popup still renders an Availability section");
 requireCondition(!dialogHtml.includes("<span>Use when</span>") && !dialogHtml.includes("<span>Recommended Python path</span>"), "family popup still renders removed guidance panels");
-requireCondition(/<strong>Aliases<\/strong>\s*<div class="api-variant-alias-list">/.test(dialogHtml), "Aliases label is not on its own row above the alias mappings");
+requireCondition(/<div class="api-family-alias-picker">\s*<strong>Aliases:<\/strong>\s*<div class="api-family-variants"/.test(dialogHtml), "Aliases label is not directly above the clickable variant buttons");
+requireCondition(!dialogHtml.includes("api-variant-aliases") && !dialogHtml.includes("api-variant-alias-list"), "family popup still renders the explanatory alias mapping section");
 
 const defaultDialogHtml = view.renderDialog?.(createEvent) || "";
 requireCondition(defaultDialogHtml.includes("CreateEvent · CreateEventW"), "removing the visible marker changed the preferred default variant");
@@ -153,12 +154,12 @@ for (const expected of [
   "trigger.dataset.windowsApiFamily",
   "trigger.dataset.windowsApiVariant",
 ]) requireCondition(appSource.includes(expected), `family popup integration is missing: ${expected}`);
-for (const selector of [".api-family-variants", ".api-variant-tab", ".api-variant-aliases", ".api-variant-alias-list", ".api-key-behaviors"]) {
+for (const selector of [".api-family-alias-picker", ".api-family-variants", ".api-variant-tab", ".api-key-behaviors"]) {
   requireCondition(styles.includes(selector), `family selector stylesheet is missing ${selector}`);
 }
 
 const versions = [...indexHtml.matchAll(/(?:href|src)="[^"]+\?v=([^"]+)"/g)];
-requireCondition(versions.length > 0 && versions.every((match) => match[1] === "windows-api-families-6"), "every tied asset must use the windows-api-families-6 release key");
+requireCondition(versions.length > 0 && versions.every((match) => match[1] === "windows-api-families-7"), "every tied asset must use the windows-api-families-7 release key");
 
 console.log(`family matches: ${exaMatches.length}`);
 console.log(`errors: ${errors.length}`);

@@ -152,21 +152,17 @@
     </details>`).join("");
   }
 
-  function renderAliases(family) {
-    if (!family.aliases.length) return "";
-    return `<div class="api-variant-aliases" aria-label="Aliases">
-      <strong>Aliases</strong><div class="api-variant-alias-list">${family.aliases.map((alias) => `<span><code>${escapeHtml(alias.name)}</code> → <code>${escapeHtml(alias.target)}</code>${alias.note ? `: ${escapeHtml(alias.note)}` : ""}</span>`).join("")}</div>
-    </div>`;
-  }
-
   function renderTabs(family, selectedName) {
     if (family.variants.length < 2) return "";
-    return `<div class="api-family-variants" role="tablist" aria-label="${escapeHtml(family.name)} variants">
-      ${family.variants.map((variant) => {
+    return `<div class="api-family-alias-picker">
+      <strong>Aliases:</strong>
+      <div class="api-family-variants" role="tablist" aria-label="${escapeHtml(family.name)} aliases">
+        ${family.variants.map((variant) => {
         const isSelected = variant.name === selectedName;
         return `<button class="api-variant-tab" type="button" role="tab" data-api-variant="${escapeHtml(variant.name)}"
           aria-selected="${isSelected}" tabindex="${isSelected ? "0" : "-1"}">${escapeHtml(variant.name)}</button>`;
-      }).join("")}
+        }).join("")}
+      </div>
     </div>`;
   }
 
@@ -179,7 +175,6 @@
       <button class="api-dialog-close" type="button" aria-label="Close API details">×</button>
     </header>
     <div class="api-dialog-body windows-api-dialog-body" style="--reference-color: var(--${categoryAccent(variant.category)})">
-      ${renderAliases(family)}
       ${renderTabs(family, variant.name)}
       <section class="signature-block windows-contract-block">
         <div class="windows-signature-grid"><section><h3>Native declaration</h3><pre><code>${escapeHtml(variant.nativeSignature)}</code></pre></section>
