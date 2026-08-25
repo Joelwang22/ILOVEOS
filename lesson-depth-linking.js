@@ -5,7 +5,7 @@ window.ILOVEOS_LESSON_DEPTH = {
     apis: ["CreateProcessW", "GetModuleFileNameW", "win32api.GetModuleFileName"],
     phases: {
       learn: ["Build an executable image", "Follow source through compilation, object files, symbol resolution, and PE layout."],
-      windows: ["Connect file to process", "Relate PE metadata, architecture, loader work, and the live mapped image."],
+      windows: ["Relate the file to the process", "Connect PE metadata and architecture to the loader's work and the live mapped image."],
       investigation: ["Trace one known binary", "Compare safe file parsing with the process image Windows actually runs."],
       review: ["Check the build path", "Test compiler, linker, loader, architecture, and error-stage distinctions."]
     },
@@ -14,7 +14,7 @@ window.ILOVEOS_LESSON_DEPTH = {
         title: "Compilation and linking solve different reference problems",
         paragraphs: [
           "A compiler translates one source unit into machine code and data plus metadata that still contains unresolved symbols and relocation records. The object file does not need to know the final address of every function or global. It records enough information for a linker to combine it with other objects and libraries.",
-          "The linker chooses a final section layout, resolves definitions it can see, applies or emits relocations, removes or combines content according to toolchain policy, and writes a PE image. A missing declaration can be a compile error, while a declared but undefined referenced symbol normally becomes a link error."
+          "The linker chooses a final section layout, resolves definitions it can see, applies or emits relocations, removes or combines content according to toolchain policy, and writes a PE image. A missing declaration can cause a compile error, while a referenced symbol that was declared but never defined normally causes a link error."
         ]
       },
       {
@@ -31,7 +31,7 @@ window.ILOVEOS_LESSON_DEPTH = {
           "A link can succeed while process startup fails because the image architecture is incompatible, a dependency cannot be found, an imported export is absent, or policy rejects the file. Loading can succeed and execution can still fail after the entry point receives control.",
           "A .NET assembly also uses a PE container but adds CLR metadata and managed execution requirements. Establish whether an image is native, managed, or mixed before interpreting entry points, imports, and code sections as if every PE followed one runtime model."
         ],
-        callout: { label: "Keep the stages named", text: "Compiler resolves language translation, linker resolves image construction, loader resolves process mappings and dependencies, and the program then performs its own runtime work." }
+        callout: { label: "Keep the stages distinct", text: "The compiler translates the language, the linker constructs the image, the loader maps the image and resolves its dependencies, and the program then performs its own runtime work." }
       }
     ],
     visuals: [
@@ -59,7 +59,7 @@ window.ILOVEOS_LESSON_DEPTH = {
           { title: "Linker lays out sections", action: "Code from both objects receives positions in the output image and the call displacement or relocation is fixed.", why: "The final relationship is known only after layout.", result: "The PE contains a coherent code section." },
           { title: "Loader maps the image", action: "Windows maps sections and applies remaining image relocations if the chosen base differs.", why: "Live virtual addresses depend on the process mapping.", result: "The initial thread can eventually execute the resolved call." }
         ],
-        conclusion: "Symbol resolution during linking and image relocation during loading are related address tasks at different times."
+        conclusion: "Symbol resolution during linking and image relocation during loading are related tasks that resolve addresses at different times."
       }
     ],
     windowsLearning: [
@@ -87,28 +87,28 @@ window.ILOVEOS_LESSON_DEPTH = {
       safety: "Inspect a known Microsoft-signed system binary or a harmless binary you built. Parsing does not require execution. Never run an unknown sample merely to populate the live-process half of the exercise.",
       steps: [
         {
-          action: "Download pe_inspector_lab.py and open PowerShell in its folder. Create the owned .\\iloveos-pe-lab\\notepad-lab.exe copy, then parse that exact copy.",
+          action: "Download pe_inspector_lab.py and open PowerShell in its folder. Create .\\iloveos-pe-lab\\notepad-lab.exe as a lab copy that you control, then parse that exact copy.",
           commands: [{ label: "PowerShell", code: "$lab = Join-Path $PWD 'iloveos-pe-lab'\n$copy = Join-Path $lab 'notepad-lab.exe'\nif (Test-Path -LiteralPath $lab) { throw \"Remove or rename the existing lab folder first: $lab\" }\nNew-Item -ItemType Directory -Path $lab | Out-Null\nCopy-Item -LiteralPath (Join-Path $env:SystemRoot 'System32\\notepad.exe') -Destination $copy\npy .\\pe_inspector_lab.py $copy" }],
-          why: "An owned copy preserves the signed System32 original and gives pe_inspector_lab.py a stable input.",
-          observe: "pe_inspector_lab.py prints the resolved path, file size, Machine, Optional Header Magic, section count, AddressOfEntryPoint RVA, preferred ImageBase, and section rows. A missing MZ or PE signature is the malformed-PE branch."
+          why: "The lab copy leaves the signed System32 original untouched and gives pe_inspector_lab.py a stable input.",
+          observe: "pe_inspector_lab.py prints the resolved path, file size, Machine value, Optional Header Magic, section count, AddressOfEntryPoint RVA, preferred ImageBase, and section rows. If the MZ or PE signature is missing, the parser reports a malformed PE file."
         },
-        { action: "In CFF Explorer choose File > Open and select .\\iloveos-pe-lab\\notepad-lab.exe. In the left tree inspect DOS Header, NT Headers > File Header, NT Headers > Optional Header, and Section Headers.", why: "The named static views provide a second interpretation of the owned file.", observe: "CFF Explorer shows the same MZ, PE signature, Machine, Magic, section count, entry RVA, ImageBase, alignments, image size, and section identities. If CFF Explorer is unavailable, continue with the parser output instead of an unnamed viewer." },
+        { action: "In CFF Explorer, choose File > Open and select .\\iloveos-pe-lab\\notepad-lab.exe. In the left tree, inspect DOS Header, NT Headers > File Header, NT Headers > Optional Header, and Section Headers.", why: "These named static views provide a second interpretation of the lab file.", observe: "CFF Explorer shows the same MZ and PE signatures, Machine value, Magic value, section count, entry RVA, ImageBase, alignments, image size, and section identities. If CFF Explorer is unavailable, continue with the parser output instead of substituting an unspecified viewer." },
         {
           action: "Run the trusted System32 original and print its PID and creation time.",
           commands: [{ label: "PowerShell", code: "$live = Start-Process -FilePath (Join-Path $env:SystemRoot 'System32\\notepad.exe') -PassThru\n\"Live PID: $($live.Id)\"\n\"Creation time: $($live.StartTime.ToString('o'))\"" }],
           why: "The live view tests loader choices against static metadata without executing the copied file.",
           observe: "The trusted original opens and PowerShell prints the launcher PID and creation time. If modern Notepad redirects and that PID exits, use Process Explorer to match the surviving Notepad by creation time and System32 image path."
         },
-        { action: "Select the exact live Notepad PID in Process Explorer, choose View > Show Lower Pane, choose View > Lower Pane View > DLLs, open the lower-pane Select Columns > DLL > Base Address chooser, and locate the exact notepad.exe module path row.", why: "The DLL lower pane exposes the loader's live module selection and base without address arithmetic.", observe: "The exact module path row shows a live Base Address that can differ from the preferred ImageBase printed by pe_inspector_lab.py. Access denied, redirection, and an exited PID are distinct branches." },
+        { action: "Select the exact live Notepad PID in Process Explorer. Choose View > Show Lower Pane, then View > Lower Pane View > DLLs. Open the lower pane's Select Columns dialog, select the DLL tab, enable Base Address, and locate the row with the exact notepad.exe module path.", why: "The DLL lower pane shows the module selected by the loader and its live base address without requiring address arithmetic.", observe: "The row with the exact module path shows a live Base Address that can differ from the preferred ImageBase printed by pe_inspector_lab.py. Access denial, process redirection, and an exited PID are separate possible outcomes." },
         {
-          action: "Close the controlled Notepad, close CFF Explorer without saving, and run this PowerShell cleanup block for the owned copy directory.",
+          action: "Close the Notepad process started earlier, close CFF Explorer without saving, and run this PowerShell cleanup block for the lab-copy directory.",
           commands: [{ label: "PowerShell", code: "$lab = Join-Path $PWD 'iloveos-pe-lab'\nif (Test-Path -LiteralPath $lab) { Remove-Item -LiteralPath $lab -Recurse }\nTest-Path -LiteralPath $lab" }],
-          why: "Cleanup removes only the directory created by step 1.",
-          observe: "PowerShell prints False. A True result means the owned lab directory remains."
+          why: "Cleanup removes only the directory created in step 1.",
+          observe: "PowerShell prints False. A True result means the lab directory remains."
         }
       ],
       hints: [{ title: "The live base is hard to find", body: "Use Process Explorer process properties, the DLL lower pane, or VMMap. Match exact PID and path because several processes can use the same image name." }],
-      cleanup: ["If the controlled Notepad remains live, close it through its own window.", "The final PowerShell block removes only .\\iloveos-pe-lab."]
+      cleanup: ["If the Notepad process started for the exercise is still running, close it through its own window.", "The final PowerShell block removes only .\\iloveos-pe-lab."]
     },
     checks: [
       ["What does an object file normally retain for the linker?", ["Only screenshots", "Symbols and relocation information", "A running PID", "Physical frame numbers"], 1, "Object files carry unresolved relationships and metadata needed for final image construction."],
@@ -121,7 +121,7 @@ window.ILOVEOS_LESSON_DEPTH = {
     apis: ["win32api.LoadLibrary", "win32api.GetProcAddress", "win32api.FreeLibrary", "SetDefaultDllDirectories"],
     phases: {
       learn: ["Choose when code is resolved", "Compare static archives, implicit DLL imports, and explicit runtime loading."],
-      windows: ["Own module references", "Handle DLL selection, architecture, exports, paths, and FreeLibrary correctly."],
+      windows: ["Manage module references", "Handle DLL selection, architecture, exports, paths, and FreeLibrary correctly."],
       investigation: ["Observe one explicit load", "Correlate LoadLibrary with Image Load evidence and module lifetime."],
       review: ["Check dependency choices", "Test timing, deployment, reference ownership, search, and compatibility."]
     },
@@ -136,28 +136,28 @@ window.ILOVEOS_LESSON_DEPTH = {
       {
         title: "Implicit and explicit dynamic linking move decisions to different moments",
         paragraphs: [
-          "Implicit linking records DLL and function requirements in the PE import directory. The loader normally satisfies them before the program entry path begins, so a missing required dependency prevents normal startup. An import library used during the build is metadata for this relationship, not the DLL's implementation code copied into the executable.",
+          "Implicit linking records DLL and function requirements in the PE import directory. The loader normally satisfies them before the program's normal entry point begins executing, so a missing required dependency prevents normal startup. An import library used during the build describes this relationship; it is not the DLL's implementation code copied into the executable.",
           "Explicit linking calls LoadLibrary or LoadLibraryEx when a feature is needed, then resolves exports with GetProcAddress. This permits optional behavior and version negotiation, but the code must handle path selection, absent modules, absent exports, exact ABI signatures, reference lifetime, and partial initialization."
         ],
         inlineCheck: ["A build uses vendor.lib, and the final PE imports vendor.dll. What was vendor.lib most likely?", ["The running process", "An import library describing DLL exports", "A page file", "A thread context"], 1, "Windows toolchains commonly use an import library to let the linker create an implicit DLL import."]
       },
       {
-        title: "Dynamic sharing is useful, but ABI compatibility is the contract",
+        title: "Dynamic sharing still requires ABI compatibility",
         paragraphs: [
           "Several processes can map the same DLL's clean image pages while retaining private writable state. A shared file on disk and shared physical code pages reduce duplication, but each process has its own module base, loader records, import slots, and private data pages where applicable.",
-          "Replacing a DLL safely requires compatible exports, calling conventions, data layouts, behavior, and architecture. A file with the same name is not automatically a compatible implementation. Versioning and deployment are design work, not loader cleanup."
+          "Replacing a DLL safely requires compatible exports, calling conventions, data layouts, behavior, and architecture. A file with the same name is not automatically a compatible implementation. Versioning and deployment must be designed explicitly; the loader does not handle them for you."
         ]
       }
     ],
     visuals: [
       {
         type: "flow",
-        title: "Three ways a function reaches the final process",
+        title: "Three ways a function becomes callable in a process",
         intro: "The moment of resolution changes error handling and deployment.",
         items: [
           { meta: "Static", label: "Object code copied at link time", detail: "No separate library archive at runtime", linkAfter: "or" },
           { meta: "Implicit DLL", label: "Import recorded in PE", detail: "Loader resolves during startup", linkAfter: "or" },
-          { meta: "Explicit DLL", label: "LoadLibrary at runtime", detail: "Program resolves and checks export", linkAfter: "all become" },
+          { meta: "Explicit DLL", label: "LoadLibrary at runtime", detail: "Program resolves the export and handles failure", linkAfter: "all become" },
           { meta: "Execution", label: "Callable machine code", detail: "Exact ABI must match" }
         ],
         caption: "The final executable can use more than one strategy at the same time."
@@ -170,17 +170,17 @@ window.ILOVEOS_LESSON_DEPTH = {
         prompt: "The core application must start even when a separately shipped exporter is unavailable.",
         columns: [
           { title: "Implicit import", rows: [["Availability", "Required during startup"], ["Call site", "Ordinary imported function"], ["Failure", "Loader can reject process startup"], ["Best fit", "Core mandatory dependency"]] },
-          { title: "Explicit load", rows: [["Availability", "Checked when export is requested"], ["Call site", "Resolved typed function pointer"], ["Failure", "Feature can report unavailable"], ["Best fit", "Optional component with defined fallback"]] }
+          { title: "Explicit load", rows: [["Availability", "Checked when export is requested"], ["Call site", "Resolved typed function pointer"], ["Failure", "Application can disable the feature or report that it is unavailable"], ["Best fit", "Optional component with defined fallback"]] }
         ],
         shared: "Both require matching architecture, compatible ABI, trustworthy path selection, and a supported component contract.",
-        conclusion: "Explicit loading supports optionality only when every failure and cleanup branch is designed."
+        conclusion: "Explicit loading supports optional components only when every failure and cleanup path has been designed."
       }
     ],
     windowsLearning: [
       {
-        title: "LoadLibrary ownership is reference based",
+        title: "LoadLibrary ownership is reference-based",
         paragraphs: [
-          "A successful LoadLibrary call adds a module reference for the process and returns an HMODULE, effectively the loaded module base for ordinary Win32 use. Each owned reference must be matched by FreeLibrary when no code, data pointer, or active callback still depends on the module.",
+          "A successful LoadLibrary call adds a module reference for the process and returns an HMODULE, effectively the loaded module base for ordinary Win32 use. Match each reference your code obtains with FreeLibrary once no code, data pointer, or active callback depends on the module.",
           "GetModuleHandle finds a module already loaded in the calling process but normally does not grant a new reference that should be released. GetModuleHandleEx can request clearer reference behavior. Never call FreeLibrary merely because a base address was observed in Process Explorer."
         ]
       },
@@ -193,21 +193,21 @@ window.ILOVEOS_LESSON_DEPTH = {
       }
     ],
     practice: {
-      title: "Observe an explicitly owned module reference",
+      title: "Observe a module reference obtained explicitly",
       time: "30 min",
-      intro: "Load a known system DLL by explicit path, correlate the Image Load event, then release the owned reference.",
+      intro: "Load a known system DLL by explicit path, correlate the Image Load event, then release the reference obtained by the script.",
       download: ["downloads/module_lifetime_lab.py", "module_lifetime_lab.py"],
-      expectedOutcome: "module_lifetime_lab.py resolves the DLL under System32, adds a LoadLibrary reference, and prints its HMODULE. Process Monitor captures an Image Load if the module was not already mapped, while Process Explorer shows the selected path. After FreeLibrary the module may unload if no other references remain, but a preexisting or transitive reference can keep it mapped.",
+      expectedOutcome: "module_lifetime_lab.py resolves the DLL under System32, obtains a reference with LoadLibrary, and prints its HMODULE. Process Monitor captures an Image Load if the module was not already mapped, while Process Explorer shows the selected path. After FreeLibrary, the module may unload if no other references remain, but a preexisting or transitive reference can keep it mapped.",
       steps: [
         {
           action: "Download module_lifetime_lab.py, open PowerShell in its folder, run the explicit version.dll command, and leave it at the first pause.",
           commands: [{ label: "PowerShell", code: "py .\\module_lifetime_lab.py --dll $env:SystemRoot\\System32\\version.dll" }],
           why: "The pre-load pause establishes whether the exact System32\\version.dll path is already present.",
-          observe: "module_lifetime_lab.py prints PID, Python pointer width, and the explicit System32\\version.dll path. An unavailable PID and a DLL not yet mapped are distinct branches."
+          observe: "module_lifetime_lab.py prints the PID, Python pointer width, and explicit System32\\version.dll path. An unavailable process and a DLL that is not yet mapped are separate outcomes."
         },
-        { action: "Select the printed PID in Process Explorer, choose View > Show Lower Pane, choose View > Lower Pane View > DLLs, open the lower-pane Select Columns > DLL > Base Address chooser, and look for the exact System32\\version.dll module path row before LoadLibrary.", why: "The baseline distinguishes a new Image Load from an already mapped dependency.", observe: "The exact module path row is present or absent before the supplied load. If present, Base Address is visible but remains a dynamic observation." },
-        { action: "In Process Monitor add PID is the printed PID Include and Operation is Image Load Include, clear the display, and resume capture. Press Enter once in module_lifetime_lab.py, pause capture when Inspect Image Load appears, and refresh the exact System32\\version.dll module path row in Process Explorer.", why: "The trace captures load-time history while the pause preserves current mapped state.", observe: "module_lifetime_lab.py prints an owned HMODULE and selected path. Process Monitor can show Image Load for the exact path; when the baseline already contained version.dll, no new row is the preloaded-module branch." },
-        { action: "Press Enter once at module_lifetime_lab.py's FreeLibrary prompt, leave it at Refresh the module snapshot, and refresh the exact System32\\version.dll module path row for the same PID.", why: "One release removes only the reference module_lifetime_lab.py owns.", observe: "The row can disappear or remain because another reference exists. Access denied and an exited PID are separate visible branches." },
+        { action: "Select the printed PID in Process Explorer. Choose View > Show Lower Pane, then View > Lower Pane View > DLLs. Open the lower pane's Select Columns dialog, select the DLL tab, enable Base Address, and look for the row with the exact System32\\version.dll path before LoadLibrary runs.", why: "The baseline distinguishes a new Image Load from an already mapped dependency.", observe: "The row with the exact module path is either present or absent before the supplied load. If present, its Base Address is visible but remains an observation from this particular run." },
+        { action: "In Process Monitor, add Include filters for the printed PID and for Operation is Image Load. Clear the display and resume capturing. Press Enter once in module_lifetime_lab.py. When 'Inspect Image Load' appears, pause the capture and refresh the row with the exact System32\\version.dll path in Process Explorer.", why: "The trace captures the loading history while the pause preserves the current mapped state.", observe: "module_lifetime_lab.py prints the HMODULE for the reference it obtained and the selected path. Process Monitor can show an Image Load event for the exact path. If the baseline already contained version.dll, the absence of a new event indicates that the module was preloaded." },
+        { action: "Press Enter once at module_lifetime_lab.py's FreeLibrary prompt, leave it at 'Refresh the module snapshot,' and refresh the row with the exact System32\\version.dll path for the same PID.", why: "One release removes only the reference obtained by module_lifetime_lab.py.", observe: "The row can disappear or remain because another reference exists. Access denial and an exited PID are separate possible outcomes." },
         { action: "Press Enter once at the final module_lifetime_lab.py prompt so the supplied process exits.", why: "The final pause exists only to inspect post-FreeLibrary state.", observe: "The command returns to PowerShell and the printed PID disappears from Process Explorer after refresh." }
       ],
       checkpoints: [{ afterStep: 3, type: "short", prompt: "Complete the supplied System32 module name: [____].dll", answer: "version", acceptedAnswers: [], feedback: "module_lifetime_lab.py deliberately loads the explicit System32\\version.dll path." }],
@@ -217,7 +217,7 @@ window.ILOVEOS_LESSON_DEPTH = {
     checks: [
       ["What does static linking normally copy into the output?", ["A live process", "Needed object code and data from library members", "The DLL search path", "Physical pages"], 1, "The linker incorporates selected compiled content from the archive."],
       ["How should code release a module reference acquired with LoadLibrary?", ["Call CloseHandle", "Call FreeLibrary after it finishes using the module", "Call VirtualFree", "Call TerminateProcess"], 1, "FreeLibrary releases the module reference acquired by LoadLibrary."],
-      ["Why can a DLL remain mapped after one FreeLibrary?", ["FreeLibrary never works", "Other references or loader dependencies can remain", "The HMODULE is a PID", "Every DLL is permanent"], 1, "Module lifetime is reference based within the process."]
+      ["Why can a DLL remain mapped after one FreeLibrary?", ["FreeLibrary never works", "Other references or loader dependencies can remain", "The HMODULE is a PID", "Every DLL is permanent"], 1, "Module lifetime is reference-based within the process."]
     ]
   },
 
@@ -248,10 +248,10 @@ window.ILOVEOS_LESSON_DEPTH = {
       {
         title: "Data directories and sections provide the navigation map",
         paragraphs: [
-          "Data-directory entries are address and size pairs for structures such as imports, exports, resources, base relocations, exception data, TLS, and debug information. Most addresses are RVAs. The security directory is an important exception, its address identifies a file position for certificate data rather than an ordinary mapped RVA.",
-          "The section table describes name, virtual size and address, raw size and pointer, and characteristics. Names such as .text and .data are conventions. Trust characteristics and bounds, not the label alone, and treat malformed files as hostile input even when the parser never executes them."
+          "Data-directory entries are address and size pairs for structures such as imports, exports, resources, base relocations, exception data, TLS, and debug information. Most addresses are RVAs. The security directory is an important exception: its address identifies a file position for certificate data rather than an ordinary mapped RVA.",
+          "The section table describes the name, virtual size and address, raw size and pointer, and characteristics. Names such as .text and .data are conventions. Trust the characteristics and bounds, not the label alone, and treat malformed files as hostile input even when the parser never executes them."
         ],
-        callout: { label: "Parser rule", text: "Validate before adding. Check that offset, size, and offset + size remain within the file and that arithmetic cannot wrap in the target integer model." }
+        callout: { label: "Parser rule", text: "Validate before adding. Check that offset, size, and offset + size remain within the file and that the arithmetic cannot wrap in the integer type used by the parser." }
       }
     ],
     visuals: [
@@ -265,7 +265,7 @@ window.ILOVEOS_LESSON_DEPTH = {
           { meta: "Image metadata", label: "COFF and Optional Header", detail: "Machine, Magic, entry, image base, directories", linkAfter: "sized to" },
           { meta: "Layout table", label: "Section headers", detail: "Raw and virtual ranges plus characteristics" }
         ],
-        caption: "The data-directory targets usually live inside the raw and virtual ranges described by sections."
+        caption: "Data-directory targets usually lie within the raw and virtual ranges described by the sections."
       }
     ],
     workedExamples: [
@@ -275,22 +275,22 @@ window.ILOVEOS_LESSON_DEPTH = {
         prompt: "A file says e_lfanew is 0x9000, but the entire file is 0x1200 bytes.",
         steps: [
           { title: "Validate the DOS read", action: "Confirm at least 0x40 bytes exist before reading e_lfanew.", why: "The field itself must be inside the file.", result: "The MZ and pointer read can be trusted only after this check." },
-          { title: "Validate the target", action: "Require e_lfanew + 4 + COFF header size to remain within file length.", why: "A pointer outside the file cannot identify a valid PE signature and header.", result: "0x9000 exceeds 0x1200, so parsing stops." },
-          { title: "Report structure error", action: "Return a clear invalid or truncated image result without loading the file.", why: "Trying alternate offsets would turn malformed input into unsafe guesswork.", result: "No execution or out-of-bounds read occurs." }
+          { title: "Validate the target", action: "Require e_lfanew + 4 + COFF header size to remain within the file length.", why: "A pointer outside the file cannot identify a valid PE signature and header.", result: "0x9000 exceeds 0x1200, so parsing stops." },
+          { title: "Report a structural error", action: "Report clearly that the image is invalid or truncated without loading the file.", why: "Trying alternate offsets would turn malformed input into unsafe guesswork.", result: "No execution or out-of-bounds read occurs." }
         ],
         conclusion: "A valid MZ signature does not prove the rest of the PE is present or trustworthy."
       }
     ],
     windowsLearning: [
       {
-        title: "Architecture needs Machine and Magic together",
+        title: "Machine and Magic together identify the architecture",
         paragraphs: [
           "The supplied how_to_load report correctly used Machine 0x014C and Magic 0x010B to establish an x86 PE32 DLL and matched it to an x86 PE32 executable. Machine identifies the target processor family, while Magic selects the optional-header format. One field reinforces but does not replace the other.",
-          "Other compatibility conditions still matter, including exported symbol ABI, subsystem expectations, dependencies, and process mitigation policy. Architecture match is necessary for an in-process native DLL, not sufficient for correct behavior."
+          "Other compatibility conditions still matter, including the exported-symbol ABI, subsystem expectations, dependencies, and process mitigation policy. A matching architecture is necessary for an in-process native DLL, but it is not sufficient for correct behavior."
         ]
       },
       {
-        title: "Static inspection should remain non-executing",
+        title: "Static inspection should not execute the target",
         paragraphs: [
           "pe_inspector_lab.py opens the file as bytes, validates bounds, and reports a limited set of fields. CFF Explorer supplies a second interpretation, while Sigcheck adds hashes, signature, version, and entropy-related metadata. None requires launching the target.",
           "Do not use LoadLibrary as a general PE parser. Loading executes loader behavior and can run DLL initialization code. Data-file loading flags exist for specialized resource use, but ordinary structural analysis should read the file format."
@@ -302,31 +302,31 @@ window.ILOVEOS_LESSON_DEPTH = {
       time: "35 min",
       intro: "Use the shared PE inspector against a known file and deliberately test one truncated copy.",
       download: ["downloads/pe_inspector_lab.py", "pe_inspector_lab.py"],
-      expectedOutcome: "The parser should report the same Machine, Magic, section count, entry RVA, image base, alignments, image size, and section rows as CFF Explorer. A deliberately truncated copy should be rejected with a bounded error rather than a crash or invented fields.",
+      expectedOutcome: "The parser should report the same Machine, Magic, section count, entry RVA, image base, alignments, image size, and section rows as CFF Explorer. It should reject a deliberately truncated copy with a clear error rather than crashing or inventing fields.",
       steps: [
         {
-          action: "Download pe_inspector_lab.py and open PowerShell in its folder. Create the owned .\\iloveos-pe-anatomy\\notepad-intact.exe copy and parse it.",
+          action: "Download pe_inspector_lab.py and open PowerShell in its folder. Create .\\iloveos-pe-anatomy\\notepad-intact.exe as a lab copy and parse it.",
           commands: [{ label: "PowerShell", code: "$lab = Join-Path $PWD 'iloveos-pe-anatomy'\n$intact = Join-Path $lab 'notepad-intact.exe'\nif (Test-Path -LiteralPath $lab) { throw \"Remove or rename the existing lab folder first: $lab\" }\nNew-Item -ItemType Directory -Path $lab | Out-Null\nCopy-Item -LiteralPath (Join-Path $env:SystemRoot 'System32\\notepad.exe') -Destination $intact\npy .\\pe_inspector_lab.py $intact" }],
-          why: "The trusted stable notepad-intact.exe input establishes the normal header path without loading notepad-intact.exe.",
+          why: "The known, unchanged notepad-intact.exe file establishes the normal header path without loading the copy.",
           observe: "pe_inspector_lab.py prints the resolved path, MZ, e_lfanew, PE signature, Machine, section count, Magic, entry RVA, preferred ImageBase, alignments, SizeOfImage, SizeOfHeaders, and section rows."
         },
         {
-          action: "Hash and verify the exact intact copy with PowerShell and Sigcheck, then in CFF Explorer choose File > Open and select .\\iloveos-pe-anatomy\\notepad-intact.exe; use the left tree's NT Headers > File Header, NT Headers > Optional Header, and Section Headers views.",
+          action: "Hash and verify the exact intact copy with PowerShell and Sigcheck. Then choose File > Open in CFF Explorer and select .\\iloveos-pe-anatomy\\notepad-intact.exe. In the left tree, examine NT Headers > File Header, NT Headers > Optional Header, and Section Headers.",
           commands: [{ label: "PowerShell", code: "$intact = Join-Path $PWD 'iloveos-pe-anatomy\\notepad-intact.exe'\nGet-FileHash -Algorithm SHA256 -LiteralPath $intact\n$sigcheck = Get-Command sigcheck.exe -ErrorAction SilentlyContinue\nif ($sigcheck) { & $sigcheck.Source -nobanner -h -a $intact } else { 'Sigcheck unavailable; continue with the hash, parser, and CFF Explorer.' }" }],
-          why: "Three views test field offsets, architecture interpretation, and provenance separately.",
-          observe: "PowerShell prints SHA-256; Sigcheck shows signature status and machine type; CFF Explorer shows Magic and the matching named header fields. If Sigcheck is unavailable, the hash plus parser and CFF Explorer remain the supplied evidence."
+          why: "The three views check field offsets, architecture interpretation, and provenance separately.",
+          observe: "PowerShell prints the SHA-256 hash. Sigcheck shows the signature status and machine type. CFF Explorer shows Magic and the matching named header fields. If Sigcheck is unavailable, the hash, parser, and CFF Explorer still provide the other evidence."
         },
         {
           action: "Create the disposable .\\iloveos-pe-anatomy\\notepad-truncated.exe from the intact copy, keep only its first 128 bytes, and rerun pe_inspector_lab.py on the malformed copy.",
           commands: [{ label: "PowerShell", code: "$intact = Join-Path $PWD 'iloveos-pe-anatomy\\notepad-intact.exe'\n$truncated = Join-Path $PWD 'iloveos-pe-anatomy\\notepad-truncated.exe'\n$bytes = [IO.File]::ReadAllBytes($intact)\n[IO.File]::WriteAllBytes($truncated, $bytes[0..127])\npy .\\pe_inspector_lab.py $truncated" }],
-          why: "Failure behavior is part of a safe file-format contract.",
-          observe: "Expect a PE inspection failed message naming a bounded missing header or section range. If the intact source is unexpectedly shorter than 128 bytes, stop rather than producing an invalid slice."
+          why: "Safe file-format handling includes predictable failure behavior.",
+          observe: "Expect a clear PE inspection failure message that identifies a missing header or an out-of-bounds section range. If the intact source is unexpectedly shorter than 128 bytes, stop rather than producing an invalid slice."
         },
         {
-          action: "Close CFF Explorer without saving and run this PowerShell cleanup block for the owned PE anatomy directory.",
+          action: "Close CFF Explorer without saving and run this PowerShell cleanup block for the PE anatomy lab directory.",
           commands: [{ label: "PowerShell", code: "$lab = Join-Path $PWD 'iloveos-pe-anatomy'\nif (Test-Path -LiteralPath $lab) { Remove-Item -LiteralPath $lab -Recurse }\nTest-Path -LiteralPath $lab" }],
-          why: "Cleanup removes only the intact and truncated copies created by the showcase.",
-          observe: "PowerShell prints False. A True result means the owned lab directory remains."
+          why: "Cleanup removes only the intact and truncated copies created by the exercise.",
+          observe: "PowerShell prints False. A True result means the lab directory remains."
         }
       ],
       hints: [{ title: "The section table offset is wrong", body: "Use e_lfanew + 4-byte signature + 20-byte COFF header + SizeOfOptionalHeader. Do not assume PE32 and PE32+ optional headers have one fixed common size." }],
@@ -342,26 +342,26 @@ window.ILOVEOS_LESSON_DEPTH = {
   "sections-rvas": {
     apis: ["GetModuleHandleW", "VirtualQueryEx", "win32process.EnumProcessModules"],
     phases: {
-      learn: ["Translate among three locations", "Connect file offsets, RVAs, and live VAs through the section table."],
+      learn: ["Translate among three locations", "Relate file offsets, RVAs, and live VAs through the section table."],
       windows: ["Account for mapping and relocation", "Use section alignment, zero-fill, ASLR, and protections without assuming one-to-one layout."],
       investigation: ["Resolve one RVA twice", "Calculate its raw file position and its live process address, then verify both."],
       review: ["Check the mapping", "Test RVA arithmetic, section selection, zero-fill, relocation, and protections."]
     },
     learning: [
       {
-        title: "File offset, RVA, and VA belong to different coordinate systems",
+        title: "File offset, RVA, and VA use different coordinate systems",
         paragraphs: [
-          "A file offset counts bytes from the beginning of the PE file. An RVA counts bytes from the loaded image base. A VA is the resulting live virtual address inside one process. The same content can therefore be described by all three values, but no single addition converts every pair without section or load information.",
-          "For live memory, VA = loaded image base + RVA. For file content inside a section, file offset = PointerToRawData + (RVA - section VirtualAddress). The containing section and valid range must be found before applying the second equation."
+          "A file offset counts bytes from the beginning of the PE file. An RVA counts bytes from the loaded image base. A VA is the resulting live virtual address inside one process. The same content can therefore be described by all three values, but converting between them requires section or loading information.",
+          "For live memory, VA = loaded image base + RVA. For file content inside a section, file offset = PointerToRawData + (RVA - section VirtualAddress). Find the containing section and confirm the valid range before applying the second equation."
         ]
       },
       {
         title: "Raw size and virtual size explain padding and zero-filled tails",
         paragraphs: [
-          "FileAlignment controls raw placement, while SectionAlignment controls mapped placement. SizeOfRawData is commonly padded to file alignment. VirtualSize describes meaningful mapped extent and can exceed raw size, in which case the tail is supplied as zero-filled memory rather than read from a file offset.",
-          "An RVA in headers can map directly within SizeOfHeaders under defined bounds. An RVA in a virtual tail beyond raw data has a valid mapped address but no corresponding stored byte to read. A correct converter reports that distinction rather than manufacturing a file offset."
+          "FileAlignment controls raw placement, while SectionAlignment controls mapped placement. SizeOfRawData is commonly padded to file alignment. VirtualSize describes the meaningful mapped extent and can exceed the raw size. In that case, the loader supplies the tail as zero-filled memory rather than reading it from a file offset.",
+          "An RVA in the headers can map directly within SizeOfHeaders when it is within the defined bounds. An RVA in a virtual tail beyond the raw data has a valid mapped address but no corresponding stored byte to read. A correct converter reports that distinction instead of inventing a file offset."
         ],
-        inlineCheck: ["An RVA is inside a section's VirtualSize but beyond SizeOfRawData. What is the likely result?", ["It must be another PID", "It can be a zero-filled mapped tail with no raw file byte", "The PE signature moves", "ASLR is disabled"], 1, "Mapped virtual extent can include bytes not stored in the section's raw data."]
+        inlineCheck: ["An RVA is inside a section's VirtualSize but beyond SizeOfRawData. What is the likely result?", ["It must be another PID", "It can be a zero-filled mapped tail with no raw file byte", "The PE signature moves", "ASLR is disabled"], 1, "The mapped virtual extent can include bytes that are not stored in the section's raw data."]
       },
       {
         title: "ASLR changes the base while RVAs describe image structure",
@@ -382,7 +382,7 @@ window.ILOVEOS_LESSON_DEPTH = {
           { meta: "File", label: "Offset 0x634", detail: "0x400 + 0x234", linkAfter: "live equation" },
           { meta: "Process", label: "Base + 0x1234", detail: "Actual VA depends on this instance" }
         ],
-        caption: "The byte's within-section offset stays 0x234 in both coordinate systems."
+        caption: "The byte remains 0x234 bytes from the start of the section in both coordinate systems."
       }
     ],
     workedExamples: [
@@ -391,12 +391,12 @@ window.ILOVEOS_LESSON_DEPTH = {
         title: "Resolve an entry-point RVA to disk and memory",
         prompt: "A PE has .text VirtualAddress 0x1000, PointerToRawData 0x400, and entry RVA 0x17B0. It loads at 0x00007FF712340000.",
         steps: [
-          { title: "Find within-section offset", action: "Subtract the section RVA from the target RVA.", result: "0x17B0 - 0x1000 = 0x7B0", why: "This locates the byte relative to the beginning of .text." },
+          { title: "Find the offset within the section", action: "Subtract the section RVA from the target RVA.", result: "0x17B0 - 0x1000 = 0x7B0", why: "This locates the byte relative to the beginning of .text." },
           { title: "Find file offset", action: "Add the within-section offset to PointerToRawData.", result: "0x400 + 0x7B0 = 0xBB0", why: "This is valid only if 0x7B0 is within stored raw data." },
           { title: "Find live VA", action: "Add the RVA to the actual loaded image base.", result: "0x00007FF712340000 + 0x17B0 = 0x00007FF7123417B0", why: "ASLR affects the base, not the image-relative offset." },
           { title: "Validate ranges", action: "Confirm both results fall inside their respective raw and mapped .text spans.", result: "Reject the conversion if either containing-range test fails", why: "Arithmetic alone cannot make an out-of-range RVA valid." }
         ],
-        conclusion: "Use section-relative offset as the invariant bridge, and validate both coordinate systems."
+        conclusion: "Use the section-relative offset to connect the two coordinate systems, and validate the result in each one."
       }
     ],
     windowsLearning: [
@@ -416,36 +416,36 @@ window.ILOVEOS_LESSON_DEPTH = {
       }
     ],
     practice: {
-      title: "Resolve one RVA in an owned PE file",
+      title: "Resolve one RVA in a PE file you control",
       time: "35 min",
-      intro: "Use the PE inspector's RVA option to find a bounded raw byte, then keep that file-relative evidence separate from a restarted process identity.",
+      intro: "Use the PE inspector's RVA option to find a valid stored byte, then keep that file-relative evidence separate from the identity of a restarted process.",
       download: ["downloads/pe_inspector_lab.py", "pe_inspector_lab.py"],
       expectedOutcome: "The inspector should identify the containing section, within-section offset, and raw file offset for an RVA backed by file bytes, and HxD should show the same raw byte. A restarted trusted process receives a new live identity, so no runtime address is inferred from or combined with the static file evidence.",
       steps: [
         {
-          action: "Download pe_inspector_lab.py and open PowerShell in its folder. Create the owned .\\iloveos-rva-lab\\notepad-rva.exe copy and parse it once to obtain AddressOfEntryPoint.",
+          action: "Download pe_inspector_lab.py and open PowerShell in its folder. Create .\\iloveos-rva-lab\\notepad-rva.exe as a lab copy and parse it once to obtain AddressOfEntryPoint.",
           commands: [{ label: "PowerShell", code: "$lab = Join-Path $PWD 'iloveos-rva-lab'\n$copy = Join-Path $lab 'notepad-rva.exe'\nif (Test-Path -LiteralPath $lab) { throw \"Remove or rename the existing lab folder first: $lab\" }\nNew-Item -ItemType Directory -Path $lab | Out-Null\nCopy-Item -LiteralPath (Join-Path $env:SystemRoot 'System32\\notepad.exe') -Destination $copy\npy .\\pe_inspector_lab.py $copy" }],
-          why: "The first parse establishes architecture, section bounds, and an exact RVA from an owned stable file.",
+          why: "The first parse establishes the architecture, section bounds, and an exact RVA from a known, unchanged file.",
           observe: "pe_inspector_lab.py prints the full copy path and an AddressOfEntryPoint value consumed by step 2."
         },
         {
           action: "Run pe_inspector_lab.py again on notepad-rva.exe, entering the AddressOfEntryPoint printed in step 1 when prompted.",
           commands: [{ label: "PowerShell", code: "$entryRva = Read-Host 'Enter AddressOfEntryPoint exactly as printed, including 0x'\npy .\\pe_inspector_lab.py .\\iloveos-rva-lab\\notepad-rva.exe --rva $entryRva" }],
           why: "The parser validates the entered RVA against the same file and section bounds.",
-          observe: "pe_inspector_lab.py prints the containing section, its RVA and raw ranges, within-section offset, raw file offset, and byte at that offset. A zero-filled virtual tail has no raw file offset; an RVA outside every range is the malformed-input branch."
+          observe: "pe_inspector_lab.py prints the containing section, its RVA and raw ranges, the offset within the section, the raw file offset, and the byte at that offset. A zero-filled virtual tail has no raw file offset. An RVA outside every range is reported as malformed input."
         },
-        { action: "Open HxD, choose File > Open, and select .\\iloveos-rva-lab\\notepad-rva.exe. Choose Search > Goto (Ctrl+G), enter the raw file offset printed by pe_inspector_lab.py as a hexadecimal offset relative to the beginning of the file, and inspect that byte without editing it.", why: "HxD independently displays the parser-selected raw byte.", observe: "HxD selects the same byte printed by pe_inspector_lab.py. If HxD is unavailable, the parser's bounded output remains visible and an unnamed hex viewer is not required." },
+        { action: "Open HxD, choose File > Open, and select .\\iloveos-rva-lab\\notepad-rva.exe. Choose Search > Goto (Ctrl+G), enter the raw file offset printed by pe_inspector_lab.py as a hexadecimal offset from the beginning of the file, and inspect that byte without editing it.", why: "HxD independently displays the raw byte selected by the parser.", observe: "HxD selects the same byte printed by pe_inspector_lab.py. If HxD is unavailable, the parser's validated output remains visible, and you do not need to substitute an unspecified hex viewer." },
         {
-          action: "Run the trusted-original restart check: launch System32 Notepad, close that first instance through its own window at the prompt, launch the replacement, then verify the replacement identity in Process Explorer without combining it with an RVA.",
+          action: "Test how a restart changes process identity. Launch System32 Notepad, close the first instance through its own window when prompted, and launch a replacement. Then verify the replacement in Process Explorer without combining its identity with an RVA.",
           commands: [{ label: "PowerShell", code: "$trusted = Join-Path $env:SystemRoot 'System32\\notepad.exe'\n$first = Start-Process -FilePath $trusted -PassThru\n\"First launcher PID: $($first.Id)\"\n\"First creation time: $($first.StartTime.ToString('o'))\"\nRead-Host 'Close the first Notepad through its own window, then press Enter'\n$replacement = Start-Process -FilePath $trusted -PassThru\n\"Trusted path: $trusted\"\n\"Replacement launcher PID: $($replacement.Id)\"\n\"Replacement creation time: $($replacement.StartTime.ToString('o'))\"" }],
-          why: "The restart boundary separates stable file-relative evidence from a new live process identity.",
-          observe: "PowerShell prints distinct first and replacement identity requests. If either launcher PID exited or redirected, use the printed creation time and System32 path to match its surviving Notepad; stop if the first window cannot be closed or the replacement has no unique live PID. No address from the earlier file inspection is reused or graded."
+          why: "The restart separates stable file-relative evidence from the identity of a new process.",
+          observe: "PowerShell prints distinct identity records for the first process and its replacement. If either launcher PID exits or redirects, use the printed creation time and System32 path to find the surviving Notepad process. Stop if you cannot close the first window or cannot identify one unique live replacement PID. Do not reuse any address from the earlier file inspection."
         },
         {
-          action: "Close the controlled Notepad and HxD without saving, then run this PowerShell cleanup block for the owned RVA directory.",
+          action: "Close the Notepad process started for the exercise and close HxD without saving. Then run this PowerShell cleanup block for the RVA lab directory.",
           commands: [{ label: "PowerShell", code: "$lab = Join-Path $PWD 'iloveos-rva-lab'\nif (Test-Path -LiteralPath $lab) { Remove-Item -LiteralPath $lab -Recurse }\nTest-Path -LiteralPath $lab" }],
-          why: "Cleanup removes only the stable copied image created in step 1.",
-          observe: "PowerShell prints False. A True result means the owned lab directory remains."
+          why: "Cleanup removes only the lab copy created in step 1.",
+          observe: "PowerShell prints False. A True result means the lab directory remains."
         }
       ],
       hints: [{ title: "The tool reports no raw file byte", body: "The RVA may lie in a zero-filled virtual tail or outside every valid section. Choose an RVA within min(VirtualSize, SizeOfRawData) for a byte comparison." }],
@@ -463,7 +463,7 @@ window.ILOVEOS_LESSON_DEPTH = {
     phases: {
       learn: ["Resolve an external function", "Follow import names and ordinals through export lookup into a callable IAT address."],
       windows: ["Construct the exact ABI", "Use pywin32 first, then ctypes for raw addresses, pointer width, calling convention, and lifetime."],
-      investigation: ["Open the box safely", "Replace the original internal ctypes call with a typed MessageBoxW function pointer and cleanup."],
+      investigation: ["Inspect resolution safely", "Replace the original internal ctypes call with a typed MessageBoxW function pointer, then release the module reference."],
       review: ["Check symbol resolution", "Test import tables, exports, forwarders, IAT contents, ABI, and module lifetime."]
     },
     learning: [
@@ -483,12 +483,12 @@ window.ILOVEOS_LESSON_DEPTH = {
         inlineCheck: ["What does an IAT entry contain after the loader resolves its import?", ["Only the DLL filename", "The imported function's callable virtual address", "The process PID", "A page-file offset"], 1, "The loader places the resolved function address in the IAT slot."]
       },
       {
-        title: "A raw address has no safe callable type by itself",
+        title: "A raw address alone does not define a safe callable type",
         paragraphs: [
           "GetProcAddress returns an address. It does not tell Python the parameter count, scalar widths, pointer levels, string encoding, calling convention, or return type. Constructing the wrong callable prototype can truncate pointers, corrupt the stack on affected architectures, pass invalid text, or misread the result.",
           "The callable remains valid only while the module is loaded and the export contract remains applicable. Do not FreeLibrary while function pointers, callbacks, worker threads, or returned module-owned data can still be used."
         ],
-        callout: { label: "Correction to open_the_box.py", text: "The supplied script uses private _ctypes.call_function without a declared MessageBox signature and never releases its LoadLibrary reference. The revised path uses WINFUNCTYPE, MessageBoxW, exact types, and FreeLibrary in finally." }
+        callout: { label: "Correction to open_the_box.py", text: "The supplied script uses private _ctypes.call_function without a declared MessageBox signature and never releases its LoadLibrary reference. The revised path uses WINFUNCTYPE, MessageBoxW, exact types, and FreeLibrary in a finally block." }
       }
     ],
     visuals: [
@@ -502,7 +502,7 @@ window.ILOVEOS_LESSON_DEPTH = {
           { meta: "Export result", label: "Function RVA", detail: "Possibly forwarded", linkAfter: "base plus RVA" },
           { meta: "IAT slot", label: "Callable VA", detail: "Indirect call target in this process" }
         ],
-        caption: "Explicit GetProcAddress performs a related export lookup but the caller stores and types the returned address itself."
+        caption: "GetProcAddress performs a similar export lookup, but the caller must store the returned address and assign it the correct type."
       }
     ],
     workedExamples: [
@@ -511,13 +511,13 @@ window.ILOVEOS_LESSON_DEPTH = {
         title: "Turn MessageBoxW into a safe ctypes call",
         prompt: "Resolve MessageBoxW explicitly while preserving pointer width, Unicode text, and module ownership.",
         steps: [
-          { title: "Load module", action: "LoadLibraryW(L\"user32.dll\") returns HMODULE or null.", why: "HMODULE is pointer sized and the successful call creates an owned reference.", result: "Only non-null enters module ownership." },
-          { title: "Resolve bytes name", action: "GetProcAddress(module, b\"MessageBoxW\") returns c_void_p or null.", why: "Export names are narrow byte strings even when the target function is the W variant.", result: "The raw address is still not callable safely." },
-          { title: "Declare prototype", action: "WINFUNCTYPE(c_int, HWND, LPCWSTR, LPCWSTR, UINT)(address)", why: "The prototype defines calling convention, four parameters, pointer encodings, and integer result.", result: "Python now has a typed callable wrapper." },
+          { title: "Load the module", action: "LoadLibraryW(L\"user32.dll\") returns an HMODULE or null.", why: "HMODULE is pointer-sized, and a successful call creates a reference owned by the caller.", result: "The caller takes ownership only if the result is non-null." },
+          { title: "Resolve the byte-string name", action: "GetProcAddress(module, b\"MessageBoxW\") returns c_void_p or null.", why: "Export names are narrow byte strings even when the target function is the W variant.", result: "The raw address is still not safe to call." },
+          { title: "Declare the prototype", action: "WINFUNCTYPE(c_int, HWND, LPCWSTR, LPCWSTR, UINT)(address)", why: "The prototype defines the calling convention, four parameters, pointer encodings, and integer return value.", result: "Python now has a typed callable wrapper." },
           { title: "Call and interpret", action: "Pass null owner, Python Unicode strings, and an MB_* UINT flag.", why: "MessageBoxW expects UTF-16 string pointers and returns a button identifier.", result: "The result is interpreted before cleanup." },
-          { title: "Release", action: "FreeLibrary(module) in finally after the last call.", why: "The function pointer must not outlive the module code it addresses.", result: "The owned reference is removed exactly once." }
+          { title: "Release", action: "Call FreeLibrary(module) in a finally block after the last use.", why: "The function pointer must not outlive the module code it addresses.", result: "The reference obtained by the caller is released exactly once." }
         ],
-        conclusion: "Load, resolve, type, call, interpret, and release are one indivisible explicit-loading contract."
+        conclusion: "Loading, resolving, typing, calling, interpreting the result, and releasing the module form one explicit-loading lifecycle."
       }
     ],
     windowsLearning: [
@@ -541,22 +541,22 @@ window.ILOVEOS_LESSON_DEPTH = {
       time: "45 min",
       intro: "Use the corrected starter to inspect every decision hidden by an ordinary wrapper call.",
       download: ["downloads/explicit_load_lab.py", "explicit_load_lab.py"],
-      expectedOutcome: "The script should load user32.dll, resolve a nonzero MessageBoxW address within the module range, display a Unicode message, report the selected button result, and release its owned module reference. The W version should accept Python str values, while the export name passed to GetProcAddress remains bytes.",
+      expectedOutcome: "The script should load user32.dll, resolve a nonzero MessageBoxW address within the module range, display a Unicode message, report the selected button result, and release the module reference it obtained. The W version should accept Python str values, while the export name passed to GetProcAddress remains bytes.",
       steps: [
-        { action: "Download explicit_load_lab.py and open the complete file in a text viewer. Locate MESSAGE_BOX_W and the LoadLibraryW, GetProcAddress, GetModuleFileNameW, and FreeLibrary declarations.", why: "The supplied artifact exposes its complete typed boundary before native execution.", observe: "MESSAGE_BOX_W is int(HWND, LPCWSTR, LPCWSTR, UINT); GetProcAddress uses LPCSTR for the export name and returns c_void_p." },
+        { action: "Download explicit_load_lab.py and open the complete file in a text viewer. Locate MESSAGE_BOX_W and the LoadLibraryW, GetProcAddress, GetModuleFileNameW, and FreeLibrary declarations.", why: "The supplied script shows its complete typed boundary before it executes native code.", observe: "MESSAGE_BOX_W is int(HWND, LPCWSTR, LPCWSTR, UINT); GetProcAddress uses LPCSTR for the export name and returns c_void_p." },
         {
-          action: "Open PowerShell in the folder containing explicit_load_lab.py, run it, and leave it at Inspect the module and export address.",
+          action: "Open PowerShell in the folder containing explicit_load_lab.py, run it, and leave it at 'Inspect the module and export address.'",
           commands: [{ label: "PowerShell", code: "py .\\explicit_load_lab.py" }],
-          why: "The pause keeps the owned user32.dll reference and MessageBoxW function address observable.",
-          observe: "explicit_load_lab.py prints PID, exact System32\\user32.dll path, HMODULE, MessageBoxW address, and prototype. A missing-export failure occurs before any pointer call."
+          why: "The pause keeps the user32.dll reference obtained by the script and the MessageBoxW function address available for inspection.",
+          observe: "explicit_load_lab.py prints the PID, exact System32\\user32.dll path, HMODULE, MessageBoxW address, and prototype. If the export is missing, the script fails before calling any pointer."
         },
-        { action: "Select the printed PID in Process Explorer, choose View > Show Lower Pane, choose View > Lower Pane View > DLLs, open the lower-pane Select Columns > DLL > Base Address chooser, and locate the exact System32\\user32.dll module path row.", why: "The exact module path row exposes the live base for the owned reference without substituting a process-list column.", observe: "The row shows user32.dll and its dynamic Base Address. Access denied, an exited PID, and a missing exact path are distinct branches." },
-        { action: "In CFF Explorer choose File > Open, select the exact System32\\user32.dll path printed by explicit_load_lab.py, select Export Directory in the left tree, and find MessageBoxW.", why: "The named export view confirms that explicit_load_lab.py requested a published export by name.", observe: "CFF Explorer shows MessageBoxW with its name, ordinal, RVA, and any forwarder. If CFF Explorer is unavailable, the fixed printed prototype and missing-tool branch remain visible." },
-        { action: "Press Enter once in explicit_load_lab.py, select OK in the supplied message box, and wait for the process to exit.", why: "The controlled call completes before finally releases the owned module reference.", observe: "explicit_load_lab.py prints MessageBoxW result: 1, result is IDOK: True, and released the user32.dll LoadLibrary reference." }
+        { action: "Select the printed PID in Process Explorer. Choose View > Show Lower Pane, then View > Lower Pane View > DLLs. Open the lower pane's Select Columns dialog, select the DLL tab, enable Base Address, and locate the row with the exact System32\\user32.dll path.", why: "The row with the exact module path shows the live base address for the reference obtained by the script; a column in the top process list does not provide the same evidence.", observe: "The row shows user32.dll and its current Base Address. Access denial, an exited PID, and a missing exact path are separate possible outcomes." },
+        { action: "In CFF Explorer, choose File > Open, select the exact System32\\user32.dll path printed by explicit_load_lab.py, select Export Directory in the left tree, and find MessageBoxW.", why: "The named export view confirms that explicit_load_lab.py requested a published export by name.", observe: "CFF Explorer shows MessageBoxW with its name, ordinal, RVA, and any forwarder. If CFF Explorer is unavailable, the fixed prototype printed by the script remains available as evidence, but the export-directory check is unverified." },
+        { action: "Press Enter once in explicit_load_lab.py, select OK in the message box, and wait for the process to exit.", why: "The call completes before the finally block releases the module reference obtained by the script.", observe: "explicit_load_lab.py prints 'MessageBoxW result: 1,' 'result is IDOK: True,' and a message confirming that it released the user32.dll LoadLibrary reference." }
       ],
       checkpoints: [{ afterStep: 5, type: "short", prompt: "Complete the fixed return printed after selecting OK: MessageBoxW result: [____]", answer: "1", acceptedAnswers: ["IDOK"], feedback: "The supplied MB_OK message box returns IDOK, whose integer value is 1." }],
       hints: [{ title: "The function address is outside the expected module", body: "Confirm the correct PID and user32 module range, then check whether the export is forwarded or the tool displays a different mapped implementation module. Do not force the pointer into a guessed range." }],
-      cleanup: ["If the supplied message box remains open, select OK so finally can call FreeLibrary.", "Close CFF Explorer and Process Explorer if they are no longer needed."]
+      cleanup: ["If the message box remains open, select OK so the finally block can call FreeLibrary.", "Close CFF Explorer and Process Explorer if they are no longer needed."]
     },
     checks: [
       ["What is stored in an IAT slot after normal resolution?", ["A source-code line", "The resolved callable address", "The DLL hash only", "A process token"], 1, "Machine code calls indirectly through the resolved function address."],
@@ -568,9 +568,9 @@ window.ILOVEOS_LESSON_DEPTH = {
   "windows-loader": {
     apis: ["LoadLibraryExW", "AddDllDirectory", "SetDefaultDllDirectories", "GetModuleFileNameW"],
     phases: {
-      learn: ["Trace process loader initialization", "Follow main image mapping, dependencies, relocations, imports, TLS, initialization, and entry transfer."],
+      learn: ["Trace process loader initialization", "Follow the mapping of the main image, dependency loading, relocations, imports, TLS, initialization, and transfer to the entry point."],
       windows: ["Control module selection", "Understand loader constraints, dependency graphs, API sets, secure paths, and live evidence."],
-      investigation: ["Prove one startup dependency", "Revisit how_to_load as a controlled import-table experiment with stronger safety and evidence."],
+      investigation: ["Prove one startup dependency", "Revisit how_to_load as a controlled import-table experiment with clearer safety limits and stronger evidence."],
       review: ["Check the loader path", "Test ordering, dependency types, DllMain constraints, architecture, search, and evidence."]
     },
     learning: [
@@ -578,13 +578,13 @@ window.ILOVEOS_LESSON_DEPTH = {
         title: "Process creation prepares the environment before application code runs",
         paragraphs: [
           "Windows creates the process and initial thread, maps the main image and core user-mode support such as Ntdll, establishes process structures, and begins user-mode initialization. The loader then prepares the dependency graph, maps required DLLs, applies relocations where needed, resolves imports, establishes runtime loader records, handles TLS initialization, calls required module initialization routines, and transfers control toward the executable entry point.",
-          "Exact private loader function names and internal steps can change across Windows versions. The stable model is the ordered set of responsibilities and the documented contracts visible through PE structures, module APIs, and initialization constraints."
+          "Exact private loader function names and internal steps can change across Windows versions. Build a durable understanding from the ordered responsibilities and documented contracts visible through PE structures, module APIs, and initialization constraints."
         ]
       },
       {
         title: "Dependencies form a graph with identity and initialization state",
         paragraphs: [
-          "An executable imports DLLs that import other DLLs, producing a graph rather than one flat list. The loader tracks modules already mapped in the process and resolves repeated dependency requests without blindly creating independent copies. API-set contract names can redirect an import to an appropriate host implementation.",
+          "An executable imports DLLs that import other DLLs, producing a graph rather than one flat list. The loader tracks modules already mapped in the process and reuses existing mappings when appropriate. API-set contract names can redirect an import to an appropriate host implementation.",
           "A static import list therefore does not equal the final module list. Transitive dependencies, runtime components, explicit loads, injected diagnostics, compatibility components, and API-set hosting can all add or change the live view."
         ],
         inlineCheck: ["A DLL appears in Process Explorer but not in the executable's direct import list. Which explanation is valid?", ["That is impossible", "It can be transitive or explicitly loaded", "The PE signature must be corrupt", "The process has no loader"], 1, "The live module graph includes more than direct implicit imports."]
@@ -593,38 +593,38 @@ window.ILOVEOS_LESSON_DEPTH = {
         title: "DllMain runs under loader constraints",
         paragraphs: [
           "DLL initialization notifications occur while the loader protects internal state. DllMain should perform minimal work, avoid waiting for other threads, avoid loading additional modules through unsafe paths, and defer complex initialization to an explicit function called after loading completes. A dependency cycle plus cross-thread waiting can deadlock process startup.",
-          "Thread attach and detach notifications add cost and reentrancy concerns, and abrupt process termination does not provide every orderly cleanup guarantee. A DLL should not depend on DllMain as a general application lifecycle manager."
+          "Thread attach and detach notifications add cost and reentrancy concerns, and abrupt process termination does not guarantee every orderly cleanup notification. A DLL should not depend on DllMain as a general application lifecycle manager."
         ],
-        callout: { label: "Implementation versus contract", text: "It is useful to know that much loader work is user mode in Ntdll, but applications should rely on documented loader APIs and DllMain restrictions, not private Ldrp* names." }
+        callout: { label: "Implementation versus contract", text: "It is useful to know that much of the loader's work occurs in user mode within Ntdll, but applications should rely on documented loader APIs and DllMain restrictions, not private Ldrp* names." }
       }
     ],
     visuals: [
       {
         type: "flow",
         title: "From CreateProcess success to program entry",
-        intro: "The creator can receive handles before the child has completed user-mode loader initialization.",
+        intro: "The calling process can receive handles before the child has completed user-mode loader initialization.",
         items: [
           { meta: "Kernel setup", label: "Process, thread, image, Ntdll", detail: "Address space and initial execution context", linkAfter: "enter user mode" },
           { meta: "Loader graph", label: "Map dependencies", detail: "Direct and transitive modules", linkAfter: "fix addresses" },
           { meta: "Resolution", label: "Relocations and imports", detail: "Chosen bases and callable IAT entries", linkAfter: "initialize" },
           { meta: "Application", label: "TLS, DLL init, entry path", detail: "Runtime startup then program logic" }
         ],
-        caption: "CreateProcess returning successfully does not guarantee the child will survive every later loader or runtime initialization step."
+        caption: "A successful return from CreateProcess does not guarantee that the child will complete every later loader or runtime initialization step."
       }
     ],
     workedExamples: [
       {
         type: "trace",
-        title: "Interpret the supplied how_to_load result",
+        title: "Interpret the supplied how_to_load results",
         prompt: "A disposable x86 cmd copy is modified to import one export from an x86 msgbox.dll placed beside it.",
         steps: [
           { title: "Establish compatibility", action: "CFF Explorer shows Machine 0x014C and Magic 0x010B for both files.", why: "An x86 process requires an x86 in-process native DLL.", result: "Architecture is compatible, but behavior is not yet proven." },
-          { title: "Add declared dependency", action: "The import table gains msgbox.dll and ?MyExport@@YAXXZ by name.", why: "The executable now asks the loader to satisfy the DLL and export before ordinary startup continues.", result: "Static inspection shows the new requirement." },
-          { title: "Start disposable copy", action: "The loader selects the adjacent lab DLL, resolves the decorated export, and runs module initialization as required.", why: "The rebuilt import establishes startup-time implicit loading.", result: "The command prompt and controlled message box appear." },
+          { title: "Add a declared dependency", action: "The import table gains msgbox.dll and ?MyExport@@YAXXZ by name.", why: "The executable now asks the loader to satisfy the DLL and export before normal startup continues.", result: "Static inspection shows the new requirement." },
+          { title: "Start the disposable copy", action: "The loader selects the adjacent lab DLL, resolves the decorated export, and runs module initialization as required.", why: "The rebuilt import establishes implicit loading during startup.", result: "The command prompt and controlled message box appear." },
           { title: "Corroborate live path", action: "Image Load capture and module snapshot identify the exact msgbox.dll path in the test PID.", why: "A message box alone does not prove which file supplied the code.", result: "Static dependency and live provenance agree." },
-          { title: "Bound the conclusion", action: "State that modifying a copy invalidates its original hash and can break signatures or assumptions.", why: "The lab demonstrates loader mechanics, not a supported production extension model.", result: "The modified artifacts are discarded after the isolated exercise." }
+          { title: "Qualify the conclusion", action: "State that modifying a copy changes its original hash and can invalidate signatures or other assumptions.", why: "The lab demonstrates loader mechanics, not a supported production extension model.", result: "The modified files are discarded after the isolated exercise." }
         ],
-        conclusion: "The strongest proof combines matching architecture, rebuilt static import data, time-based Image Load evidence, and a current module path."
+        conclusion: "The strongest proof combines matching architecture, rebuilt static import data, time-stamped Image Load evidence, and a current module path."
       }
     ],
     windowsLearning: [
@@ -647,37 +647,37 @@ window.ILOVEOS_LESSON_DEPTH = {
       title: "Trace a trusted startup module",
       time: "25 min",
       download: ["downloads/pe_inspector_lab.py", "pe_inspector_lab.py"],
-      intro: "Parse an owned copy without executing it, then correlate one trusted System32 Notepad startup across Process Monitor and Process Explorer.",
-      expectedOutcome: "pe_inspector_lab.py reports the owned copy's fixed PE structure without loading it. Process Monitor captures Image Load history for the trusted original, and Process Explorer shows an exact captured module path as current DLL state with its dynamic Base Address.",
-      safety: "Copy but do not modify or execute the owned notepad-loader.exe file. Run only the trusted System32 original and leave all signed system files unchanged.",
+      intro: "Parse a lab copy without executing it, then correlate one trusted System32 Notepad startup across Process Monitor and Process Explorer.",
+      expectedOutcome: "pe_inspector_lab.py reports the lab copy's fixed PE structure without loading it. Process Monitor captures Image Load history for the trusted original, and Process Explorer shows the current state and dynamic Base Address of a module at an exact captured path.",
+      safety: "Copy but do not modify or execute the notepad-loader.exe lab file. Run only the trusted System32 original and leave all signed system files unchanged.",
       steps: [
         {
-          action: "Download pe_inspector_lab.py and open PowerShell in its folder. Create the owned .\\iloveos-loader-lab\\notepad-loader.exe copy, hash it, and parse it without running notepad-loader.exe.",
+          action: "Download pe_inspector_lab.py and open PowerShell in its folder. Create .\\iloveos-loader-lab\\notepad-loader.exe as a lab copy, hash it, and parse it without running it.",
           commands: [{ label: "PowerShell", code: "$lab = Join-Path $PWD 'iloveos-loader-lab'\n$copy = Join-Path $lab 'notepad-loader.exe'\nif (Test-Path -LiteralPath $lab) { throw \"Remove or rename the existing lab folder first: $lab\" }\nNew-Item -ItemType Directory -Path $lab | Out-Null\nCopy-Item -LiteralPath (Join-Path $env:SystemRoot 'System32\\notepad.exe') -Destination $copy\nGet-FileHash -Algorithm SHA256 -LiteralPath $copy\npy .\\pe_inspector_lab.py $copy" }],
-          why: "A trusted owned copy supplies stable static metadata without binary editing or execution.",
-          observe: "PowerShell prints SHA-256 and pe_inspector_lab.py prints MZ, PE signature, Machine, Optional Header Magic, entry RVA, ImageBase, and section rows. A py failure or malformed-PE message is the setup-failure branch."
+          why: "A trusted lab copy supplies stable static metadata without binary editing or execution.",
+          observe: "PowerShell prints the SHA-256 hash, and pe_inspector_lab.py prints MZ, the PE signature, Machine, Optional Header Magic, entry RVA, ImageBase, and section rows. If Python fails or reports a malformed PE file, the setup did not complete successfully."
         },
         {
-          action: "In Process Monitor pause File > Capture Events, choose Edit > Clear Display, open Filter > Filter, add Process Name is notepad.exe Include and Operation is Image Load Include, then resume capture. Run the trusted System32 original with this PowerShell block and pause capture when Notepad appears.",
+          action: "In Process Monitor, pause capturing with File > Capture Events and choose Edit > Clear Display. Open Filter > Filter and add Include filters where Process Name is notepad.exe and Operation is Image Load. Resume capturing, run the trusted System32 original with this PowerShell block, and pause the capture when Notepad appears.",
           commands: [{ label: "PowerShell", code: "$notepadPath = Join-Path $env:SystemRoot 'System32\\notepad.exe'\n$live = Start-Process -FilePath $notepadPath -PassThru\n\"Live PID: $($live.Id)\"\n\"Creation time: $($live.StartTime.ToString('o'))\"" }],
-          why: "Capture begins before startup so Image Load history is preserved for the trusted executable.",
+          why: "Capture begins before startup so the Image Load history of the trusted executable is preserved.",
           observe: "Process Monitor shows Image Load rows for the new Notepad startup. If modern Notepad redirects, use the captured event PID and System32 path instead of assuming the launcher PID remains live."
         },
         { action: "Open one successful Process Monitor Image Load row for the live Notepad PID and read its exact module path; keep that exact captured path for step 4.", why: "The trace supplies one concrete loader-selected module path rather than an inferred basename.", observe: "The row shows Result SUCCESS, the exact module path, and the event PID. A missing row means the capture or filters were not active before startup." },
         { action: "Select the live PID from step 3 in Process Explorer. Choose View > Show Lower Pane, then View > Lower Pane View > DLLs. Open Select Columns > DLL > Base Address and locate the exact module path row captured in step 3.", why: "This snapshot checks whether the startup module is still mapped and shows its current base address.", observe: "The matching module row shows its dynamic base address while the process remains live. If the process exits or unloads the module, the earlier Process Monitor event is still valid historical evidence." },
         {
-          action: "Close the controlled Notepad and run this PowerShell cleanup block for the owned static-copy directory.",
+          action: "Close the Notepad process started for the exercise and run this PowerShell cleanup block for the static-copy lab directory.",
           commands: [{ label: "PowerShell", code: "$lab = Join-Path $PWD 'iloveos-loader-lab'\nif (Test-Path -LiteralPath $lab) { Remove-Item -LiteralPath $lab -Recurse }\nTest-Path -LiteralPath $lab" }],
           why: "Cleanup removes only the non-executed copy created in step 1.",
-          observe: "PowerShell prints False. A True result means the owned lab directory remains."
+          observe: "PowerShell prints False. A True result means the lab directory remains."
         }
       ],
       hints: [{ title: "No Image Load rows appear", body: "Confirm both Include filters, clear the display, resume capture before starting Notepad, and pause only after the window appears." }],
       cleanup: ["Leave Process Monitor capture stopped and close Process Explorer if it is no longer needed.", "The final PowerShell block removes only .\\iloveos-loader-lab."]
     },
     checks: [
-      ["Why can CreateProcess succeed before a child later fails to start normally?", ["The creator already owns a PID, but user-mode loader initialization can still fail", "CreateProcess compiles the source", "The child has no image", "The loader runs only after process exit"], 0, "Kernel process creation and later user-mode loader work are distinct stages."],
-      ["Why should DllMain avoid cross-thread waits?", ["It has no stack", "Loader constraints can create deadlock with threads needing loader progress", "It always runs as SYSTEM", "It cannot read parameters"], 1, "Waiting while loader state is protected can create a dependency cycle that prevents either side from progressing."],
+      ["Why can CreateProcess succeed before a child later fails to start normally?", ["The process has been created, but user-mode loader initialization can still fail", "CreateProcess compiles the source", "The child has no image", "The loader runs only after process exit"], 0, "Kernel process creation and later user-mode loader work are distinct stages."],
+      ["Why should DllMain avoid cross-thread waits?", ["It has no stack", "A thread that DllMain waits for may itself need the loader to make progress, causing a deadlock", "It always runs as SYSTEM", "It cannot read parameters"], 1, "Waiting while loader state is protected can create a dependency cycle that prevents either side from progressing."],
       ["How can you verify the exact DLL path selected during startup?", ["Read only the import basename", "Find the test process's filtered Image Load event", "Check the DLL extension", "Read a source-code comment"], 1, "The Image Load trace records the path and timing for that specific process instance."]
     ]
   }

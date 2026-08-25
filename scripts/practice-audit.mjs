@@ -1,8 +1,7 @@
-const unresolvedPatterns = [
-  /\bfrom this lesson\b/i,
-  /\bthe (?:code|example|script|starter|reader|inspector|survey|copy)\b/i,
-  /\bthe same (?:command|script|workload)\b/i,
-];
+const unresolvedLessonPatterns = [/\bfrom this lesson\b/i];
+const unresolvedArtifactPatterns = [/\bthe (?:code|example|script|starter|inspector|survey|copy)\b/i];
+const unresolvedRepeatedActionPatterns = [/\bthe same (?:command|script|workload)\b/i];
+const concreteArtifactPattern = /\b[\w.-]+\.(?:c|cpp|dll|exe|json|py|ps1|js|txt|csv)\b/i;
 const crossLessonReferencePatterns = [
   /\b(?:the\s+)?displayed(?:\s+[\w:-]+){0,12}\s+(?:example|walkthrough|stage|card|section)\b/i,
   /\b(?:the\s+)?(?:earlier|previous)(?:\s+[\w:-]+){0,5}\s+(?:example|walkthrough|stage|card|section)\b/i,
@@ -228,7 +227,12 @@ export function validatePractice(practice = {}, context = "practice", options = 
     }
 
     const stepText = [step.action, step.why, step.observe, step.hint].filter((item) => typeof item === "string").join(" ");
-    if (unresolvedPatterns.some((pattern) => pattern.test(stepText))) clarityFinding(`${stepName}: unresolved reference`);
+    const hasConcreteArtifact = concreteArtifactPattern.test(stepText);
+    const hasCommands = Array.isArray(step.commands) && step.commands.length > 0;
+    const hasUnresolvedReference = unresolvedLessonPatterns.some((pattern) => pattern.test(stepText))
+      || (!hasConcreteArtifact && unresolvedArtifactPatterns.some((pattern) => pattern.test(stepText)))
+      || (!hasConcreteArtifact && !hasCommands && unresolvedRepeatedActionPatterns.some((pattern) => pattern.test(stepText)));
+    if (hasUnresolvedReference) clarityFinding(`${stepName}: unresolved reference`);
 
     if (step.caseStudySections !== undefined) {
       if (!Array.isArray(step.caseStudySections) || !step.caseStudySections.length) {
@@ -251,7 +255,12 @@ export function validatePractice(practice = {}, context = "practice", options = 
       continue;
     }
     const commands = step.commands || [];
-    if (((terminalPattern.test(step.action || "") && terminalInstructionPattern.test(step.action || "") && !/\bProcess Monitor\b/i.test(step.action || "")) || codeInstructionPattern.test(step.action || "")) && !commands.length) {
+    if (((terminalPattern.test(step.action || "")
+      && terminalInstructionPattern.test(step.action || "")
+      && !/\bProcess Monitor\b/i.test(step.action || "")
+      && !/\bRun as administrator\b/i.test(step.action || ""))
+      || (codeInstructionPattern.test(step.action || "") && !pauseInputPattern.test(step.action || "")))
+      && !commands.length) {
       clarityFinding(`${stepName}: terminal instruction needs a command block`);
     }
     for (const [commandIndex, command] of commands.entries()) {

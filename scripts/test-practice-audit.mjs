@@ -254,6 +254,21 @@ assert.deepEqual(codeRunWarning.warnings, [
   "context: step 1: terminal instruction needs a command block",
 ]);
 
+const concreteArtifactReference = validatePractice({
+  steps: [{ action: "Open actor.py and inspect the code.", observe: "The named file contains the fixed declaration." }],
+}, "concrete artifact", { enforceClarity: true });
+assert.deepEqual(concreteArtifactReference.errors, [], "a filename in the same step must resolve a later artifact reference");
+
+const runAsAdministratorUiAction = validatePractice({
+  steps: [{ action: "Open PowerShell with Run as administrator from Windows Search.", observe: "The elevated window is visible." }],
+}, "run as administrator", { enforceClarity: true });
+assert.deepEqual(runAsAdministratorUiAction.errors, [], "the Run as administrator UI action must not require a command block");
+
+const enterToContinueAction = validatePractice({
+  steps: [{ action: "Press Enter in actor.py to close the script.", observe: "The process exits." }],
+}, "enter to continue", { enforceClarity: true });
+assert.deepEqual(enterToContinueAction.errors, [], "an Enter-to-continue prompt must not require a command block");
+
 const artifactWarning = validatePractice({
   download: ["downloads/one.py", "one.py"],
   steps: [{ action: "Run a direct check.", commands: [{ label: "PowerShell", code: "py -c \"print(1)\"" }], observe: "The output is visible." }],
@@ -600,17 +615,18 @@ for (const requiredText of ["Properties > Threads", "selected TID", "Start Addre
 }
 for (const lessonId of ["compile-link-execute", "static-dynamic-linking", "imports-exports-iat", "windows-loader"]) {
   const practiceText = JSON.stringify(lessonById.get(lessonId).practice);
-  for (const requiredText of ["View > Show Lower Pane", "View > Lower Pane View > DLLs", "Select Columns > DLL > Base Address"]) {
+  for (const requiredText of ["View > Show Lower Pane", "View > Lower Pane View > DLLs"]) {
     requireReview(practiceText.includes(requiredText), `${lessonId} module-base workflow must name ${requiredText}`);
   }
-  requireReview(/exact.{0,160}module (?:path )?row/i.test(practiceText), `${lessonId} module-base workflow must locate the exact module path row`);
+  requireReview(/Select Columns.{0,160}DLL.{0,80}Base Address/i.test(practiceText), `${lessonId} module-base workflow must name the DLL tab and Base Address column in Select Columns`);
+  requireReview(/(?:exact.{0,160}module (?:path )?row|(?:locate|look for).{0,80}row.{0,80}exact.{0,100}(?:module )?path)/i.test(practiceText), `${lessonId} module-base workflow must locate the exact module path row`);
 }
 for (const lessonId of ["hooking-injection", "startup-code-loading", "detect-injection"]) {
   const practiceText = JSON.stringify(lessonById.get(lessonId).practice);
   for (const requiredText of ["View > Show Lower Pane", "View > Lower Pane View > DLLs", "Select Columns", "Base Address"]) {
     requireReview(practiceText.includes(requiredText), `${lessonId} module-base workflow must name ${requiredText}`);
   }
-  requireReview(/locate (?:an|the) exact.{0,160}row/i.test(practiceText), `${lessonId} module-base workflow must locate the exact module path row`);
+  requireReview(/(?:locate (?:an|the) exact.{0,160}row|locate.{0,80}row.{0,80}exact.{0,100}(?:module )?path)/i.test(practiceText), `${lessonId} module-base workflow must locate the exact module path row`);
 }
 
 const deadlockPracticeText = JSON.stringify(lessonById.get("deadlocks-starvation").practice);
@@ -636,7 +652,7 @@ const fileOpenRunIndex = systemCallPractice.steps.findIndex((step) => step.comma
 requireReview(procmonSetupIndex >= 0 && procmonSetupIndex < fileOpenRunIndex, "Process Monitor setup must precede file_open_trace_lab.py");
 requireReview(!/pywin32/i.test(systemCallPractice.expectedOutcome), "file_open_trace_lab.py stack prediction must not name pywin32");
 requireReview(
-  systemCallPractice.steps.some((step) => /held-open read handle/i.test(`${step.action} ${step.observe}`) && /Desired Access.*read/i.test(step.observe)),
+  systemCallPractice.steps.some((step) => /(?:held-open|open) read handle/i.test(`${step.action} ${step.observe}`) && /Desired Access.*read/i.test(step.observe)),
   "system call trace must identify the successful CreateFile row for the held-open read handle",
 );
 

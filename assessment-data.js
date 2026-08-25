@@ -70,7 +70,7 @@
             "Assume a nonzero last-error value always means the call failed even when the result reports success."
           ],
           [0, 1, 2],
-          "Windows APIs do not share one result convention. Test the documented sentinel first, capture extended error only when the contract says it is meaningful, and preserve that primary evidence while guaranteed cleanup runs."
+          "Windows APIs do not share one result convention. Test the documented sentinel first, capture the extended error only when the contract says it is meaningful, and preserve that primary evidence while guaranteed cleanup runs."
         ),
         ordering(
           "foundations-review-lifecycle",
@@ -82,10 +82,10 @@
             { id: "cleanup", label: "Release every resource owned by the caller in a guaranteed cleanup path" },
             { id: "declare", label: "Declare exact argument and result types before the first native call" },
             { id: "inspect", label: "Read the DLL, parameter directions, result sentinel, error rule, and cleanup contract" },
-            { id: "call", label: "Build owned inputs and outputs, call once, and check the documented result immediately" }
+            { id: "call", label: "Prepare the input and output storage, call once, and check the documented result immediately" }
           ],
           ["inspect", "declare", "call", "cleanup"],
-          "Contract reading comes first because it determines declarations, storage, error checks, and ownership. The call is then made with explicit objects, and cleanup remains guaranteed regardless of the result branch."
+          "Contract reading comes first because it determines declarations, storage, error checks, and ownership. The call is then made with explicit objects, and cleanup remains guaranteed whether the call succeeds or fails."
         ),
         single(
           "foundations-review-evidence",
@@ -137,17 +137,17 @@
             "Request every process right so later operations cannot report access denied."
           ],
           1,
-          "The process and thread handles are caller-owned kernel-object references and need explicit closure. PID and TID are numeric identifiers rather than handles, and requested access should still be limited to the later operations."
+          "The process and thread handles are caller-owned references to kernel objects and must be closed explicitly. PID and TID are numeric identifiers rather than handles, and requested access should be limited to the operations the caller plans to perform."
         ),
         multiple(
           "processes-review-open-failure",
           "processes-handles",
           "failure",
           "OpenProcess diagnosis",
-          "OpenProcess reports access denied for an owned diagnostic target. Which checks can explain the result without immediately requesting all access?",
+          "OpenProcess reports access denied for a diagnostic process you started. Which checks can explain the result without immediately requesting all access?",
           [
             "Confirm the PID still identifies the intended process and has not exited or been reused.",
-            "Compare the requested access mask with the exact next operation.",
+            "Compare the requested access mask with the exact operation you plan to perform next.",
             "Inspect caller elevation, integrity, target protection, and the relevant security policy.",
             "Assume 64-bit Windows forbids every 32-bit process from opening any 64-bit process.",
             "Disable security software and retry against an unrelated system process."
@@ -168,7 +168,7 @@
             { id: "wait", label: "Wait on the process handle and branch on the documented wait result" }
           ],
           ["create", "wait", "inspect", "close"],
-          "The returned process handle supplies a stable waitable reference even if names or IDs are reused. Exit information is meaningful after the required wait branch, and both returned handles remain owned until cleanup."
+          "The returned process handle supplies a stable, waitable reference even if names or IDs are reused. Exit information is meaningful after the wait reports process completion, and both returned handles remain the caller's responsibility until cleanup."
         ),
         single(
           "processes-review-evidence",
@@ -190,7 +190,7 @@
     {
       module: "threads-scheduling",
       title: "Threads and scheduling review",
-      summary: "Reason about runnable work, waits, Python concurrency, scheduler choices, and evidence instead of assuming more threads are faster.",
+      summary: "Reason about runnable work, waits, Python concurrency, scheduler choices, and evidence instead of assuming that more threads are faster.",
       activities: [
         single(
           "threads-review-ready-waiting",
@@ -212,7 +212,7 @@
           "threads-scheduling",
           "interface",
           "threading interface choice",
-          "A Python workload spends most of its time waiting for independent file reads. Which first design best communicates the work and cleanup?",
+          "A Python workload spends most of its time waiting for independent file reads. Which initial design best expresses the work and cleanup responsibilities?",
           [
             "Use a bounded set of Python worker threads, retain them, and join them before consuming final results.",
             "Create one native thread for every byte and never retain the handles.",
@@ -243,7 +243,7 @@
           "threads-scheduling",
           "ownership",
           "thread experiment lifecycle",
-          "Order a repeatable thread-count experiment so no worker survives into the next measurement.",
+          "Order a repeatable thread-count experiment so no worker remains active during the next measurement.",
           [
             { id: "compare", label: "Compare elapsed time, CPU use, context switches, and completed work" },
             { id: "join", label: "Join every worker and confirm all expected results were produced" },
@@ -251,7 +251,7 @@
             { id: "baseline", label: "Define identical input, output checks, warm-up policy, and observation method" }
           ],
           ["baseline", "start", "join", "compare"],
-          "A fair experiment fixes the workload and validation first, then starts a known worker set. Joining establishes completion and ownership cleanup before measurements are compared with another run."
+          "A fair experiment fixes the workload and validation first, then starts a known set of workers. Joining confirms that every worker has completed and cleaned up before measurements are compared with another run."
         ),
         single(
           "threads-review-evidence",
@@ -280,7 +280,7 @@
           "memory",
           "mechanism",
           "virtual address translation",
-          "A valid virtual page is not currently resident in a physical frame. What must happen before the instruction can use its byte?",
+          "A valid virtual page is not currently resident in a physical frame. What must happen before the instruction can access a byte on that page?",
           [
             "The processor raises a page fault and Windows resolves the mapping or reports an access failure.",
             "The virtual address permanently changes to a physical address visible to the program.",
@@ -288,7 +288,7 @@
             "The scheduler assigns the address to whichever process runs next."
           ],
           0,
-          "The memory-management unit detects that translation cannot complete with a present mapping and raises a fault. Windows may bring data into a frame, create a demand-zero page, or reject the access according to the region state and protection."
+          "The memory-management unit detects that the current mapping is not present and raises a fault. Windows may bring data into a frame, create a demand-zero page, or reject the access according to the region's state and protection."
         ),
         single(
           "memory-review-interface",
@@ -297,7 +297,7 @@
           "VirtualAlloc contract",
           "A lab needs a large address range now but will use only one small portion initially. Which allocation model expresses that intent?",
           [
-            "Reserve the range, then commit only the pages that need backing as they become required.",
+            "Reserve the range, then commit only the pages that need backing as they are required.",
             "Commit every possible page and assume unused commit has no system cost.",
             "Use MEM_RELEASE on the unallocated address before reserving it.",
             "Treat a Python object ID as a stable address for the entire virtual range."
@@ -334,7 +334,7 @@
             { id: "protect", label: "Change protection for the intended pages and retain the previous protection value" }
           ],
           ["allocate", "protect", "observe", "free"],
-          "Allocation establishes the owned base, protection changes operate on that live range, and observation verifies the state transition. Cleanup must use the original base and the release contract rather than an interior address."
+          "Allocation establishes the original base address, protection changes operate on that live range, and observation verifies the state transition. Cleanup must use that original base and follow the release contract rather than using an interior address."
         ),
         single(
           "memory-review-evidence",
@@ -378,7 +378,7 @@
           "linking-loading",
           "interface",
           "export address calling",
-          "GetProcAddress returns a non-null raw function address for an owned test DLL. What is still required before Python can call it safely?",
+          "GetProcAddress returns a non-null raw function address for a test DLL you control. What is still required before Python can call it safely?",
           [
             "Construct a callable with the documented calling convention, parameter types, and exact result type.",
             "Convert the address to a 32-bit signed integer on every Windows architecture.",
@@ -393,12 +393,12 @@
           "linking-loading",
           "failure",
           "DLL load diagnosis",
-          "An owned DLL fails to load in the lab. Which facts should be checked before changing search paths or copying files into system directories?",
+          "A DLL supplied by the lab fails to load. Which facts should be checked before changing search paths or copying files into system directories?",
           [
             "Caller and DLL architecture compatibility",
             "Dependent-module availability and the documented search context",
             "The exact load result and extended error captured immediately",
-            "Whether the export name is spelled correctly, even though no module loaded yet",
+            "Whether the export name is spelled correctly, even though no module has loaded yet",
             "Whether disabling signature verification makes every dependency compatible"
           ],
           [0, 1, 2],
@@ -409,15 +409,15 @@
           "linking-loading",
           "ownership",
           "module lifetime",
-          "Order the explicit-load lifecycle when calling one documented export from an owned test DLL.",
+          "Order the explicit-load lifecycle for calling one documented export from a test DLL you control.",
           [
-            { id: "unload", label: "Release the owned module reference after no callable or address can be used again" },
+            { id: "unload", label: "Release the caller's module reference after the program can no longer use the callable or its address" },
             { id: "resolve", label: "Resolve the exact export and reject the documented missing-address result" },
             { id: "load", label: "Load the intended DLL through a controlled path and retain the module handle" },
             { id: "invoke", label: "Construct the correctly typed callable, invoke it, and check its own result contract" }
           ],
           ["load", "resolve", "invoke", "unload"],
-          "The module must be loaded before its export is resolved and must stay loaded through every use of that address. Only after the callable is no longer reachable is releasing the owned module reference safe."
+          "The module must be loaded before its export is resolved and must stay loaded through every use of that address. Releasing the caller's module reference is safe only after the callable and address can no longer be used."
         ),
         single(
           "linking-review-evidence",
@@ -454,7 +454,7 @@
             "A pending state is only a Registry value and never affects runtime behavior."
           ],
           0,
-          "Service controls initiate transitions. A pending state exposes work still in progress, often with a checkpoint and wait hint, so the controller must poll or wait with a bound and handle failure or timeout branches."
+          "Service controls initiate transitions. A pending state exposes work still in progress, often with a checkpoint and wait hint, so the controller must poll for a bounded period and handle failures and timeouts separately."
         ),
         single(
           "management-review-interface",
@@ -469,14 +469,14 @@
             "Use a hard-coded filesystem path under System32 instead of the Registry API."
           ],
           0,
-          "The WOW64 view flag is combined with the minimum base right, such as query access, at open time. This avoids depending on interpreter architecture and makes the selected logical view reviewable."
+          "The WOW64 view flag is combined with the minimum base right, such as query access, at open time. This avoids depending on the interpreter architecture and makes the selected Registry view explicit and reviewable."
         ),
         multiple(
           "management-review-control-failure",
           "management",
           "failure",
           "service-control diagnosis",
-          "A disposable lab service does not reach the requested stopped state. Which branches should a controller report distinctly?",
+          "A disposable lab service does not reach the requested stopped state. Which conditions should a controller report separately?",
           [
             "Opening the SCM or service failed because the requested access was not granted.",
             "The service does not accept the requested control in its current state.",
@@ -492,7 +492,7 @@
           "management",
           "ownership",
           "SCM handle ownership",
-          "Order one clear reverse-acquisition implementation of a read-only service query; the final cleanup step closes both independent handles.",
+          "Put the steps for a read-only service query in order. The final cleanup step should close both independent handles in reverse acquisition order.",
           [
             { id: "open-service", label: "Open the named service with query-status access and retain that handle" },
             { id: "query", label: "Query status, interpret state and checkpoint fields, and preserve any primary error" },
@@ -559,7 +559,7 @@
           "security",
           "failure",
           "privilege adjustment",
-          "AdjustTokenPrivileges returns a success-shaped result. Which checks are still required to know whether the requested privilege became enabled?",
+          "AdjustTokenPrivileges returns a value that normally indicates success. Which checks are still required to determine whether the requested privilege was actually enabled?",
           [
             "Clear and inspect last error according to the API contract, including ERROR_NOT_ALL_ASSIGNED.",
             "Confirm the token actually contains the requested privilege LUID.",
@@ -578,7 +578,7 @@
           "Order a read-only token investigation that preserves evidence and closes every owned handle.",
           [
             { id: "close", label: "Close the owned token and process handles in reverse acquisition order" },
-            { id: "process", label: "Identify and open the owned target process with the minimum query right" },
+            { id: "process", label: "Identify and open the target process you started with the minimum query right" },
             { id: "interpret", label: "Interpret groups, privilege attributes, integrity, and elevation without changing them" },
             { id: "token", label: "Open the process token with query access and request the needed information classes" }
           ],
@@ -612,7 +612,7 @@
           "synchronisation",
           "mechanism",
           "race interleaving",
-          "Two threads each execute read-counter, add one, write-counter without synchronization. Why can one increment disappear?",
+          "Two threads each read a counter, add one, and write the result without synchronization. Why can one increment disappear?",
           [
             "Both threads can read the same old value before either write, then each writes the same incremented value.",
             "Windows guarantees arithmetic produces a random result when two threads exist.",
@@ -635,7 +635,7 @@
             "A busy loop reading the queue length without a lock"
           ],
           0,
-          "A semaphore represents a bounded or accumulating count and releases one waiter per acquired unit. An event represents a condition rather than an item count, and busy polling does not protect the queue operation."
+          "A semaphore represents a bounded or accumulating count and allows one waiter to proceed for each available unit. An event represents a condition rather than an item count, and busy polling does not protect the queue operation."
         ),
         multiple(
           "sync-review-wait-result",
@@ -651,7 +651,7 @@
             "Erase the result and continue so the user never sees a warning."
           ],
           [0, 1, 2],
-          "An abandoned mutex is a distinct success-with-warning branch: the waiter owns the mutex, but the previous owner ended without releasing it. Code must inspect protected state and still release the acquired mutex."
+          "An abandoned result means the wait succeeded but included a warning: the waiter now owns the mutex, but the previous owner ended without releasing it. The code must inspect the protected state and still release the acquired mutex."
         ),
         ordering(
           "sync-review-critical-section",
@@ -660,22 +660,22 @@
           "mutex ownership",
           "Order one protected read-modify-write operation with a native mutex and complete result handling.",
           [
-            { id: "release", label: "Release the mutex in a finally path only when this thread acquired ownership" },
-            { id: "wait", label: "Wait with a bounded policy and branch on object, abandoned, timeout, and failure results" },
+            { id: "release", label: "Release the mutex in a finally block only when this thread acquired ownership" },
+            { id: "wait", label: "Wait with a bounded timeout and handle object, abandoned, timeout, and failure results separately" },
             { id: "update", label: "Validate the invariant, perform the complete read-modify-write, and record the new state" },
             { id: "open", label: "Create or open the intended mutex with the required synchronization rights" }
           ],
           ["open", "wait", "update", "release"],
-          "The handle identifies the intended object, the wait result determines whether ownership exists, and the entire invariant-changing operation occurs while owned. Cleanup releases only ownership actually acquired."
+          "The handle identifies the intended object, and the wait result determines whether the thread acquired ownership. The thread performs the entire invariant-changing operation while it owns the mutex, and cleanup releases only ownership that was actually acquired."
         ),
         single(
           "sync-review-evidence",
           "synchronisation",
           "evidence",
           "named-object evidence",
-          "How can you confirm that two owned processes opened the same named event rather than separate unnamed events?",
+          "How can you confirm that two processes you started opened the same named event rather than separate unnamed events?",
           [
-            "WinObj or Process Explorer shows matching event object names/handles while the processes coordinate the same signal.",
+            "WinObj or Process Explorer shows matching event names or handle entries while the processes coordinate through the same signal.",
             "Both executables happen to be stored in the same directory.",
             "The processes use similar variable names in their Python source.",
             "RAMMap reports that both processes have private memory."
@@ -710,9 +710,9 @@
           "ipc",
           "interface",
           "pipe selection",
-          "A parent only needs to capture one child process's standard output. Which initial IPC design has the smallest necessary namespace and exposure?",
+          "A parent only needs to capture one child process's standard output. Which initial IPC design requires the least naming and exposure?",
           [
-            "An anonymous pipe with controlled inheritable child end and prompt closure of unused ends",
+            "An anonymous pipe with controlled inheritance of the child's write end and prompt closure of unused ends",
             "A globally named message pipe accessible to every logged-on user",
             "A shared file opened with delete access by both processes",
             "A network socket listening on every interface"
@@ -734,7 +734,7 @@
             "Decode each fragment independently even when a multibyte character may span fragments."
           ],
           [0, 1, 2],
-          "ERROR_MORE_DATA is a partial-result branch in message mode. The caller keeps the fragment, continues within a size bound, and decodes after assembling the complete byte message while preserving distinct closure and failure branches."
+          "In message mode, ERROR_MORE_DATA reports an expected partial result. The caller keeps the fragment, continues reading within a size limit, and decodes only after assembling the complete byte message, while distinguishing peer closure from other failures."
         ),
         ordering(
           "ipc-review-inheritance",
@@ -743,7 +743,7 @@
           "pipe endpoint inheritance",
           "Order the parent-side setup for redirecting a child's standard output without keeping EOF artificially open.",
           [
-            { id: "read", label: "Read until data completes and EOF arrives, then wait and close remaining owned handles" },
+            { id: "read", label: "Read until all data has been consumed and EOF arrives, then wait and close the remaining caller-owned handles" },
             { id: "create-child", label: "Create the child with explicit handle inheritance and redirected standard output" },
             { id: "pipe", label: "Create the pipe and make only the intended child write endpoint inheritable" },
             { id: "close-parent-write", label: "Close the parent's unused write copy immediately after successful child creation" }
@@ -771,7 +771,7 @@
     {
       module: "hooking-injection",
       title: "Hooking and injection review",
-      summary: "Use controlled lifecycle and detection reasoning to understand address spaces, hook chains, module baselines, and cleanup without operational payloads.",
+      summary: "Use controlled lifecycle and detection reasoning to understand address spaces, hook chains, module baselines, and cleanup without creating operational attack payloads.",
       activities: [
         single(
           "hooking-review-address-context",
@@ -793,7 +793,7 @@
           "hooking-injection",
           "interface",
           "defensive inspection choice",
-          "You need to compare memory-region state in an owned target without modifying it. Which API direction best matches that diagnostic outcome?",
+          "You need to compare memory-region state in a target process you started without modifying it. Which API approach best matches that diagnostic goal?",
           [
             "Open with minimum query rights and enumerate regions with VirtualQueryEx-style metadata calls.",
             "Allocate writable executable memory and start a remote thread before reading anything.",
@@ -808,7 +808,7 @@
           "hooking-injection",
           "failure",
           "baseline mismatch diagnosis",
-          "A module-baseline comparison reports an unexpected DLL in an owned process. Which checks are needed before calling it malicious or injected?",
+          "A module-baseline comparison reports an unexpected DLL in a process you started. Which checks are needed before calling it malicious or injected?",
           [
             "Confirm PID, creation time, architecture, path, signer, and the time each snapshot was taken.",
             "Correlate image-load events and determine whether normal application behavior loaded the module.",
@@ -824,11 +824,11 @@
           "hooking-injection",
           "ownership",
           "controlled observer lifecycle",
-          "Order a defensive module-baseline investigation for a purpose-built process you own.",
+          "Order a defensive module-baseline investigation for a purpose-built test process.",
           [
             { id: "cleanup", label: "Close snapshot/process handles, stop capture, and remove only artifacts created by the lab" },
             { id: "baseline", label: "Record process identity, architecture, module paths, signers, and capture start time" },
-            { id: "compare", label: "Trigger the owned feature, collect a second snapshot, and compare additions and removals" },
+            { id: "compare", label: "Trigger the controlled feature, collect a second snapshot, and compare additions and removals" },
             { id: "correlate", label: "Correlate changed modules with Process Monitor image-load events and Process Explorer state" }
           ],
           ["baseline", "compare", "correlate", "cleanup"],
@@ -854,44 +854,44 @@
   ];
 
   const finalQuestions = [
-    single("final-foundations-contract", "foundations", "interface", "API contract", "A BOOL-returning API documents zero as failure and says to call GetLastError. What must the Python wrapper do first?", ["Set exact argtypes/restype, call once, test zero, then capture last error immediately", "Treat every non-null Python object as success", "Call GetLastError before the API and ignore its return", "Use a 64-bit pointer as the BOOL result"], 0, "The declaration and API-specific sentinel control interpretation. Exact types prevent ABI corruption, and last error is captured only after the documented failure because another Windows call can replace it."),
+    single("final-foundations-contract", "foundations", "interface", "API contract", "A BOOL-returning API documents zero as failure and says to call GetLastError. Which sequence must the Python wrapper follow?", ["Set exact argtypes/restype, call once, test zero, then capture last error immediately", "Treat every non-null Python object as success", "Call GetLastError before the API and ignore its return", "Use a 64-bit pointer as the BOOL result"], 0, "The declaration and API-specific sentinel control interpretation. Exact types prevent ABI corruption, and last error is captured only after the documented failure because another Windows call can replace it."),
     multiple("final-foundations-research", "foundations", "evidence", "research method", "Which records make an unfamiliar Windows API experiment reproducible?", ["The native signature, DLL, parameter directions, result and cleanup contracts", "The Python declarations and owned input/output objects", "The controlled input, exact result/error, and matching system evidence", "Only a screenshot of successful output", "A guess based on a similarly named function"], [0, 1, 2], "Reproducibility connects the authoritative contract to an exact Python declaration, controlled inputs, observed outputs, and external evidence. A screenshot or name resemblance omits the causal and ownership details."),
 
-    single("final-processes-handle", "processes-handles", "ownership", "handle ownership", "A function returns a process handle and PID. Which value participates in wait and cleanup ownership?", ["The handle is waitable and caller-owned; the PID is an identifier", "The PID is closed with CloseHandle and the handle is printed only", "Both values are freed with VirtualFree", "Neither has lifetime because process objects are not kernel objects"], 0, "The handle is a reference to the process object with granted rights and wait semantics, so the caller closes it. The PID identifies a process lifetime but is not itself an owned handle."),
-    single("final-processes-identity", "processes-handles", "debugging", "PID reuse diagnosis", "A stored PID now refers to a different process. Which missing evidence would have prevented the mistaken identity?", ["Creation time and a retained handle or other lifetime-bound identity evidence", "The executable's desktop shortcut color", "The system page size", "The number of Registry hives"], 0, "PIDs are reusable identifiers. Creation time, parent/command line, and especially a retained handle tied to the original object distinguish one process lifetime from another later process using the same number."),
+    single("final-processes-handle", "processes-handles", "ownership", "handle ownership", "A function returns a process handle and a PID. Which value must the caller use for waiting and later close?", ["The handle is waitable and caller-owned; the PID is an identifier", "The PID is closed with CloseHandle and the handle is printed only", "Both values are freed with VirtualFree", "Neither has lifetime because process objects are not kernel objects"], 0, "The handle is a reference to the process object with granted rights and wait semantics, so the caller closes it. The PID identifies a process lifetime but is not itself a handle that the caller owns."),
+    single("final-processes-identity", "processes-handles", "debugging", "PID reuse diagnosis", "A stored PID now refers to a different process. Which missing evidence would have prevented the mistaken identity?", ["Creation time and a retained handle or other lifetime-bound identity evidence", "The executable's desktop shortcut color", "The system page size", "The number of Registry hives"], 0, "PIDs are reusable identifiers. Creation time, parent PID, command line, and especially a retained handle tied to the original object distinguish one process lifetime from another process that later uses the same number."),
 
-    single("final-threads-choice", "threads-scheduling", "mechanism", "CPU versus I/O concurrency", "Why may Python threads help an I/O-bound workload but not speed CPU-bound bytecode proportionally?", ["I/O waits can overlap, while interpreter serialization and scheduling overhead limit CPU-bound parallelism", "Windows schedules files instead of threads", "CPU-bound work never uses instructions", "I/O-bound threads do not have stacks"], 0, "Waiting workers can release execution so other work proceeds, but CPU-bound Python bytecode can remain serialized and accrue coordination costs. The result must be measured with the same workload and output checks."),
-    multiple("final-threads-measure", "threads-scheduling", "evidence", "thread performance evidence", "Which observations support a fair comparison of two worker counts?", ["Identical input and verified output", "Elapsed time across repeated runs", "Per-thread CPU time/states and process CPU use", "Different partition sizes chosen after seeing results", "Changing process priority between runs"], [0, 1, 2], "A fair comparison controls input and correctness, repeats elapsed measurements, and collects thread/process evidence. Changing partition or priority introduces a confounding variable rather than explaining worker-count effects."),
+    single("final-threads-choice", "threads-scheduling", "mechanism", "CPU versus I/O concurrency", "Why may Python threads help an I/O-bound workload but not speed CPU-bound bytecode proportionally?", ["I/O waits can overlap, while interpreter serialization and scheduling overhead limit CPU-bound parallelism", "Windows schedules files instead of threads", "CPU-bound work never uses instructions", "I/O-bound threads do not have stacks"], 0, "Waiting workers can release execution so other work proceeds, but CPU-bound Python bytecode can remain serialized and incur coordination costs. The result must be measured with the same workload and output checks."),
+    multiple("final-threads-measure", "threads-scheduling", "evidence", "thread performance evidence", "Which observations support a fair comparison of two worker counts?", ["Identical input and verified output", "Elapsed time across repeated runs", "Per-thread CPU time and states, plus process CPU use", "Different partition sizes chosen after seeing results", "Changing process priority between runs"], [0, 1, 2], "A fair comparison controls input and correctness, repeats elapsed measurements, and collects evidence about both the threads and the process. Changing partition or priority introduces a confounding variable rather than explaining worker-count effects."),
 
     single("final-memory-region", "memory", "interface", "memory region query", "Which returned field should advance a VirtualQueryEx region walk?", ["BaseAddress plus RegionSize with pointer-sized overflow/progress checks", "AllocationProtect alone", "A fixed one-byte increment", "The process ID multiplied by page size"], 0, "VirtualQueryEx describes a contiguous region with shared attributes. Advancing to BaseAddress plus RegionSize reaches the next boundary, provided pointer-sized arithmetic detects wraparound and non-progress."),
     multiple("final-memory-cleanup", "memory", "ownership", "allocation cleanup", "Which facts are required to release a VirtualAlloc allocation correctly?", ["Retain the original allocation base", "Use the release mode and size rule documented for VirtualFree", "Ensure no code still uses pointers into the released range", "Pass any interior committed-page address with an arbitrary size", "Close the address with CloseHandle"], [0, 1, 2], "Virtual memory is not a handle. Correct release uses the allocation base and the API's release contract, after all users of the range have stopped. Interior addresses and handle cleanup express different ownership models."),
 
-    single("final-linking-rva", "linking-loading", "mechanism", "PE mapping", "An import-table RVA is 0x2500 inside a section whose virtual address is 0x2000 and raw offset is 0x800. What raw offset follows the usual section translation?", ["0xD00", "0x2D00", "0x1D00", "0xA00"], 0, "The offset within the section is 0x2500 minus 0x2000, which is 0x500. Adding the section raw offset 0x800 gives 0xD00, subject to file-bound validation."),
+    single("final-linking-rva", "linking-loading", "mechanism", "PE mapping", "An import-table RVA is 0x2500 inside a section whose virtual address is 0x2000 and raw offset is 0x800. What raw offset follows the usual section translation?", ["0xD00", "0x2D00", "0x1D00", "0xA00"], 0, "The offset within the section is 0x2500 minus 0x2000, which is 0x500. Adding the section's raw offset of 0x800 gives 0xD00, subject to file-bounds validation."),
     multiple("final-linking-call", "linking-loading", "failure", "export call safety", "Before calling a raw export address, which contracts must match?", ["Module remains loaded", "Architecture and pointer width", "Calling convention, parameters, and result type", "The address resembles one from another process", "The export filename extension matches Python"], [0, 1, 2], "The address is usable only while its module remains mapped and when Python constructs the exact ABI for the current architecture. Numeric resemblance in another process or a filename convention supplies none of those guarantees."),
 
-    single("final-management-pending", "management", "failure", "service pending state", "A service checkpoint advances while START_PENDING remains reported. What is the best next action?", ["Continue a bounded wait guided by current state/checkpoint rather than declaring success", "Rewrite service state directly in the Registry", "Close Windows because every pending state is a deadlock", "Send every control code simultaneously"], 0, "Advancing checkpoint evidence suggests ongoing transition work, not a stable running state. A controller continues bounded observation using status fields and reports timeout or terminal failure distinctly."),
-    multiple("final-management-reversible", "management", "ownership", "reversible configuration", "Which steps make a Registry mutation lab reversible?", ["Record whether the key/value existed and its original type/data", "Change only an exact disposable path with minimum access", "Restore or delete only what the lab changed and verify the final state", "Export the entire Registry and delete broad parent keys", "Leave test values because cleanup cannot be verified"], [0, 1, 2], "Reversibility requires a precise before-state, narrow mutation, and verified restoration that distinguishes an originally absent value from one with typed data. Broad deletion creates unrelated risk rather than reliable cleanup."),
+    single("final-management-pending", "management", "failure", "service pending state", "A service checkpoint advances while START_PENDING remains reported. What is the best next action?", ["Continue a bounded wait guided by the current state and checkpoint rather than declaring success", "Rewrite service state directly in the Registry", "Close Windows because every pending state is a deadlock", "Send every control code simultaneously"], 0, "An advancing checkpoint suggests that transition work is still in progress, not that the service has reached a stable running state. A controller continues bounded observation using the status fields and reports a timeout or terminal failure separately."),
+    multiple("final-management-reversible", "management", "ownership", "reversible configuration", "Which steps make a Registry mutation lab reversible?", ["Record whether the key or value existed and preserve its original type and data", "Change only an exact disposable path with minimum access", "Restore or delete only what the lab changed and verify the final state", "Export the entire Registry and delete broad parent keys", "Leave test values because cleanup cannot be verified"], [0, 1, 2], "Reversibility requires a precise record of the previous state, a narrow mutation, and verified restoration that distinguishes an originally absent value from one that contained typed data. Broad deletion creates unrelated risk rather than reliable cleanup."),
 
-    single("final-security-denied", "security", "mechanism", "authorization decision", "Why can two processes running as the same user receive different access results?", ["Their effective tokens, integrity, privileges, requested masks, or target contexts can differ", "A username alone permanently determines every Windows access decision", "DACLs are ignored when a process has a PID", "Access results depend only on CPU clock speed"], 0, "Authorization uses the effective security context and exact requested action against object and mandatory policy. Group attributes, privileges, integrity, impersonation, protection, and request masks can differ despite the same account name."),
-    multiple("final-security-privilege", "security", "debugging", "privilege failure", "Which observations prove a requested privilege adjustment did not fully succeed?", ["ERROR_NOT_ALL_ASSIGNED after the documented success-shaped call", "The privilege is absent from the token", "A re-query shows the privilege not enabled", "The process name contains lowercase letters", "The target file is on an SSD"], [0, 1, 2], "The API's special last-error branch, privilege presence, and resulting attributes directly address the adjustment. Process naming and storage hardware are unrelated to whether the token held and enabled that privilege."),
+    single("final-security-denied", "security", "mechanism", "authorization decision", "Why can two processes running as the same user receive different access results?", ["Their effective tokens, integrity levels, privileges, requested masks, or target contexts can differ", "A username alone permanently determines every Windows access decision", "DACLs are ignored when a process has a PID", "Access results depend only on CPU clock speed"], 0, "Authorization compares the effective security context and exact requested action with the object's access policy and mandatory integrity policy. Group attributes, privileges, integrity, impersonation, protection, and request masks can differ despite the same account name."),
+    multiple("final-security-privilege", "security", "debugging", "privilege failure", "Which observations prove that a requested privilege adjustment did not fully succeed?", ["ERROR_NOT_ALL_ASSIGNED after the call returned its documented success value", "The privilege is absent from the token", "A new query shows that the privilege is not enabled", "The process name contains lowercase letters", "The target file is on an SSD"], [0, 1, 2], "The API's special last-error condition, the presence of the privilege, and its resulting attributes directly address the adjustment. Process naming and storage hardware are unrelated to whether the token contained and enabled that privilege."),
 
-    single("final-sync-abandoned", "synchronisation", "failure", "abandoned mutex", "What does WAIT_ABANDONED mean for the calling thread?", ["It acquired mutex ownership, but protected state may be inconsistent because the prior owner ended", "It timed out without ownership", "The mutex handle was automatically closed", "Every waiting thread now owns the mutex"], 0, "Abandoned is a distinct acquired-ownership branch. The caller must validate protected invariants and release the mutex in cleanup; treating it as timeout would leak ownership and hide possible corruption."),
-    ordering("final-sync-order", "synchronisation", "ownership", "synchronized update", "Order the essential steps for a bounded mutex-protected update.", [{ id: "release", label: "Release the mutex only when this thread acquired ownership" }, { id: "update", label: "Validate the invariant and update all protected state" }, { id: "wait", label: "Wait with a bound and branch on the exact result" }, { id: "open", label: "Open the intended mutex with synchronization access" }], ["open", "wait", "update", "release"], "Object identity comes first, then the wait result establishes whether ownership exists. Only an owning branch touches protected state, and guaranteed cleanup releases exactly that acquired ownership."),
+    single("final-sync-abandoned", "synchronisation", "failure", "abandoned mutex", "What does WAIT_ABANDONED mean for the calling thread?", ["It acquired mutex ownership, but protected state may be inconsistent because the prior owner ended", "It timed out without ownership", "The mutex handle was automatically closed", "Every waiting thread now owns the mutex"], 0, "WAIT_ABANDONED means that the caller acquired ownership with a warning. The caller must validate the protected invariants and release the mutex during cleanup; treating the result as a timeout would leak ownership and hide possible corruption."),
+    ordering("final-sync-order", "synchronisation", "ownership", "synchronized update", "Order the essential steps for a bounded mutex-protected update.", [{ id: "release", label: "Release the mutex only when this thread acquired ownership" }, { id: "update", label: "Validate the invariant and update all protected state" }, { id: "wait", label: "Wait with a bounded timeout and handle the exact result" }, { id: "open", label: "Open the intended mutex with synchronization access" }], ["open", "wait", "update", "release"], "Object identity comes first, and then the wait result establishes whether ownership was acquired. Only code that acquired ownership may touch the protected state, and guaranteed cleanup releases exactly that ownership."),
 
     single("final-ipc-eof", "ipc", "ownership", "pipe endpoint lifetime", "A child exits but the parent still never sees EOF on redirected output. Which handle should be investigated first?", ["An unused write-end copy retained or inherited by the parent or another process", "The parent's read handle because readers generate EOF", "The process ID because it must be closed", "A Registry key under the pipe name"], 0, "EOF appears only after all write endpoints close and buffered data is consumed. A forgotten or inherited write copy keeps the stream logically open even after the intended child writer exits."),
-    multiple("final-ipc-message", "ipc", "failure", "message framing", "Which rules prevent corrupt decoding of a partial message-mode pipe response?", ["Accumulate fragments until the complete message branch", "Enforce a maximum total size", "Decode after complete byte assembly using the agreed encoding", "Decode each fragment separately regardless of character boundaries", "Treat ERROR_MORE_DATA as zero bytes returned"], [0, 1, 2], "Message mode preserves boundaries but a buffer can still receive fragments. Bounded accumulation and decoding after complete assembly preserve both framing and multibyte character boundaries while retaining partial bytes."),
+    multiple("final-ipc-message", "ipc", "failure", "message framing", "Which rules prevent corrupt decoding of a partial message-mode pipe response?", ["Accumulate fragments until the protocol reports a complete message", "Enforce a maximum total size", "Decode only after assembling the complete byte sequence with the agreed encoding", "Decode each fragment separately regardless of character boundaries", "Treat ERROR_MORE_DATA as zero bytes returned"], [0, 1, 2], "Message mode preserves boundaries, but a buffer can still receive the message in fragments. Bounded accumulation and decoding after complete assembly preserve both framing and multibyte character boundaries without discarding partial bytes."),
 
-    single("final-hooking-observation", "hooking-injection", "evidence", "defensive load evidence", "What does an unexpected module in one owned-process snapshot establish by itself?", ["Only that the module was observed mapped at that time; cause and intent need correlated evidence", "That a remote-thread injection definitely occurred", "That the file is unsigned and malicious", "That the module was present before process creation"], 0, "A snapshot directly supports presence at one time. Establishing how, when, and why it loaded requires process identity, baselines, image-load traces, path/signature evidence, and controlled reproduction."),
-    multiple("final-hooking-compatibility", "hooking-injection", "interface", "cross-process compatibility", "Which facts must a defensive cross-process memory inspector establish before interpreting addresses and structures?", ["Caller and target architecture/pointer width", "The exact process identity and minimum query/read rights", "Structure ABI and valid target address ranges", "An address resolved in the caller must be valid remotely", "All processes use identical module bases"], [0, 1, 2], "Cross-process interpretation depends on target identity, access, architecture, and ABI. Address values and module bases are process-context facts, so the inspector validates them rather than transferring local assumptions."
+    single("final-hooking-observation", "hooking-injection", "evidence", "defensive load evidence", "What does an unexpected module in a snapshot of a process you started establish by itself?", ["Only that the module was observed mapped at that time; cause and intent need correlated evidence", "That a remote-thread injection definitely occurred", "That the file is unsigned and malicious", "That the module was present before process creation"], 0, "A snapshot directly supports presence at one point in time. Establishing how, when, and why the module loaded requires process identity, baselines, image-load traces, path and signature evidence, and controlled reproduction."),
+    multiple("final-hooking-compatibility", "hooking-injection", "interface", "cross-process compatibility", "Which facts must a defensive cross-process memory inspector establish before interpreting addresses and structures?", ["The architectures and pointer widths of the caller and target", "The exact process identity and minimum query and read rights", "The structure ABI and valid target address ranges", "An address resolved in the caller must be valid remotely", "All processes use identical module bases"], [0, 1, 2], "Cross-process interpretation depends on target identity, access, architecture, and ABI. Address values and module bases belong to a particular process context, so the inspector validates them rather than transferring assumptions from the local process."
     )
   ];
 
   const practical = {
     id: "final-owned-target-investigation",
-    title: "Final practical: explain a failed owned-target inspection",
+    title: "Final practical: explain a failed inspection of a controlled target",
     scenario: "You maintain a read-only diagnostic Python utility for a purpose-built 64-bit lab process that you own. It opens the process with PROCESS_QUERY_INFORMATION and walks region metadata with VirtualQueryEx. Separately, it calls CreateToolhelp32Snapshot with TH32CS_SNAPMODULE | TH32CS_SNAPMODULE32, initializes MODULEENTRY32.dwSize, and enumerates modules with Module32First and Module32Next. The 64-bit utility succeeds. The same source launched by 32-bit Python still opens the target for region queries, but its 32-to-64 module snapshot returns INVALID_HANDLE_VALUE with ERROR_PARTIAL_COPY instead of returning a malformed module structure. A deliberately over-broad process-open attempt also reports access denied. Design a controlled investigation and an architecture-compatible fallback without modifying target memory, starting remote execution, disabling protections, or testing unrelated processes.",
     prompts: [
-      { id: "contract", label: "Choose the contract", prompt: "Explain why VirtualQueryEx requires PROCESS_QUERY_INFORMATION, while Tool Help module enumeration uses a separately owned snapshot handle. State the zero and INVALID_HANDLE_VALUE sentinels, immediate error rules, and output structures." },
+      { id: "contract", label: "Choose the contract", prompt: "Explain why VirtualQueryEx requires PROCESS_QUERY_INFORMATION, while Tool Help module enumeration returns a separate snapshot handle that the caller owns. State the zero and INVALID_HANDLE_VALUE sentinels, immediate error rules, and output structures." },
       { id: "compatibility", label: "Check compatibility", prompt: "Explain how you will establish caller and target architecture, pointer width, structure layout, and which address values belong to which process context before interpreting results." },
       { id: "outcomes", label: "Predict branches", prompt: "Predict successful region queries, zero-return termination or failure, access denied, target exit, Module32First or Module32Next completion, and the documented ERROR_PARTIAL_COPY branch for a 32-bit module snapshot of a 64-bit target." },
       { id: "evidence", label: "Correlate evidence", prompt: "Choose only tools and views that answer the question, then list the PID, times, paths, regions, result codes, and tool observations that connect internal output to Windows state." },
@@ -899,7 +899,7 @@
       { id: "cleanup", label: "Plan cleanup", prompt: "Give the cleanup order for every branch and explain how the utility preserves its primary Windows result or error while later cleanup calls run and may alter thread-local error state." }
     ],
     evidenceExpectations: [
-      "Process identity includes PID, creation time, path, architecture, and the exact owned lab target.",
+      "Process identity includes the PID, creation time, path, and architecture, tying the evidence to the exact lab target you created.",
       "Memory evidence distinguishes base address, region size, state, protection, type, and a bounded termination condition.",
       "Module evidence records full path and load presence and is correlated with image-load events rather than inferred from names alone.",
       "Failure evidence preserves the exact requested access, documented sentinel, immediate error code, and whether the target remained alive.",
@@ -907,11 +907,11 @@
     ],
     modelReasoning: [
       { id: "model-outcome", title: "Start from the outcome", body: "The task is read-only identity, region, and module inspection, so mutation, allocation, writing, hook installation, and remote-thread rights are outside the contract." },
-      { id: "model-rights", title: "Request minimum rights", body: "Open only the owned target with PROCESS_QUERY_INFORMATION for VirtualQueryEx. Tool Help creates a separate snapshot handle rather than consuming process-handle rights. Report the over-broad denial as expected policy evidence rather than escalating automatically." },
+      { id: "model-rights", title: "Request minimum rights", body: "Open only the lab target with PROCESS_QUERY_INFORMATION for VirtualQueryEx. Tool Help creates a separate snapshot handle rather than consuming process-handle rights. Report the over-broad denial as expected policy evidence rather than escalating automatically." },
       { id: "model-abi", title: "Treat ABI as evidence", body: "Record both architectures, declare MEMORY_BASIC_INFORMATION and MODULEENTRY32 with pointer-sized fields, and initialize MODULEENTRY32.dwSize. A 32-bit caller must not reinterpret a failed 64-bit module snapshot as a malformed returned structure." },
       { id: "model-results", title: "Branch on documented results", body: "VirtualQueryEx returns zero on failure or termination and exposes extended error according to its contract. CreateToolhelp32Snapshot returns INVALID_HANDLE_VALUE; 32-to-64 module enumeration reports ERROR_PARTIAL_COPY, so rerun that module phase with an architecture-compatible 64-bit observer." },
-      { id: "model-tools", title: "Correlate precise views", body: "Use Process Explorer for live identity, architecture, handles, regions/modules where available, and Process Monitor for time-ordered process and image-load evidence. Add VMMap only when its region classifications answer a memory question." },
-      { id: "model-ownership", title: "Close what you own", body: "Retain and close the real process handle and every successful Tool Help snapshot handle exactly once. INVALID_HANDLE_VALUE is a failure sentinel, not an owned snapshot. Allow Python-managed buffers to expire only after their calls complete." },
+      { id: "model-tools", title: "Correlate precise views", body: "Use Process Explorer for live identity, architecture, handles, regions, and modules where available. Use Process Monitor for time-ordered process and image-load evidence. Add VMMap only when its region classifications answer a memory question." },
+      { id: "model-ownership", title: "Close what you own", body: "Retain and close the real process handle and every successful Tool Help snapshot handle exactly once. INVALID_HANDLE_VALUE is a failure sentinel, not a snapshot that the caller owns. Release Python-managed buffers only after their calls have completed." },
       { id: "model-error", title: "Preserve the primary failure", body: "Store the operation's result and error before cleanup, run cleanup in reverse ownership order, then report the stored failure together with cleanup failures without replacing the original cause." }
     ]
   };

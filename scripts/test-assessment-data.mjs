@@ -106,7 +106,7 @@ if (assessments) {
   requireCondition(new Set((practical?.modelReasoning || []).map((item) => item.id)).size === practical?.modelReasoning?.length, "final practical repeats a model-reasoning ID");
   requireCondition(practical?.modelReasoning?.every((item) => item.title.length >= 8 && item.body.length >= 90), "final practical has a weak model-reasoning item");
   const safetyText = `${practical?.scenario || ""} ${(practical?.modelReasoning || []).map((item) => item.body).join(" ")}`.toLowerCase();
-  requireCondition(safetyText.includes("owned") && safetyText.includes("read-only"), "final practical does not establish owned, read-only scope");
+  requireCondition((safetyText.includes("owned") || safetyText.includes("you own")) && safetyText.includes("read-only"), "final practical does not establish learner-controlled, read-only scope");
   requireCondition(safetyText.includes("remote") && safetyText.includes("without modifying"), "final practical does not explicitly exclude mutation and remote execution");
 }
 

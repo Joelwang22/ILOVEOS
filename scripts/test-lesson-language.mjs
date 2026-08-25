@@ -37,7 +37,12 @@ const disallowedTemplates = [
   ["ambiguous 'most directly' question template", /\bmost directly\b/i],
   ["compressed non-execution wording", /\bwall time spent not executing\b/i],
   ["abstract 'difference permits' wording", /\bwhat does the difference\b.*\bpermit/i],
-  ["question fragment used as an action title", /^Need\b.*\?$/i]
+  ["question fragment used as an action title", /^Need\b.*\?$/i],
+  ["internal setup-failure label", /\bsetup-failure\b/i],
+  ["internal protected-invariant label", /\bprotected-invariant\b/i],
+  ["internal success-shaped label", /\bsuccess-shaped\b/i],
+  ["editorial showcase terminology", /\bshowcase\b/i],
+  ["unnatural owned-target terminology", /\bowned (?:notepad|powershell|director(?:y|ies)|path|csv|log|same-user)\b/i]
 ];
 
 const failures = [];
