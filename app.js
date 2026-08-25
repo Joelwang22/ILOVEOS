@@ -20,6 +20,7 @@
   const searchDialog = document.querySelector("#search-dialog");
   const searchInput = document.querySelector("#search-input");
   const searchResults = document.querySelector("#search-results");
+  const mobileDrawerBackground = [main, document.querySelector("#search-trigger"), document.querySelector(".settings-control")];
   const apiDialog = document.querySelector("#api-detail-dialog");
   const apiDetailContent = document.querySelector("#api-detail-content");
   let openWindowsApiFamilyId = "";
@@ -1113,9 +1114,14 @@ user = <span class="code-function">win32api.GetUserName</span>()
   }
 
   function updateActiveNav(root, referencePage = "") {
-    document.querySelectorAll(".nav-item").forEach((item) => item.classList.remove("active"));
+    document.querySelectorAll(".nav-item").forEach((item) => {
+      item.classList.remove("active");
+      item.removeAttribute("aria-current");
+    });
     const key = root === "reference" ? (referencePage === "windows-api" ? "windows-api" : "pywin32") : ["module", "review", "assessment"].includes(root) ? "home" : root || "home";
-    document.querySelector(`[data-route="${key}"]`)?.classList.add("active");
+    const activeItem = document.querySelector(`[data-route="${key}"]`);
+    activeItem?.classList.add("active");
+    activeItem?.setAttribute("aria-current", "page");
   }
 
   function escapeHtml(value) {
@@ -1367,16 +1373,33 @@ except pywintypes.error as error:
     });
   }
 
+  function isMobileSidebar() {
+    return window.matchMedia("(max-width: 780px)").matches;
+  }
+
+  function setMobileDrawerBackgroundInert(inert) {
+    mobileDrawerBackground.forEach((element) => {
+      element.inert = inert;
+    });
+  }
+
   function openSidebar() {
     sidebar.classList.add("open");
     scrim.classList.add("visible");
     menuButton.setAttribute("aria-expanded", "true");
+    if (!isMobileSidebar()) return;
+    setMobileDrawerBackgroundInert(true);
+    sidebar.tabIndex = -1;
+    sidebar.focus();
   }
 
-  function closeSidebar() {
+  function closeSidebar({ restoreFocus = false } = {}) {
+    const restoreMobileMenuFocus = restoreFocus && isMobileSidebar() && sidebar.classList.contains("open");
     sidebar.classList.remove("open");
     scrim.classList.remove("visible");
     menuButton.setAttribute("aria-expanded", "false");
+    setMobileDrawerBackgroundInert(false);
+    if (restoreMobileMenuFocus) menuButton.focus();
   }
 
   function setSidebarCollapsed(collapsed) {
@@ -1491,9 +1514,9 @@ except pywintypes.error as error:
     window.setTimeout(() => searchInput.focus(), 20);
   }
 
-  menuButton.addEventListener("click", () => sidebar.classList.contains("open") ? closeSidebar() : openSidebar());
+  menuButton.addEventListener("click", () => sidebar.classList.contains("open") ? closeSidebar({ restoreFocus: true }) : openSidebar());
   sidebarToggle.addEventListener("click", () => setSidebarCollapsed(!document.body.classList.contains("sidebar-collapsed")));
-  scrim.addEventListener("click", closeSidebar);
+  scrim.addEventListener("click", () => closeSidebar({ restoreFocus: true }));
   document.querySelector("#search-trigger").addEventListener("click", openSearch);
   document.querySelector("#search-close").addEventListener("click", () => searchDialog.close());
   settingsTrigger.addEventListener("click", () => setSettingsOpen(settingsPanel.hidden));
@@ -1565,6 +1588,11 @@ except pywintypes.error as error:
     if (family) renderWindowsApiDetails(family, tabs[nextIndex].dataset.apiVariant, true);
   });
   document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && sidebar.classList.contains("open") && isMobileSidebar()) {
+      event.preventDefault();
+      closeSidebar({ restoreFocus: true });
+      return;
+    }
     if (event.key === "Escape" && !settingsPanel.hidden) {
       setSettingsOpen(false);
       settingsTrigger.focus();
@@ -1577,6 +1605,9 @@ except pywintypes.error as error:
   });
   document.addEventListener("click", (event) => {
     if (!settingsPanel.hidden && !event.target.closest(".settings-control")) setSettingsOpen(false);
+  });
+  window.addEventListener("resize", () => {
+    if (!isMobileSidebar() && sidebar.classList.contains("open")) closeSidebar();
   });
   window.addEventListener("hashchange", route);
   try {
