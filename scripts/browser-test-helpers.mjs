@@ -125,6 +125,8 @@ export async function pressKey(client, key, modifiers = 0) {
 }
 
 export function filePage(hash = "#/") {
+  const publicBaseUrl = process.env.ILOVEOS_TEST_BASE_URL;
+  if (publicBaseUrl) return `${publicBaseUrl.replace(/#.*$/, "").replace(/\/?$/, "/")}${hash}`;
   return `${pathToFileURL(path.join(repositoryRoot, "index.html")).href}${hash}`;
 }
 

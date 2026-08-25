@@ -1,7 +1,22 @@
 {
-  "recordedAt": "2026-08-25T11:48:04+08:00",
+  "recordedAt": "2026-08-25T14:14:14+08:00",
   "host": { "platform": "Windows", "architecture": "x64", "cleanLab": false },
-  "verifiedEvidence": ["41 Python downloads compile under 64-bit CPython 3.14", "7 non-interactive automated-safe downloads passed under 64-bit CPython 3.14 with pywin32", "62 diagrams and 704 responsive route cases pass", "67-file Pages artifact inventory is exact"],
+  "verifiedEvidence": ["41 Python downloads compile under 64-bit CPython 3.14", "7 non-interactive automated-safe downloads passed under 64-bit CPython 3.14 with pywin32", "62 diagrams and 704 responsive route cases pass locally", "67-file Pages artifact inventory is exact", "GitHub Actions run 69 passed Linux validation, Windows validation, build, deploy, and public verification for commit 684e7cff73eebcf1a2145e0e3eb54648e2ac9664", "66 publicly retrievable files match the staged artifact byte-for-byte; .nojekyll remains an artifact-only Pages marker", "The deployed site passed 704 responsive route cases, dialog lifecycle, global keyboard navigation, and all 41 download checks"],
+  "release": {
+    "commit": "684e7cff73eebcf1a2145e0e3eb54648e2ac9664",
+    "workflowRun": "https://github.com/Joelwang22/ILOVEOS/actions/runs/32815828498",
+    "workflowStatus": "success",
+    "jobs": {
+      "validate-linux": "success",
+      "validate-windows": "success",
+      "build": "success",
+      "deploy": "success",
+      "verify-public": "success"
+    },
+    "pagesUrl": "https://joelwang22.github.io/ILOVEOS/",
+    "publicAssetVerification": "66 public files matched the exact 67-file artifact byte-for-byte; .nojekyll is present in the artifact and intentionally not exposed as a public URL",
+    "liveBrowserReview": "704 route/viewport/text-size combinations, dialog lifecycle, global keyboard navigation, and 41 download controls passed against the deployed Pages URL"
+  },
   "rows": {
     "access_check_lab.py": "passed automated-safe: disposable file access checks ran normally and cleanup completed",
     "cache_locality_lab.py": "passed automated-safe: 4 MiB sequential run completed",

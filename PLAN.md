@@ -720,7 +720,7 @@ Windows API family and contextual-parameter audit, 24 August 2026:
 
 ### Stage 8: Clean-machine validation and release quality
 
-Status: automated release quality completed locally on 25 August 2026; clean-lab operator validation and public deployment verification remain pending.
+Status: automated release quality and exact public deployment verification completed on 25 August 2026; clean-lab operator validation remains pending.
 
 - Run every relevant guided practice and downloadable artifact in a clean Windows lab environment with the intended Python architecture and permissions.
 - For each practice, record the stable expected outcome, machine-dependent values, expected non-success branches, observable Sysinternals evidence, and verified cleanup state.
@@ -739,8 +739,9 @@ Current audit record:
 - Search ranking, dialog lifecycle, keyboard navigation, content-size persistence/fallback, colour contrast, focus indicators, and all 41 downloadable controls pass their focused release tests. Download targets are at least 40 pixels and expose filename-aware accessible names.
 - The clean Pages artifact contains exactly 67 files: `index.html`, `.nojekyll`, 24 index-linked CSS/JavaScript assets, and all 41 Python downloads. Private plans, documentation, tests, and validation results are excluded.
 - The runtime manifest covers all 41 physical downloads and all 55 lesson references. Seven genuinely non-interactive `automated-safe` rows passed with 64-bit CPython 3.14 and pywin32. Pause-driven/Sysinternals, multi-terminal, controlled-target, optional HKCU write, 32-bit comparison, service, and token rows remain explicitly pending.
-- The GitHub Actions contract now provides validation-only pull requests, Ubuntu source-link validation, the complete Windows Edge/Python gate, gated `_site` deployment, scoped Pages permissions, and post-deploy byte verification. It has not yet been pushed and observed for this exact revision, so no live release is claimed.
-- Stage 8 remains pending until the operator-assisted clean Windows matrix and the exact commit's deployed/public verification are recorded. Automated evidence is not used as a substitute for unexecuted runtime or external-tool observations.
+- Commit `684e7cff73eebcf1a2145e0e3eb54648e2ac9664` passed Ubuntu source-link validation, the complete Windows Edge/Python gate, exact-artifact build, GitHub Pages deployment, and post-deploy verification in workflow run 69. All 66 public files matched the 67-file artifact byte-for-byte; `.nojekyll` remains an artifact-only marker.
+- The deployed Pages site passed a separate live-browser review covering 704 route/viewport/text-size combinations, dialog lifecycle, global keyboard navigation, and all 41 download controls.
+- Stage 8 remains pending only until the 32 operator-assisted and two authorised-lab-only rows are executed in a disposable Windows 11 lab with their required external-tool and cleanup evidence. Automated and deployed evidence is not used as a substitute for those unexecuted observations.
 
 ### Completion gate for each stage
 
