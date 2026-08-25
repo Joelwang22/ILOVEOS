@@ -17,6 +17,14 @@
     "publicAssetVerification": "66 public files matched the exact 67-file artifact byte-for-byte; .nojekyll is present in the artifact and intentionally not exposed as a public URL",
     "liveBrowserReview": "704 route/viewport/text-size combinations, dialog lifecycle, global keyboard navigation, and 41 download controls passed against the deployed Pages URL"
   },
+  "theoreticalAudit": {
+    "recordedAt": "2026-08-25",
+    "scope": "32 operator-assisted and 2 authorised-lab-only downloads",
+    "outcome": "No blocking Win32, pywin32, CPython, ownership, cleanup, or command-surface contradiction found; normal paths are expected to run as documented under the declared prerequisites.",
+    "supportingChecks": ["All 41 downloads compile", "32 argparse command surfaces pass --help", "7 pending read-only paths ran successfully without system mutation", "64-bit ctypes structure sizes match the documented ABI", "hard-coded service and process constants match installed pywin32 values"],
+    "report": "docs/stage-8-theoretical-validation.md",
+    "limitation": "Research and read-only probes do not replace clean-lab execution, external-tool observations, controlled non-success branches, or cleanup proof. All 34 runtime rows remain pending until that evidence is collected."
+  },
   "rows": {
     "access_check_lab.py": "passed automated-safe: disposable file access checks ran normally and cleanup completed",
     "cache_locality_lab.py": "passed automated-safe: 4 MiB sequential run completed",
