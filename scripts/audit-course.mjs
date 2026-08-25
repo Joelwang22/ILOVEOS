@@ -182,7 +182,9 @@ for (const relative of textFiles) {
 if (process.argv.includes("--check-links")) {
   const unique = [...new Map(sourceUrls.map((item) => [item.url, item])).values()];
   const queue = [...unique];
-  const workers = Array.from({ length: 8 }, async () => {
+  // Keep source requests serial so shared CI egress addresses do not flood
+  // documentation hosts such as Microsoft Learn and trigger bulk HTTP 429s.
+  const workers = Array.from({ length: 1 }, async () => {
     while (queue.length) {
       try {
         await checkSourceLink(queue.shift());
