@@ -21,15 +21,19 @@ try {
 
   const fixture = path.join(temp, "fixture");
   fs.mkdirSync(path.join(fixture, "downloads"), { recursive: true });
-  fs.writeFileSync(path.join(fixture, "index.html"), '<!doctype html><link rel="stylesheet" href="styles.css?v=1"><script src="app.js?v=1"></script>');
-  fs.writeFileSync(path.join(fixture, "styles.css"), "body{}\n");
-  fs.writeFileSync(path.join(fixture, "app.js"), "console.log('ok');\n");
-  fs.writeFileSync(path.join(fixture, "downloads", "lab.py"), "print('lab')\n");
+  fs.writeFileSync(path.join(fixture, "index.html"), '<!doctype html>\r\n<link rel="stylesheet" href="styles.css?v=1">\r\n<script src="app.js?v=1"></script>\r\n');
+  fs.writeFileSync(path.join(fixture, "styles.css"), "body{}\r\n");
+  fs.writeFileSync(path.join(fixture, "app.js"), "console.log('ok');\r\n");
+  fs.writeFileSync(path.join(fixture, ".nojekyll"), "");
+  fs.writeFileSync(path.join(fixture, "downloads", "lab.py"), "print('lab')\r\n");
   fs.writeFileSync(path.join(fixture, "private.md"), "do not publish\n");
   const output = path.join(fixture, "_site");
   const inventory = preparePagesArtifact({ root: fixture, output });
-  assert.deepEqual(inventory, ["app.js", "downloads/lab.py", "index.html", "styles.css"]);
+  assert.deepEqual(inventory, [".nojekyll", "app.js", "downloads/lab.py", "index.html", "styles.css"]);
   assert.equal(fs.existsSync(path.join(output, "private.md")), false);
+  for (const relative of ["app.js", "downloads/lab.py", "index.html", "styles.css"]) {
+    assert.equal(fs.readFileSync(path.join(output, relative), "utf8").includes("\r"), false, `${relative} was not normalized to LF`);
+  }
 
   const missingFixture = path.join(temp, "missing");
   fs.mkdirSync(path.join(missingFixture, "downloads"), { recursive: true });
@@ -46,6 +50,7 @@ try {
   let transientRequests = 0;
   const server = http.createServer((request, response) => {
     const relative = decodeURIComponent(new URL(request.url, "http://localhost").pathname).replace(/^\/+/, "") || "index.html";
+    if (relative === ".nojekyll") return response.writeHead(404).end("build marker is not public");
     if (mode === "status") return response.writeHead(404).end("missing");
     if (mode === "transient" && transientRequests++ < 2) return response.writeHead(503).end("retry");
     const file = path.join(output, ...relative.split("/"));
@@ -55,9 +60,9 @@ try {
   await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
   const baseUrl = `http://127.0.0.1:${server.address().port}/`;
   try {
-    assert.equal(await verifyPagesAssets({ root: output, baseUrl, sleep: async () => {} }), inventory.length);
+    assert.equal(await verifyPagesAssets({ root: output, baseUrl, sleep: async () => {} }), inventory.length - 1);
     mode = "transient";
-    assert.equal(await verifyPagesAssets({ root: output, baseUrl, sleep: async () => {} }), inventory.length);
+    assert.equal(await verifyPagesAssets({ root: output, baseUrl, sleep: async () => {} }), inventory.length - 1);
     mode = "status";
     await assert.rejects(() => verifyPagesAssets({ root: output, baseUrl, sleep: async () => {}, attempts: 2 }), /HTTP 404/);
     mode = "mismatch";

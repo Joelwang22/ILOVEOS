@@ -27,7 +27,14 @@ function copyFile(root, output, relative) {
   if (!source.startsWith(rootPrefix) || !fs.existsSync(source) || !fs.statSync(source).isFile()) throw new Error(`Missing or unsafe public file: ${relative}`);
   const destination = path.join(output, relative);
   fs.mkdirSync(path.dirname(destination), { recursive: true });
-  fs.copyFileSync(source, destination);
+  if (/\.(?:html|css|js|py)$/i.test(relative)) {
+    // Git may materialize CRLF in a Windows checkout. Normalize public text so
+    // Windows and Linux produce the same byte-for-byte release artifact.
+    const contents = fs.readFileSync(source, "utf8").replace(/\r\n?/g, "\n");
+    fs.writeFileSync(destination, contents);
+  } else {
+    fs.copyFileSync(source, destination);
+  }
 }
 
 export function listFiles(root) {

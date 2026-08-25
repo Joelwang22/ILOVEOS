@@ -26,7 +26,10 @@ async function fetchWithRetries(url, { fetchImpl, sleep, attempts }) {
 export async function verifyPagesAssets({ root = defaultRoot, baseUrl, fetchImpl = fetch, sleep = defaultSleep, attempts = 3 } = {}) {
   if (!baseUrl) throw new Error("A public base URL is required");
   root = path.resolve(root);
-  const files = listFiles(root);
+  // .nojekyll controls the Pages build, but GitHub does not expose dotfiles
+  // as public URLs. Keep it in the artifact inventory and verify deployable
+  // content only: index.html, its linked assets, and downloads.
+  const files = listFiles(root).filter((relative) => relative !== ".nojekyll");
   const failures = [];
   for (const relative of files) {
     const target = new URL(relative.split("/").map(encodeURIComponent).join("/"), baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`);
