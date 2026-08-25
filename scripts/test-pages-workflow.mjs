@@ -4,7 +4,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const workflow = fs.readFileSync(path.join(root, ".github", "workflows", "pages.yml"), "utf8");
+const workflow = fs.readFileSync(path.join(root, ".github", "workflows", "pages.yml"), "utf8").replaceAll("\r\n", "\n");
 for (const job of ["validate-linux", "validate-windows", "build", "deploy", "verify-public"]) assert.match(workflow, new RegExp(`^  ${job}:`, "m"));
 assert.match(workflow, /^  pull_request:/m);
 assert.match(workflow, /node-version: 22/g);
