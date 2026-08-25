@@ -108,6 +108,13 @@ try {
     const result = await pageClient.send("Runtime.evaluate", { expression: "document.readyState", returnByValue: true });
     return result.result.value === "complete";
   }, 15000, "course page load");
+  await waitFor(async () => {
+    const result = await pageClient.send("Runtime.evaluate", {
+      expression: "Boolean(window.ILOVEOS_WINDOWS_API_GUIDE?.families?.length && window.ILOVEOS_WINDOWS_API_FAMILY_DATA?.resolveParameterChoices && document.querySelector('#windows-api-filter'))",
+      returnByValue: true,
+    });
+    return result.result.value === true;
+  }, 15000, "Windows API guide initialization");
 
   const widths = [1440, 900, 500, 390];
   const sizes = ["small", "default", "large"];
