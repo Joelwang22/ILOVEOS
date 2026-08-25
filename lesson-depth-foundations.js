@@ -30,7 +30,7 @@ window.ILOVEOS_LESSON_DEPTH = {
           "A CPU package is the physical chip installed in a socket. A package may contain several physical cores, and a core may expose more than one logical processor through simultaneous multithreading. Windows schedules threads onto logical processors. Saying that two packages with four cores each provide eight physical cores is a useful counting exercise, but saying they can execute exactly eight instructions at once is only a classroom simplification.",
           "Modern cores pipeline many instructions, issue more than one operation in a cycle, wait on dependencies, and reorder work while preserving the program's visible behavior. Multiple runnable threads also compete for shared caches and memory bandwidth. For operating-system work, the practical rule is that logical processors are scheduling targets, while actual throughput depends on the workload and microarchitecture."
         ],
-        inlineCheck: ["A machine has two CPU packages, four physical cores per package, and two logical processors per core. How many logical processors can Windows schedule onto?", ["4", "8", "16", "32"], 2, "Two packages times four cores times two logical processors gives sixteen scheduling targets. This does not mean exactly sixteen instructions complete at every instant."]
+        inlineCheck: ["A machine has two CPU packages, four physical cores per package, and two logical processors per core. How many logical processors are available to the Windows scheduler?", ["4", "8", "16", "32"], 2, "Two packages times four cores times two logical processors gives sixteen scheduling targets. This does not mean exactly sixteen instructions complete at every instant."]
       },
       {
         title: "Address width limits the names a process can give memory locations",
@@ -124,7 +124,7 @@ window.ILOVEOS_LESSON_DEPTH = {
     },
     checks: [
       ["Which item is not a numeric Win32 type?", ["BOOL", "CHAR", "UINT", "LPCTSTR"], 3, "LPCTSTR is a pointer to constant TCHAR text. Its address is represented with bits, but the declared meaning is a string pointer."],
-      ["What does a 32-bit byte-address calculation establish?", ["Exactly 4 GiB of installed RAM", "2^32 distinct byte addresses", "Four CPU cores", "A 4 GiB file-size limit in every API"], 1, "Thirty-two bits encode 2^32 distinct values. Installed memory and usable process regions are separate questions."],
+      ["How many distinct byte addresses can a 32-bit address represent?", ["Exactly 4 GiB of installed RAM", "2^32 byte addresses", "Four CPU cores", "A 4 GiB file-size limit in every API"], 1, "Thirty-two bits can encode 2^32 distinct values. Installed memory and usable process regions are separate questions."],
       ["What does Windows normally schedule onto a logical processor?", ["A file", "A process container", "A runnable thread", "A DLL export"], 2, "A thread carries the instruction pointer, registers, stack, and scheduling state that a logical processor can execute."]
     ]
   },
@@ -739,7 +739,7 @@ window.ILOVEOS_LESSON_DEPTH = {
     },
     checks: [
       ["Which section is not normally part of a C WinAPI function contract?", ["Parameter descriptions", "Return-value behavior", "Exceptions the C function throws", "Requirements and DLL"], 2, "C WinAPI functions normally report through return values and error state. A Python wrapper may translate failure into an exception."],
-      ["Which is not a complete valid direction annotation by itself?", ["[out, optional]", "[optional]", "[out]", "[in, out]"], 1, "Optional modifies a direction. By itself it does not say whether data enters or leaves the function."],
+      ["Which annotation is incomplete because it does not specify a data-flow direction?", ["[out, optional]", "[optional]", "[out]", "[in, out]"], 1, "Optional modifies a direction; it does not say whether data enters or leaves the function."],
       ["What must be decided before code uses a returned handle?", ["Only its printed integer value", "Its ownership, permitted access, and matching cleanup rule", "Whether its name contains an uppercase letter", "Whether every handle uses RegCloseKey"], 1, "A handle is useful only with its access and lifetime contract. Cleanup functions depend on the API family."]
     ]
   },
@@ -1012,7 +1012,7 @@ window.ILOVEOS_LESSON_DEPTH = {
     },
     checks: [
       ["Which tool is best suited to determine which file operation failed several seconds ago?", ["A current Process Explorer handle snapshot", "A Process Monitor trace captured during the failure", "A desktop screenshot", "The CPU architecture label"], 1, "A time-based trace preserves completed and failed operations that no longer have live state."],
-      ["What does a Process Monitor NAME NOT FOUND event prove by itself?", ["The application crashed", "One lookup did not find that name at that time", "The file never existed anywhere", "Malware deleted the path"], 1, "Many programs probe optional paths. Interpret the row within its sequence, process context, and later results."],
+      ["What can you conclude from a single Process Monitor NAME NOT FOUND event?", ["The application crashed", "One lookup did not find that name at that time", "The file never existed anywhere", "Malware deleted the path"], 1, "Many programs probe optional paths. Interpret the event alongside the surrounding sequence, process context, and later results."],
       ["Why use both Process Monitor and Process Explorer during the file lab?", ["They always show identical data", "One records the open event and the other tests whether a handle currently remains", "Process Explorer creates the file", "Process Monitor changes the handle rights"], 1, "Trace and snapshot evidence answer related but distinct temporal questions and can corroborate each other."]
     ]
   }

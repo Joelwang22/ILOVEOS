@@ -103,7 +103,7 @@ window.ILOVEOS_LESSON_DEPTH = {
     checks: [
       ["Which item belongs to the executable file rather than one process instance?", ["PID", "Creation time", "Publisher signature", "Private heap"], 2, "The signature describes the file. PID, creation time, and private heap belong to a running instance."],
       ["Why can OpenProcess fail immediately after EnumProcesses returned the PID?", ["Enumeration grants permanent ownership", "The process can exit or access can be denied between calls", "PIDs are file handles", "OpenProcess only opens threads"], 1, "Enumeration is a snapshot. The target can exit, the PID can be reused, or the requested rights can fail an access check."],
-      ["What does a process tree establish most directly?", ["Permanent parent ownership", "Creation ancestry", "Shared address spaces", "Automatic group termination"], 1, "The tree records who created whom. Job objects or application policy are needed for stronger group-lifetime semantics."]
+      ["What relationship does a process tree show?", ["Permanent ownership by the parent", "Which process created which child", "Which processes share an address space", "Which processes terminate as a group"], 1, "A process tree shows creation ancestry. Job objects or application policy are needed for stronger group-lifetime rules."]
     ]
   },
 
@@ -248,7 +248,7 @@ window.ILOVEOS_LESSON_DEPTH = {
           "Wall-clock elapsed time includes execution, waiting for storage or locks, scheduling delay, and time when other work ran. User and kernel CPU times count intervals in which the process's threads actually executed. A program can take ten seconds while using one second of CPU because it spent most of its lifetime waiting.",
           "Several I/O workers can reduce elapsed time by overlapping independent waits even when total CPU time stays similar or increases slightly. Conversely, CPU-bound pure Python threads can add overhead without parallel bytecode execution because of the CPython GIL. The workload and runtime determine which conclusion is justified."
         ],
-        inlineCheck: ["A process exists for 8 seconds and accumulates 1.2 seconds of CPU time. What does the difference most directly permit?", ["It proves the process crashed", "The process spent substantial time waiting, descheduled, or otherwise not executing", "It proves eight CPU cores were used", "It equals the handle count"], 1, "Wall time includes intervals when the process is not executing. More evidence is needed to identify the exact wait source."]
+        inlineCheck: ["Eight seconds have passed since a process started, but it has accumulated only 1.2 seconds of CPU time. What could account for the remaining time?", ["The process must have crashed", "Its threads were waiting, descheduled, or otherwise not executing", "The process must have used eight CPU cores", "The remaining time equals its handle count"], 1, "Elapsed time includes periods when none of the process's threads are executing. More evidence is needed to determine exactly where that time went."]
       }
     ],
     visuals: [
@@ -332,8 +332,8 @@ window.ILOVEOS_LESSON_DEPTH = {
       cleanup: ["Leave Process Monitor capture stopped and clear only the showcase display.", "The final PowerShell block removes only .\\iloveos-io-tiny and .\\iloveos-io-many."]
     },
     checks: [
-      ["What does process CPU time exclude most directly?", ["Time its threads executed in kernel mode", "Wall time spent not executing", "Execution by every worker thread", "Accumulated user-mode execution"], 1, "CPU time accumulates actual execution. Waiting and descheduled wall-clock intervals are not CPU time."],
-      ["What does interleaved ReadFile activity from several TIDs prove?", ["The disk completed every read simultaneously", "Several threads issued operations during overlapping periods", "The Python GIL was removed", "Every thread ran on a different core"], 1, "The trace establishes attribution and ordering of logical requests. Hardware parallelism requires additional evidence."],
+      ["Which interval is not included in process CPU time?", ["Time its threads spend executing in kernel mode", "Time when its threads are waiting or descheduled", "Time used by each of its worker threads", "Time its threads spend executing in user mode"], 1, "CPU time counts periods when the process's threads actually execute. Waiting and descheduled intervals contribute to elapsed time, not CPU time."],
+      ["What can you conclude from interleaved ReadFile events issued by several thread IDs?", ["The disk completed every read simultaneously", "Several threads issued operations during overlapping periods", "The Python GIL was removed", "Every thread ran on a different core"], 1, "The trace identifies the threads that issued the requests and shows their order. Additional evidence is required to demonstrate hardware-level parallelism."],
       ["Why pair a PID with creation time?", ["To convert it into a filename", "Because PID values can be reused", "To increase process priority", "Because every process has two PIDs"], 1, "Creation time distinguishes one historical instance from a later process that reuses the same numeric PID."]
     ]
   },
@@ -450,7 +450,7 @@ window.ILOVEOS_LESSON_DEPTH = {
     checks: [
       ["What does CreateProcess create in addition to the process object?", ["Only a filename", "An initial thread", "A permanent parent-child ownership link", "A Job object automatically"], 1, "A new process begins with an initial thread whose handle and TID are returned to the creator."],
       ["What must the creator close after successful CreateProcessW?", ["The PID and TID integers", "The executable file on disk", "The returned process and thread handles", "The child's entire address space"], 2, "PROCESS_INFORMATION returns two caller-owned handles. Closing them releases references without necessarily terminating the child."],
-      ["What does SW_HIDE establish?", ["The process cannot be enumerated", "An initial window-show request", "The process runs in kernel mode", "All child handles are protected"], 1, "SW_HIDE concerns window presentation. It does not conceal the process object from Windows or inspection tools."]
+      ["What does SW_HIDE control during process creation?", ["Whether the process can be enumerated", "The initial request for how its window should be shown", "Whether the process runs in kernel mode", "Whether all child handles are protected"], 1, "SW_HIDE requests an initially hidden window. It does not conceal the process from Windows or inspection tools."]
     ]
   },
 
@@ -559,7 +559,7 @@ window.ILOVEOS_LESSON_DEPTH = {
       cleanup: ["If either named_event_lab.py process is still waiting, press Enter once so its handle closes.", "Local\\ILOVEOS_ObjectLab needs no file cleanup after both processes exit."]
     },
     checks: [
-      ["What does an Object Manager name primarily provide?", ["Automatic full access", "A lookup path to an object", "A raw kernel pointer", "Permanent storage"], 1, "Names make objects discoverable. Opening still performs access checks and returns a handle."],
+      ["Why give an Object Manager object a name?", ["To grant automatic full access", "To let other callers locate the object", "To expose a raw kernel pointer", "To place the object in permanent storage"], 1, "A name makes the object discoverable. Opening it still requires an access check and returns a handle."],
       ["Why can two processes print different handle values for the same event?", ["The events must be different", "Each value is interpreted in its own process handle table", "Event handles are random filenames", "Only one process can use an event"], 1, "The per-process table entries can use different numeric values while referring to the same underlying object."],
       ["When can the named event be deleted?", ["Immediately after the creator closes, regardless of other users", "After the final relevant reference is released", "Only at system shutdown", "When its name is converted to lowercase"], 1, "The object persists while handles or other relevant references remain."]
     ]
@@ -689,9 +689,9 @@ window.ILOVEOS_LESSON_DEPTH = {
       cleanup: ["Leave Process Monitor capture stopped and clear only the showcase display.", "The final PowerShell block removes only the three explicit ILOVEOS log files."]
     },
     checks: [
-      ["What does granted access belong to most directly?", ["The executable filename", "The handle table entry", "The PID forever", "The desktop window"], 1, "The access check records granted rights in the caller's handle entry."],
+      ["Where are a handle's granted access rights recorded?", ["In the executable filename", "In the process's handle-table entry", "Permanently in the PID", "In the desktop window"], 1, "When Windows opens an object, it records the granted rights in the caller's handle-table entry."],
       ["Why may an object survive CloseHandle?", ["CloseHandle never releases references", "Other handles or kernel references can remain", "Every object is permanent", "Only processes have lifetimes"], 1, "Closing one handle releases one reference. Deletion waits for all relevant references to be gone."],
-      ["What does FlushFileBuffers primarily change?", ["The process PID", "The requested durability boundary for buffered file data", "The file's executable signature", "The number of CPU cores"], 1, "A flush requests buffered file data be pushed through the storage stack, often trading throughput for a stronger durability point."]
+      ["Why would a program call FlushFileBuffers?", ["To change its PID", "To push buffered file data toward storage before continuing", "To change the file's executable signature", "To increase the number of CPU cores"], 1, "Flushing asks Windows to push buffered file data through the storage stack. It can provide a stronger durability point at the cost of throughput."]
     ]
   }
 };

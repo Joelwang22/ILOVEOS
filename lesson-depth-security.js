@@ -47,7 +47,7 @@ window.ILOVEOS_LESSON_DEPTH = {
       cleanup: ["Close the owned Notepad window and Process Explorer.", "Both probe handles close immediately; the target token, descriptor, and configuration remain unchanged."],
     },
     checks: [
-      ["What does a successful object open normally produce?", ["A handle with granted access", "A new user account", "A Registry hive", "A kernel driver"], 0, "The handle table entry records rights granted by the access check."],
+      ["What does Windows return after successfully opening a secured object?", ["A handle with the granted access rights", "A new user account", "A Registry hive", "A kernel driver"], 0, "The returned handle refers to a handle-table entry that records the rights granted by the access check."],
       ["Is authentication the same as authorization?", ["Yes", "No", "Only for services", "Only when elevated"], 1, "Authentication establishes identity, while authorization evaluates a requested action."],
       ["Is every denied access automatically audited?", ["Yes", "No", "Only from Python", "Only for files"], 1, "Audit policy and SACL configuration determine which events are recorded."]
     ]
@@ -98,7 +98,7 @@ window.ILOVEOS_LESSON_DEPTH = {
     checks: [
       ["What do ACLs store for a principal?", ["Only its current display name", "Its SID", "Its password", "Its PID"], 1, "SIDs are the durable identities used in access-control entries."],
       ["Can an unresolved SID still be meaningful?", ["Yes", "No", "Only on x86", "Only for services"], 0, "The identity remains in the token or ACL even if no current name translation exists."],
-      ["Does Administrators SID presence alone prove every access request will succeed?", ["Yes", "No", "Only in Python", "Only for files"], 1, "Attributes, integrity, privileges, requested mask, and object policy still matter."]
+      ["Does having the Administrators SID in a token guarantee that every access request will succeed?", ["Yes", "No", "Only when the program uses Python", "Only for files"], 1, "The SID's attributes, integrity level, privileges, requested access mask, and the object's policy still affect the decision."]
     ]
   },
 
@@ -117,7 +117,7 @@ window.ILOVEOS_LESSON_DEPTH = {
     ],
     visuals: [{ type: "map", title: "Read the current security context", items: [
       { meta: "Process", label: "Primary token", detail: "Default subject for threads", linkAfter: "thread may override" },
-      { meta: "Thread", label: "Impersonation token?", detail: "If absent, fall back to primary", linkAfter: "effective token" },
+      { meta: "Thread", label: "Check for an impersonation token", detail: "If none is present, use the process token", linkAfter: "effective token" },
       { meta: "Contents", label: "SIDs, attributes, privileges", detail: "Integrity, elevation, restrictions", linkAfter: "access check" },
       { meta: "Object open", label: "Requested rights", detail: "Produces denial or granted handle" }
     ], caption: "The effective token is chosen before its contents are evaluated against the object." }],
@@ -147,7 +147,7 @@ window.ILOVEOS_LESSON_DEPTH = {
       cleanup: ["Close both PowerShell comparison terminals and Process Explorer.", "token_summary_lab.py closes its TOKEN_QUERY handle in finally before each short Python process exits."],
     },
     checks: [
-      ["Does TOKEN_QUERY enable contained privileges?", ["Yes", "No", "Only for administrators", "Only for services"], 1, "Token-handle access and the privilege attributes inside the token are distinct."],
+      ["Does opening a token with TOKEN_QUERY enable its privileges?", ["Yes", "No", "Only for administrators", "Only for services"], 1, "TOKEN_QUERY controls what the handle may do. Each privilege's enabled or disabled state is separate."],
       ["What does TokenPrivileges return?", ["LUID and attribute entries", "File paths", "Service PIDs only", "Registry keys"], 0, "Privilege names can be resolved from their LUIDs."],
       ["Should GetCurrentProcess's pseudo-handle be closed?", ["Yes", "No", "Only after elevation", "Only with CloseServiceHandle"], 1, "The pseudo-handle is not an owned real handle from an open call."]
     ]
@@ -269,7 +269,7 @@ window.ILOVEOS_LESSON_DEPTH = {
       { title: "Process creation needs a primary token and a full launch contract", paragraphs: ["DuplicateTokenEx can produce TokenPrimary or TokenImpersonation. CreateProcessAsUser requires a suitable primary token, relevant handle access, and often SeIncreaseQuotaPrivilege or SeAssignPrimaryTokenPrivilege depending on the token relationship and environment. It returns owned process and thread handles plus IDs.", "The new process does not automatically receive the source user's loaded profile or a correct user-specific environment when None is supplied. Production code may need LoadUserProfile and CreateEnvironmentBlock with matching cleanup. A command line also needs safe quoting and application-path rules."] }
     ],
     visuals: [{ type: "map", title: "Keep the token operations distinct", items: [
-      { meta: "Current token", label: "Privilege present?", detail: "Enabled or disabled attribute", linkAfter: "may adjust" },
+      { meta: "Current token", label: "Find the privilege", detail: "Check whether it is present and enabled", linkAfter: "may adjust" },
       { meta: "Thread scope", label: "Impersonation token", detail: "Temporary effective subject, always revert", linkAfter: "or duplicate" },
       { meta: "Process scope", label: "Primary token", detail: "Suitable type and access for launch", linkAfter: "CreateProcessAsUser" },
       { meta: "Owned outputs", label: "Process and thread handles", detail: "Close both plus every token and process open" }
@@ -320,8 +320,8 @@ window.ILOVEOS_LESSON_DEPTH = {
     },
     checks: [
       ["Which token type does CreateProcessAsUser require?", ["A suitable primary token", "Only an impersonation token", "A process handle", "A SID string"], 0, "DuplicateTokenEx can create the required TokenPrimary copy."],
-      ["What is wrong with duplicating again inside the launch helper?", ["It changes CPU mode", "It creates unnecessary ownership and leaks in the supplied path", "It removes the SID", "It closes the SCM"], 1, "The already-created primary token can be passed directly and closed by its clear owner."],
-      ["What cleanup ends thread impersonation?", ["FreeLibrary", "RevertToSelf", "DeleteService", "RegCloseKey"], 1, "RevertToSelf belongs in finally around the impersonated work."]
+      ["Why should the launch helper use the primary token it was given instead of duplicating it again?", ["Duplicating it changes the CPU mode", "Another duplicate adds unnecessary ownership and can leak", "Duplicating it removes the SID", "Duplicating it closes the SCM"], 1, "The existing primary token is already suitable for the launch. Its owner can pass it to the helper and close it afterward."],
+      ["Which cleanup call ends thread impersonation?", ["FreeLibrary", "RevertToSelf", "DeleteService", "RegCloseKey"], 1, "Call RevertToSelf in a finally block around the impersonated work."]
     ]
   },
 

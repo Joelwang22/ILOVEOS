@@ -92,7 +92,7 @@
           "foundations",
           "evidence",
           "snapshot versus trace",
-          "A temporary file handle opens and closes too quickly to find in Process Explorer. Which evidence source most directly answers when it opened and closed?",
+          "A temporary file handle opens and closes too quickly to appear in Process Explorer. Which tool can show when those operations occurred?",
           [
             "A Process Monitor trace filtered to the process and file operations",
             "A RAMMap physical-page snapshot taken after the process exits",
@@ -627,7 +627,7 @@
           "synchronisation",
           "interface",
           "primitive selection",
-          "One producer must wake exactly one waiting consumer for each queued work item. Which primitive most directly represents an accumulated item count?",
+          "One producer must wake exactly one waiting consumer for each queued work item. Which synchronization primitive naturally tracks how many items are available?",
           [
             "A semaphore whose count tracks available work items",
             "A manual-reset event left signaled forever",
@@ -673,7 +673,7 @@
           "synchronisation",
           "evidence",
           "named-object evidence",
-          "Which observation most directly confirms that two owned processes opened the same named event rather than separate unnamed events?",
+          "How can you confirm that two owned processes opened the same named event rather than separate unnamed events?",
           [
             "WinObj or Process Explorer shows matching event object names/handles while the processes coordinate the same signal.",
             "Both executables happen to be stored in the same directory.",

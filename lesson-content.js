@@ -5,7 +5,7 @@ window.ILOVEOS_LESSONS = [
     title: "CPU architecture and data representation",
     lead: "Learn the vocabulary underneath every later topic: instructions, registers, cores, address widths, binary, hexadecimal, and Windows data types.",
     core: [
-      "A CPU repeatedly fetches, decodes, and executes machine instructions. Registers hold the values the current instruction needs, while RAM holds a much larger working set. A process does not execute by itself, one or more threads supply the instruction stream and register context that a core can run.",
+      "A CPU repeatedly fetches, decodes, and executes machine instructions. Registers hold the values the current instruction needs, while RAM holds a much larger working set. A process does not execute by itself; one or more threads provide the instruction stream and register context that a core can run.",
       "Humans usually count in decimal. Digital computers represent state with bits, so binary is natural. Hexadecimal is a compact way to write binary: one hex digit represents exactly four bits. Windows tools use hex for addresses, bit flags, access masks, and raw file structures because boundaries are easier to see."
     ],
     mechanics: [
@@ -308,7 +308,7 @@ window.ILOVEOS_LESSONS = [
     keys: ["Objects represent resources in kernel memory", "Handles are checked user-mode references", "Names let processes find shared objects", "Object namespaces differ from ordinary file paths"],
     apis: ["win32event.CreateEvent", "win32event.OpenEvent", "win32file.CreateFile", "win32api.QueryDosDevice"],
     practice: { title: "Watch a named object live", time: "20 min", intro: "Create an object from Python and find it in both the namespace and a process handle table.", steps: ["Create a manual-reset event named Local\\ILOVEOS_ObjectLab and pause the script.", "Find the event under BaseNamedObjects in WinObj.", "Find the Event handle in Process Explorer's lower pane.", "Open the same event from a second Python process.", "Close one handle, then the other, and explain when the object disappears."] },
-    check: ["What does a user-mode handle directly contain?", ["A portable filename", "A raw kernel pointer", "A process-table value interpreted by Windows", "The complete object data structure"], 2, "The numeric handle indexes or identifies an entry in the process handle table. Windows uses that entry to reach the object and granted-access state."],
+    check: ["How should user-mode code treat a handle value?", ["As a portable filename", "As a raw kernel pointer", "As a value that Windows interprets through the process handle table", "As the complete object data structure"], 2, "A handle identifies an entry in the process handle table. Windows uses that entry to reach the object and its granted-access state."],
     sources: [["Object Manager", "https://learn.microsoft.com/windows-hardware/drivers/kernel/windows-kernel-mode-object-manager"]]
   },
   {
@@ -343,7 +343,7 @@ window.ILOVEOS_LESSONS = [
     keys: ["Threads are schedulable entities", "Threads share process resources", "Concurrency and parallelism differ", "Threading has workload-dependent overhead"],
     apis: ["threading.Thread", "win32api.GetCurrentThreadId", "win32process.GetCurrentProcess", "win32process.GetThreadTimes"],
     practice: { title: "See one process, many workers", time: "20 min", intro: "Connect Python worker names to Windows thread IDs and observed I/O.", steps: ["Create three Python worker threads that print threading.get_native_id and pause.", "Find the process in Process Explorer and match each native ID in the Threads tab.", "Have each worker read a different file and capture the process in Process Monitor.", "Group events by TID and compare their timestamps.", "Explain which state is shared and which belongs to each worker."] },
-    check: ["What does Windows schedule directly?", ["Executable files", "Threads", "Handle tables", "Virtual address spaces"], 1, "The thread is the basic schedulable entity. Process-level statistics aggregate work done by its threads."],
+    check: ["What is the Windows scheduler's basic unit of work?", ["An executable file", "A thread", "A handle table", "A virtual address space"], 1, "Windows schedules threads. Process-level statistics aggregate the work performed by a process's threads."],
     sources: [["Processes and threads", "https://learn.microsoft.com/windows/win32/procthread/processes-and-threads"]]
   },
   {
@@ -391,7 +391,7 @@ window.ILOVEOS_LESSONS = [
     keys: ["Priority selects among ready work", "Boosts are temporary responsiveness mechanisms", "Real-time priorities can starve the system", "Raising priority does not create CPU capacity"],
     apis: ["win32process.GetPriorityClass", "win32process.SetPriorityClass", "GetThreadPriority", "SetThreadPriority"],
     practice: { title: "Observe priority without harming the system", time: "20 min", intro: "Use two disposable CPU workers and keep all changes below real-time priority.", steps: ["Start two identical CPU-bound processes and record baseline CPU shares.", "Lower one to Below Normal in Process Explorer and observe several intervals.", "Add another foreground workload and note responsiveness.", "Restore the original class before ending the experiment.", "Explain why the result may differ on a machine with idle cores."] },
-    check: ["What does raising a thread's priority directly provide?", ["More processor cores", "Earlier selection relative to lower-priority ready threads", "A larger virtual address space", "Automatic lock ownership"], 1, "Priority affects scheduling order. It does not increase the machine's computational capacity."],
+    check: ["What effect does raising a thread's priority have?", ["It adds processor cores", "It favors that thread over lower-priority ready threads", "It enlarges the virtual address space", "It grants automatic lock ownership"], 1, "Priority affects which ready thread the scheduler favors. It does not increase the machine's computational capacity."],
     sources: [["Scheduling priorities", "https://learn.microsoft.com/windows/win32/procthread/scheduling-priorities"]]
   },
 
@@ -416,7 +416,7 @@ window.ILOVEOS_LESSONS = [
     keys: ["Locality drives cache effectiveness", "CPU cache and file cache differ", "Warm-cache benchmarks can mislead", "Flushing trades performance for durability"],
     apis: ["win32file.FlushFileBuffers", "GetProcessMemoryInfo", "QueryWorkingSetEx"],
     practice: { title: "Compare cold and warm reads", time: "20 min", intro: "Measure carefully without claiming more than the tools show.", steps: ["Read the same large test file twice and record elapsed time.", "Observe the file in RAMMap's File Summary before and after.", "Capture logical ReadFile operations in Process Monitor.", "Explain why the second run can be faster even if application code is unchanged.", "State why clearing all caches is intrusive and unnecessary for this conceptual comparison."] },
-    check: ["What does FlushFileBuffers primarily request?", ["A CPU register reset", "Buffered file data be sent through the storage stack", "A larger process heap", "A new virtual address"], 1, "It requests that buffered information for the file be flushed toward the device, which can be much more expensive than normal cached writes."],
+    check: ["What does FlushFileBuffers ask Windows to do?", ["Reset a CPU register", "Send buffered file data through the storage stack", "Enlarge the process heap", "Create a new virtual address"], 1, "The call asks Windows to flush buffered information for the file toward the device. That can be much more expensive than a normal cached write."],
     sources: [["File caching", "https://learn.microsoft.com/en-us/windows/win32/fileio/file-caching"]]
   },
   {
@@ -778,7 +778,7 @@ window.ILOVEOS_LESSONS = [
     keys: ["Deadlock is a dependency cycle", "Starvation is indefinite unfair delay", "A lock order prevents many cycles", "Timeouts need a defined recovery path"],
     apis: ["WaitForMultipleObjects", "RegisterWaitForSingleObject", "OpenThreadWaitChainSession"],
     practice: { title: "Diagnose a deliberate deadlock", time: "25 min", intro: "Use only a disposable two-lock Python program.", steps: ["Create two workers that acquire locks in opposite order with a barrier between acquisitions.", "Reproduce the hang and capture thread stacks.", "Draw the wait-for cycle.", "Fix both workers to acquire locks in one documented order.", "Add bounded diagnostics without pretending a timeout makes partially updated data safe."] },
-    check: ["Which design most directly prevents a two-lock circular wait?", ["Give both threads higher priority", "Use one consistent lock acquisition order", "Add more worker threads", "Rename the locks"], 1, "A global acquisition order removes the cycle that circular wait requires."],
+    check: ["Which design prevents two threads from deadlocking over the same two locks?", ["Give both threads higher priority", "Require both threads to acquire the locks in the same order", "Add more worker threads", "Rename the locks"], 1, "A consistent acquisition order prevents the circular wait that causes this deadlock."],
     sources: [["Using critical sections safely", "https://learn.microsoft.com/windows/win32/sync/using-critical-section-objects"]]
   },
 
@@ -815,7 +815,7 @@ window.ILOVEOS_LESSONS = [
     keys: ["Servers create instances and clients open them", "Byte and message modes differ", "Connection races have documented outcomes", "Pipe ACLs and client identity matter"],
     apis: ["win32pipe.CreateNamedPipe", "win32pipe.ConnectNamedPipe", "win32pipe.WaitNamedPipe", "win32pipe.SetNamedPipeHandleState", "win32file.CreateFile"],
     practice: { title: "Finish the named-pipe identity client", time: "35 min", intro: "Pair whats_my_name.py with a known lab server.", steps: ["Validate the exact \\\\.\\pipe\\ name, encoding, and message format.", "Wait with a bounded timeout, open the pipe, and set the intended read mode.", "Encode the local username with an explicit delimiter or length rule.", "Handle ERROR_MORE_DATA or looped reads according to the protocol.", "Close the handle in finally and inspect the endpoint with Handle while connected."] },
-    check: ["What does a named-pipe name provide by itself?", ["Discovery of the endpoint", "Authentication of every client", "Encryption of all messages", "Automatic JSON framing"], 0, "The name lets a client locate the pipe. Security descriptors and protocol behavior provide authorization and trust controls."],
+    check: ["What can a client do with a named pipe's name alone?", ["Locate the endpoint", "Authenticate every client", "Encrypt every message", "Frame messages as JSON automatically"], 0, "The name lets a client locate the pipe. Security descriptors and the application protocol provide authorization and trust controls."],
     sources: [["Named pipes", "https://learn.microsoft.com/windows/win32/ipc/named-pipes"]]
   },
   {
@@ -912,7 +912,7 @@ window.ILOVEOS_LESSONS = [
     keys: ["Detection needs correlated evidence", "Signed does not mean harmless", "Private executable memory has benign uses", "Preserve evidence before response"],
     apis: ["win32process.EnumProcessModules", "win32process.GetModuleFileNameEx", "VirtualQueryEx", "WinVerifyTrust"],
     practice: { title: "Investigate a controlled plugin", time: "35 min", intro: "Use a known application and a plugin you deliberately installed or a supplied lab sample.", steps: ["Capture a baseline process identity, module list, hashes, and signatures.", "Enable the controlled plugin and capture Image Load events.", "Diff module path, signer, load time, and relevant memory regions.", "Inspect thread start modules and Autoruns only if the plugin persists.", "Write a conclusion separating observed facts, likely explanation, alternative explanations, and missing evidence."] },
-    check: ["What does a valid file signature establish most directly?", ["The file never behaves maliciously", "Publisher identity and integrity under the signature trust chain", "The module is loaded in every process", "The process has no private memory"], 1, "A signature helps establish provenance and whether signed bytes changed, but it is not a behavioral verdict."],
+    check: ["What can a valid file signature tell you?", ["That the file can never behave maliciously", "Who signed the file and whether its signed bytes have changed", "That the module is loaded in every process", "That the process has no private memory"], 1, "A valid signature supports publisher attribution and shows whether the signed bytes changed. It does not tell you whether the program's behavior is safe."],
     sources: [["Process Explorer", "https://learn.microsoft.com/sysinternals/downloads/process-explorer"], ["Sigcheck", "https://learn.microsoft.com/sysinternals/downloads/sigcheck"]]
   }
 ];

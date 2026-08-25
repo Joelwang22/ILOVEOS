@@ -113,7 +113,7 @@ window.ILOVEOS_LESSON_DEPTH = {
     checks: [
       ["What does an object file normally retain for the linker?", ["Only screenshots", "Symbols and relocation information", "A running PID", "Physical frame numbers"], 1, "Object files carry unresolved relationships and metadata needed for final image construction."],
       ["Why is a PE file not copied byte-for-byte into memory?", ["Sections have separate raw and virtual layouts", "Windows cannot read files", "Every byte becomes a thread", "The linker deletes the headers"], 0, "Headers describe alignment, mapping, zero-filled tails, protections, and directories."],
-      ["Which failure belongs most clearly to load time?", ["Source syntax error", "Unresolved local variable type", "Required imported export is missing from a dependency", "An application rejects a user password"], 2, "The image was built, but the loader cannot satisfy its declared dependency contract."]
+      ["Which problem would normally appear only when the program is loaded?", ["A syntax error in the source", "An unresolved local variable type", "A required export is missing from an imported DLL", "The application rejects a user's password"], 2, "The program was built successfully, but the loader cannot satisfy one of its declared dependencies."]
     ]
   },
 
@@ -216,7 +216,7 @@ window.ILOVEOS_LESSON_DEPTH = {
     },
     checks: [
       ["What does static linking normally copy into the output?", ["A live process", "Needed object code and data from library members", "The DLL search path", "Physical pages"], 1, "The linker incorporates selected compiled content from the archive."],
-      ["What should match one successful owned LoadLibrary reference?", ["CloseHandle", "FreeLibrary after dependent use ends", "VirtualFree", "TerminateProcess"], 1, "FreeLibrary releases the module reference acquired by LoadLibrary."],
+      ["How should code release a module reference acquired with LoadLibrary?", ["Call CloseHandle", "Call FreeLibrary after it finishes using the module", "Call VirtualFree", "Call TerminateProcess"], 1, "FreeLibrary releases the module reference acquired by LoadLibrary."],
       ["Why can a DLL remain mapped after one FreeLibrary?", ["FreeLibrary never works", "Other references or loader dependencies can remain", "The HMODULE is a PID", "Every DLL is permanent"], 1, "Module lifetime is reference based within the process."]
     ]
   },
@@ -480,7 +480,7 @@ window.ILOVEOS_LESSON_DEPTH = {
           "An export directory maps ordinal indexes to function RVAs and can associate selected ordinals with names. Importing by ordinal is compact but depends on a stable ordinal contract. Name decoration can encode language or calling information, which is why a C++ export such as the supplied ?MyExport@@YAXXZ is less convenient than a deliberate C-compatible exported name.",
           "An export entry can forward to another module and symbol instead of containing code in the first DLL. The loader follows the forwarder, so the module named by the import and the module containing the final implementation can differ."
         ],
-        inlineCheck: ["The IAT entry for an import contains what after resolution?", ["The DLL filename only", "A callable virtual address", "The process PID", "A page-file offset"], 1, "The loader replaces or initializes the IAT slot with the resolved function address."]
+        inlineCheck: ["What does an IAT entry contain after the loader resolves its import?", ["Only the DLL filename", "The imported function's callable virtual address", "The process PID", "A page-file offset"], 1, "The loader places the resolved function address in the IAT slot."]
       },
       {
         title: "A raw address has no safe callable type by itself",
@@ -664,7 +664,7 @@ window.ILOVEOS_LESSON_DEPTH = {
           observe: "Process Monitor shows Image Load rows for the new Notepad startup. If modern Notepad redirects, use the captured event PID and System32 path instead of assuming the launcher PID remains live."
         },
         { action: "Open one successful Process Monitor Image Load row for the live Notepad PID and read its exact module path; keep that exact captured path for step 4.", why: "The trace supplies one concrete loader-selected module path rather than an inferred basename.", observe: "The row shows Result SUCCESS, the exact module path, and the event PID. A missing row means the capture or filters were not active before startup." },
-        { action: "Select the exact live PID from step 3 in Process Explorer, choose View > Show Lower Pane, choose View > Lower Pane View > DLLs, open the lower-pane Select Columns > DLL > Base Address chooser, and locate the exact captured module path row from step 3.", why: "The snapshot checks whether the captured startup module is still mapped and exposes its current base.", observe: "The exact module path row shows a dynamic Base Address while the process remains live. An exited process or unloaded module does not erase the earlier Process Monitor event." },
+        { action: "Select the live PID from step 3 in Process Explorer. Choose View > Show Lower Pane, then View > Lower Pane View > DLLs. Open Select Columns > DLL > Base Address and locate the exact module path row captured in step 3.", why: "This snapshot checks whether the startup module is still mapped and shows its current base address.", observe: "The matching module row shows its dynamic base address while the process remains live. If the process exits or unloads the module, the earlier Process Monitor event is still valid historical evidence." },
         {
           action: "Close the controlled Notepad and run this PowerShell cleanup block for the owned static-copy directory.",
           commands: [{ label: "PowerShell", code: "$lab = Join-Path $PWD 'iloveos-loader-lab'\nif (Test-Path -LiteralPath $lab) { Remove-Item -LiteralPath $lab -Recurse }\nTest-Path -LiteralPath $lab" }],
@@ -678,7 +678,7 @@ window.ILOVEOS_LESSON_DEPTH = {
     checks: [
       ["Why can CreateProcess succeed before a child later fails to start normally?", ["The creator already owns a PID, but user-mode loader initialization can still fail", "CreateProcess compiles the source", "The child has no image", "The loader runs only after process exit"], 0, "Kernel process creation and later user-mode loader work are distinct stages."],
       ["Why should DllMain avoid cross-thread waits?", ["It has no stack", "Loader constraints can create deadlock with threads needing loader progress", "It always runs as SYSTEM", "It cannot read parameters"], 1, "Waiting while loader state is protected can create a dependency cycle that prevents either side from progressing."],
-      ["Which evidence best proves the exact DLL path selected during startup?", ["The import basename alone", "A filtered Image Load event correlated to the test PID", "The DLL extension", "The source-code comment"], 1, "The trace records the selected path and timing for that process instance."]
+      ["How can you verify the exact DLL path selected during startup?", ["Read only the import basename", "Find the test process's filtered Image Load event", "Check the DLL extension", "Read a source-code comment"], 1, "The Image Load trace records the path and timing for that specific process instance."]
     ]
   }
 };

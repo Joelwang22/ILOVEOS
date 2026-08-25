@@ -101,7 +101,7 @@ window.ILOVEOS_LESSON_DEPTH = {
     checks: [
       ["Which state is normally shared by threads in one process?", ["Register context", "User stack", "Virtual address space", "Native TID"], 2, "Sibling threads share the process address space while keeping independent contexts, stacks, and IDs."],
       ["What does CPython's GIL mainly limit?", ["Creation of native Windows threads", "Simultaneous execution of ordinary Python bytecode in one interpreter", "All overlapping I/O", "Process Monitor TID capture"], 1, "Native threads still exist and blocking work can overlap, but ordinary bytecode execution is generally serialized within one interpreter."],
-      ["What evidence joins a Python worker to a Process Monitor file event?", ["Only the executable path", "The worker's native TID within the captured PID and interval", "The file extension", "The process publisher"], 1, "PID and native TID provide the direct correlation, strengthened by controlled paths and timestamps."]
+      ["How can you match a Python worker to its Process Monitor file event?", ["Use only the executable path", "Match the worker's native TID within the captured PID and time interval", "Match the file extension", "Match the process publisher"], 1, "The PID and native thread ID provide the strongest match, supported by the controlled path and timestamps."]
     ]
   },
 
@@ -268,10 +268,10 @@ window.ILOVEOS_LESSON_DEPTH = {
         title: "Choose a shutdown response",
         prompt: "The application needs to stop three workers that write through one shared output owner.",
         steps: [
-          { title: "Can workers return after a bounded unit?", action: "Use a shared stop event checked between units.", why: "The worker chooses a point where its local state is consistent.", result: "Signal, join, then close shared output." },
-          { title: "Can a worker block indefinitely?", action: "Add a timeout, queue sentinel, or wait set that includes cancellation.", why: "A worker that never observes cancellation can make join hang forever.", result: "Shutdown latency becomes bounded and testable." },
-          { title: "Did a worker raise?", action: "Capture and propagate the exception to the owner.", why: "Thread exceptions must affect the operation's final success decision.", result: "Cancel siblings if required, join all, then report failure." },
-          { title: "Is forced termination tempting?", action: "Redesign the blocking or ownership protocol instead.", why: "TerminateThread cannot guarantee locks, heaps, files, or runtime state remain consistent.", result: "Normal control flow retains cleanup guarantees." }
+          { title: "Give workers a safe stopping point", action: "Use a shared stop event checked between bounded units of work.", why: "Each worker can stop where its local state is consistent.", result: "Signal, join, then close shared output." },
+          { title: "Put a bound on blocking operations", action: "Add a timeout, queue sentinel, or wait set that includes cancellation.", why: "A worker that never observes cancellation can make join hang forever.", result: "Shutdown latency becomes bounded and testable." },
+          { title: "Propagate worker failures", action: "Capture each exception and return it to the owner.", why: "A worker exception must affect the operation's final success decision.", result: "Cancel siblings if required, join all workers, then report the failure." },
+          { title: "Avoid forced termination", action: "Redesign the blocking or ownership protocol instead.", why: "TerminateThread cannot guarantee that locks, heaps, files, or runtime state remain consistent.", result: "Normal control flow retains cleanup guarantees." }
         ],
         conclusion: "A shutdown protocol is part of the worker API, not an emergency feature added after the thread starts."
       }
@@ -339,7 +339,7 @@ window.ILOVEOS_LESSON_DEPTH = {
       cleanup: ["Allow every worker to join; do not close the terminal during the cleanup messages.", "The final PowerShell block removes only thread_shutdown_normal.log and thread_shutdown_fail.log."]
     },
     checks: [
-      ["What does join request?", ["Immediate worker termination", "A wait for worker completion", "A new TID", "A priority boost"], 1, "join waits. Cancellation or completion must be caused through the worker's normal protocol."],
+      ["What happens when one thread calls join on another?", ["The worker terminates immediately", "The caller waits for the worker to finish", "Windows creates a new thread ID", "The worker receives a priority boost"], 1, "join waits for completion; it does not request cancellation. The worker must finish through its normal control flow."],
       ["Why can TerminateThread corrupt sibling work?", ["Threads share process state and locks", "It creates a new process", "It always deletes the executable", "It only changes wall time"], 0, "Forced termination can interrupt shared-state updates and leave locks or runtime structures inconsistent."],
       ["When should shared resources normally be released?", ["Before workers receive inputs", "After cancellation is requested but before joins", "After every worker that can use them has completed", "Only at system shutdown"], 2, "Join establishes that no worker will continue using the shared resource before the owner closes it."]
     ]
@@ -477,7 +477,7 @@ window.ILOVEOS_LESSON_DEPTH = {
     },
     checks: [
       ["What is the scheduler's direct unit of dispatch?", ["Executable file", "Thread", "Handle table", "DLL"], 1, "Ready threads are selected for logical processors."],
-      ["Why is 100 not a universal best thread count?", ["Windows changes all TIDs at 101", "The optimum depends on workload, machine, runtime, and measurement conditions", "Only 100 files can be opened", "Every CPU has exactly 100 cores"], 1, "The supplied value is one experimental result. The useful region moves with available parallelism, waits, and overhead."],
+      ["Why is there no single best thread count for every workload?", ["Windows changes all thread IDs at 101", "The best count depends on the workload, machine, runtime, and measurement conditions", "A process can open only 100 files", "Every CPU has exactly 100 cores"], 1, "A result from one experiment does not become a universal setting. Available parallelism, waiting time, and overhead all change the useful range."],
       ["Why may prime_threads.py fail to speed up with more threads?", ["Primes cannot be partitioned", "The pure Python CPU loop is constrained by the CPython GIL and adds overhead", "Windows cannot schedule Python threads", "join deletes results"], 1, "The workers are native threads, but ordinary Python bytecode execution is generally serialized within one interpreter."]
     ]
   },
@@ -519,7 +519,7 @@ window.ILOVEOS_LESSON_DEPTH = {
         title: "Priority affects selection only after eligibility",
         intro: "A high number cannot make a blocked thread runnable or create new processor time.",
         items: [
-          { meta: "Condition", label: "Waiting or ready?", detail: "Only ready threads are candidates", linkAfter: "derive" },
+          { meta: "Condition", label: "Check whether the thread is ready", detail: "Waiting threads are not candidates", linkAfter: "derive" },
           { meta: "Base", label: "Class plus thread level", detail: "Documented starting priority", linkAfter: "adjust" },
           { meta: "Dynamic", label: "Temporary boost or decay", detail: "Responsiveness within policy", linkAfter: "rank" },
           { meta: "Dispatch", label: "Select ready work", detail: "Higher priority precedes lower", linkAfter: "competes for" },
@@ -580,9 +580,9 @@ window.ILOVEOS_LESSON_DEPTH = {
       cleanup: ["Restore the changed first PID to Normal if it is still live.", "Let both cpu_priority_lab.py processes finish, or stop only those two visible owned workers with Ctrl+C after restoration."]
     },
     checks: [
-      ["What does higher priority directly change?", ["Processor capacity", "Selection order among ready work", "Virtual address width", "Handle ownership"], 1, "Priority ranks ready candidates. It does not add processors or reduce the work."],
+      ["How does a higher priority affect a ready thread?", ["It increases processor capacity", "It makes the scheduler favor that thread over lower-priority ready work", "It widens the virtual address space", "It grants handle ownership"], 1, "Priority ranks ready candidates. It does not add processors or reduce the amount of work."],
       ["Why can a high-priority thread still consume no CPU?", ["It may be waiting", "High priority deletes its stack", "It becomes a file", "It cannot have a TID"], 0, "A waiting thread is not eligible for dispatch regardless of its priority."],
-      ["What is required after a controlled priority experiment?", ["Leave the faster class permanently", "Restore the saved original setting", "Set every process to Real Time", "Delete Process Explorer"], 1, "Configuration changes must be reversible and restored even if measurement or code fails."]
+      ["What should you do after a controlled priority experiment?", ["Leave the faster priority class in place", "Restore the original priority setting", "Set every process to Real Time", "Delete Process Explorer"], 1, "Restore configuration changes even if the measurement or test code fails."]
     ]
   }
 };
