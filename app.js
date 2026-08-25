@@ -969,7 +969,6 @@ user = <span class="code-function">win32api.GetUserName</span>()
           <div class="api-purpose">
             <p>${escapeHtml(module.description)}</p>
             <p><strong>Use it when:</strong> ${escapeHtml(module.useWhen)}</p>
-            <div class="api-context"><span>${escapeHtml(module.category)}</span><span>${escapeHtml(module.course)}</span></div>
           </div>
           <div class="feature-table" role="table" aria-label="${escapeHtml(module.name)} functions and concepts">
             <div class="feature-row feature-head" role="row"><span>API / concept</span><span>What you use it for</span><span>What to know</span><span></span></div>

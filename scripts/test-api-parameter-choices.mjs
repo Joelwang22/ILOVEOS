@@ -126,6 +126,9 @@ const probe = `<script>
 
       await changeRoute("#/reference/pywin32?api=OpenProcessToken");
       const renderedMain = document.querySelector("main");
+      const pywin32ModuleCards = [...document.querySelectorAll("#reference-list .api-module")];
+      checks.pywin32OuterCategoryTagsRetained = pywin32ModuleCards.length > 0 && pywin32ModuleCards.every((card) => card.querySelector(":scope > summary .reference-category"));
+      checks.pywin32InnerContextTagsRemoved = pywin32ModuleCards.every((card) => !card.querySelector(".api-module-body .api-context"));
       checks.pywin32ConstantsStripRemoved = !renderedMain?.querySelector(".constant-strip") && !renderedMain?.innerText.includes("Constants you will meet");
       const pywin32Summary = document.querySelector("#api-detail-content > .api-dialog-body > .api-dialog-summary");
       checks.pywin32PopupCategoryTagsRemoved = Boolean(pywin32Summary?.querySelector("p")) && !pywin32Summary.querySelector(":scope > span");

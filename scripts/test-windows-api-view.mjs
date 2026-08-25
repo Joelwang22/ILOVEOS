@@ -159,7 +159,7 @@ for (const selector of [".api-family-alias-picker", ".api-family-variants", ".ap
 }
 
 const versions = [...indexHtml.matchAll(/(?:href|src)="[^"]+\?v=([^"]+)"/g)];
-requireCondition(versions.length > 0 && versions.every((match) => match[1] === "windows-api-families-7"), "every tied asset must use the windows-api-families-7 release key");
+requireCondition(versions.length > 0 && versions.every((match) => match[1] === "windows-api-families-8"), "every tied asset must use the windows-api-families-8 release key");
 
 console.log(`family matches: ${exaMatches.length}`);
 console.log(`errors: ${errors.length}`);
