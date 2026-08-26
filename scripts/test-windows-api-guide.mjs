@@ -21,6 +21,7 @@ for (const filename of [
   "api-signatures-stage4.js",
   "api-signatures-stage6.js",
   "windows-api-families.js",
+  "course-api-coverage.js",
   "windows-api-data.js",
 ]) {
   vm.runInThisContext(fs.readFileSync(path.join(root, filename), "utf8"), { filename });

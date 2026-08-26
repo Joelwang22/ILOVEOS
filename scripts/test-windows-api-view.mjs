@@ -14,7 +14,7 @@ const requireCondition = (condition, message) => { if (!condition) errors.push(m
 globalThis.window = {};
 for (const filename of [
   "reference-data.js", "api-signatures.js", "api-signatures-stage3.js", "api-signatures-stage4.js",
-  "api-signatures-stage6.js", "windows-api-families.js", "windows-api-data.js",
+  "api-signatures-stage6.js", "windows-api-families.js", "course-api-coverage.js", "windows-api-data.js",
   "reference-overview-view.js", "windows-api-view.js",
 ]) vm.runInThisContext(fs.readFileSync(path.join(root, filename), "utf8"), { filename });
 
@@ -159,7 +159,7 @@ for (const selector of [".api-family-alias-picker", ".api-family-variants", ".ap
 }
 
 const versions = [...indexHtml.matchAll(/(?:href|src)="[^"]+\?v=([^"]+)"/g)];
-requireCondition(versions.length > 0 && versions.every((match) => match[1] === "stage-8-accessibility-1"), "every tied asset must use the stage-8-accessibility-1 release key");
+requireCondition(versions.length > 0 && versions.every((match) => match[1] === "course-api-coverage-1"), "every tied asset must use the course-api-coverage-1 release key");
 
 console.log(`family matches: ${exaMatches.length}`);
 console.log(`errors: ${errors.length}`);

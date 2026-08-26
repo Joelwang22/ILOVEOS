@@ -452,24 +452,40 @@
   }
 
   const moduleGroups = {
-    "Memory and address spaces": new Set(["GetSystemInfo", "GetNativeSystemInfo", "GlobalMemoryStatusEx", "QueryWorkingSetEx", "VirtualAlloc", "VirtualAllocEx", "VirtualFree", "VirtualFreeEx", "VirtualProtect", "VirtualProtectEx", "VirtualQueryEx", "CreateFileMappingW", "CreateFileMappingA", "OpenFileMappingW", "OpenFileMappingA", "MapViewOfFile", "MapViewOfFileEx", "UnmapViewOfFile", "GetProcessHeap", "HeapAlloc", "HeapSize", "HeapFree", "WriteProcessMemory"]),
-    "Processes, threads, and handles": new Set(["CreateProcessW", "CreateProcessA", "GetCurrentProcess", "GetExitCodeProcess", "OpenProcess", "OpenThread", "CreateRemoteThread", "CreateRemoteThreadEx", "WaitForSingleObject", "WaitForMultipleObjects", "CloseHandle", "FlushInstructionCache", "IsWow64Process2", "CreateEventW", "CreateEventA", "CreateEventExW", "CreateEventExA", "CreateMutexW", "CreateMutexA", "CreateMutexExW", "CreateMutexExA"]),
-    "Files, pipes, and devices": new Set(["ReadFile", "WriteFile", "CreateNamedPipeW", "CreateNamedPipeA"]),
+    "Memory and address spaces": new Set(["GetSystemInfo", "GetNativeSystemInfo", "GlobalMemoryStatusEx", "QueryWorkingSetEx", "VirtualAlloc", "VirtualAllocEx", "VirtualFree", "VirtualFreeEx", "VirtualProtect", "VirtualProtectEx", "VirtualQueryEx", "CreateFileMappingW", "CreateFileMappingA", "OpenFileMappingW", "OpenFileMappingA", "MapViewOfFile", "MapViewOfFileEx", "UnmapViewOfFile", "FlushViewOfFile", "GetProcessHeap", "HeapCreate", "HeapDestroy", "HeapAlloc", "HeapSize", "HeapFree", "ReadProcessMemory", "WriteProcessMemory"]),
+    "Processes, threads, and handles": new Set(["CreateProcessW", "CreateProcessA", "CreateProcessAsUserW", "CreateThread", "GetCurrentProcess", "GetExitCodeProcess", "GetExitCodeThread", "OpenProcess", "OpenThread", "CreateRemoteThread", "CreateRemoteThreadEx", "WaitForSingleObject", "WaitForMultipleObjects", "CloseHandle", "DuplicateHandle", "GetStdHandle", "SetHandleInformation", "SetThreadContext", "TerminateThread", "ExitThread", "FlushInstructionCache", "IsWow64Process2", "CreateEventW", "CreateEventA", "CreateEventExW", "CreateEventExA", "OpenEventW", "SetEvent", "ResetEvent", "CreateMutexW", "CreateMutexA", "CreateMutexExW", "CreateMutexExA", "ReleaseMutex", "EnterCriticalSection", "LeaveCriticalSection"]),
+    "Files, pipes, and devices": new Set(["CreateFileW", "ReadFile", "WriteFile", "FlushFileBuffers", "CreatePipe", "CreateNamedPipeW", "CreateNamedPipeA", "GetNamedPipeInfo", "SetNamedPipeHandleState", "WaitNamedPipeW"]),
     "Modules and loading": new Set(["EnumProcessModules", "EnumProcessModulesEx", "GetModuleHandleW", "GetModuleHandleA", "GetModuleFileNameW", "GetModuleFileNameA", "GetModuleFileNameExW", "GetModuleFileNameExA", "GetProcAddress", "LoadLibraryA", "LoadLibraryW", "LoadLibraryExW", "LoadLibraryExA", "FreeLibrary", "SetDefaultDllDirectories", "AddDllDirectory", "RtlAddFunctionTable"]),
-    "Services and Registry": new Set(["OpenSCManagerW", "OpenSCManagerA", "OpenServiceW", "OpenServiceA", "StartServiceW", "StartServiceA", "ControlService", "QueryServiceStatusEx", "QueryServiceStatus", "CloseServiceHandle", "RegOpenKeyExW", "RegOpenKeyExA"]),
-    "Security and trust": new Set(["AccessCheck", "OpenProcessToken", "DuplicateToken", "DuplicateTokenEx", "GetNamedSecurityInfoW", "GetNamedSecurityInfoA", "MapGenericMask", "LocalFree", "WinVerifyTrust"]),
+    "Services and Registry": new Set(["OpenSCManagerW", "OpenSCManagerA", "OpenServiceW", "OpenServiceA", "CreateServiceW", "StartServiceW", "StartServiceA", "ControlService", "QueryServiceStatusEx", "QueryServiceStatus", "CloseServiceHandle", "RegOpenKeyExW", "RegOpenKeyExA", "RegCreateKeyExW", "RegDeleteKeyW", "RegEnumKeyExW", "RegEnumValueW", "RegQueryValueExW", "RegSetValueExW", "RegCloseKey"]),
+    "Security and trust": new Set(["AccessCheck", "OpenProcessToken", "AdjustTokenPrivileges", "DuplicateToken", "DuplicateTokenEx", "LookupPrivilegeValueW", "ImpersonateLoggedOnUser", "ImpersonateNamedPipeClient", "RevertToSelf", "GetNamedSecurityInfoW", "GetNamedSecurityInfoA", "MapGenericMask", "LocalFree", "WinVerifyTrust"]),
     "Hooks and desktop APIs": new Set(["SetWindowsHookExW", "SetWindowsHookExA", "CallNextHookEx", "UnhookWindowsHookEx", "InterlockedExchangePointer", "MessageBoxW", "MessageBoxA"]),
     "System information and errors": new Set(["GetLastError", "GetWindowsDirectoryW", "GetWindowsDirectoryA"]),
   };
 
   const dllGroups = {
-    "Advapi32.dll": new Set(["AccessCheck", "OpenProcessToken", "DuplicateToken", "DuplicateTokenEx", "GetNamedSecurityInfoW", "GetNamedSecurityInfoA", "MapGenericMask", "OpenSCManagerW", "OpenSCManagerA", "OpenServiceW", "OpenServiceA", "StartServiceW", "StartServiceA", "ControlService", "QueryServiceStatusEx", "QueryServiceStatus", "CloseServiceHandle", "RegOpenKeyExW", "RegOpenKeyExA"]),
+    "Advapi32.dll": new Set(["AccessCheck", "OpenProcessToken", "AdjustTokenPrivileges", "DuplicateToken", "DuplicateTokenEx", "LookupPrivilegeValueW", "ImpersonateLoggedOnUser", "ImpersonateNamedPipeClient", "RevertToSelf", "GetNamedSecurityInfoW", "GetNamedSecurityInfoA", "MapGenericMask", "CreateProcessAsUserW", "OpenSCManagerW", "OpenSCManagerA", "OpenServiceW", "OpenServiceA", "CreateServiceW", "StartServiceW", "StartServiceA", "ControlService", "QueryServiceStatusEx", "QueryServiceStatus", "CloseServiceHandle", "RegOpenKeyExW", "RegOpenKeyExA", "RegCreateKeyExW", "RegDeleteKeyW", "RegEnumKeyExW", "RegEnumValueW", "RegQueryValueExW", "RegSetValueExW", "RegCloseKey"]),
     "User32.dll": new Set(["SetWindowsHookExW", "SetWindowsHookExA", "CallNextHookEx", "UnhookWindowsHookEx", "MessageBoxW", "MessageBoxA"]),
-    "Psapi.dll": new Set(["QueryWorkingSetEx", "EnumProcessModules", "EnumProcessModulesEx", "GetModuleFileNameExW", "GetModuleFileNameExA"]),
+    "Psapi.dll": new Set(["QueryWorkingSetEx", "EnumProcesses", "EnumProcessModules", "EnumProcessModulesEx", "GetModuleFileNameExW", "GetModuleFileNameExA"]),
     "Wintrust.dll": new Set(["WinVerifyTrust"]),
   };
 
   const cleanupByName = {
+    CreateFileW: "Close the returned file, device, or pipe handle once with CloseHandle.",
+    CreatePipe: "Close both returned pipe handles once with CloseHandle. Close unused ends promptly so readers can observe end of file.",
+    CreateProcessAsUserW: "Close both hThread and hProcess from PROCESS_INFORMATION with CloseHandle.",
+    CreateServiceW: "Release the returned service handle once with CloseServiceHandle.",
+    CreateThread: "Close the returned thread handle with CloseHandle after synchronization and result handling.",
+    DuplicateHandle: "The duplicate is independently owned unless DUPLICATE_CLOSE_SOURCE transferred ownership. Close each remaining owned handle in its process context.",
+    EnterCriticalSection: "Balance every successful entry with LeaveCriticalSection on the same thread. Delete the object only after all users have stopped.",
+    HeapCreate: "Destroy the private heap with HeapDestroy only after every allocation and user is finished.",
+    HeapDestroy: "This destroys the complete private heap. Do not access the heap or any block formerly allocated from it.",
+    ImpersonateLoggedOnUser: "Restore the original thread context with RevertToSelf in a finally block.",
+    ImpersonateNamedPipeClient: "Restore the original thread context with RevertToSelf in a finally block.",
+    LeaveCriticalSection: "This releases one recursive acquisition; it does not delete the CRITICAL_SECTION object.",
+    OpenEventW: "Close the returned event handle once with CloseHandle.",
+    RegCreateKeyExW: "Close the returned Registry key once with RegCloseKey.",
+    RegCloseKey: "This releases one open HKEY. Do not use it again after success.",
+    RevertToSelf: "This restores the original thread security context; treat failure as a security-critical condition.",
     OpenProcess: "An owned process handle must be released once with CloseHandle, normally in finally.",
     CreateProcessW: "Close both hThread and hProcess from PROCESS_INFORMATION with CloseHandle.",
     CreateRemoteThread: "Close the returned thread handle with CloseHandle after waiting or otherwise finishing with it.",
@@ -505,6 +521,7 @@
     LoadLibraryExA: "Balance an owned module reference with FreeLibrary.",
     FreeLibrary: "This decrements one owned module reference. Do not use addresses that became invalid after the final unload.",
     GetCurrentProcess: "The returned pseudo-handle is borrowed and must not be closed.",
+    GetStdHandle: "The standard handle is borrowed process state. Do not close it unless your code deliberately replaced and took ownership of it.",
     GetProcessHeap: "The returned process-heap handle is borrowed and must not be closed.",
     OpenProcessToken: "Close the returned token handle with CloseHandle.",
     DuplicateToken: "Close the returned duplicate-token handle with CloseHandle.",
@@ -530,6 +547,17 @@
   };
 
   const resultByName = {
+    AdjustTokenPrivileges: "A nonzero BOOL means the call ran, but ERROR_NOT_ALL_ASSIGNED still means one or more requested privileges were unavailable. Capture last error immediately after success.",
+    CreateFileW: "Returns an owned handle on success. INVALID_HANDLE_VALUE, not null, indicates failure; then read last error.",
+    GetExitCodeThread: "Nonzero indicates success and lpExitCode receives the termination status or STILL_ACTIVE. Zero indicates failure; then read last error.",
+    GetStdHandle: "Returns the configured standard handle, null when no standard handle exists, or INVALID_HANDLE_VALUE on failure. Interpret all three outcomes explicitly.",
+    RegCloseKey: "Returns ERROR_SUCCESS on success or a Win32 error code directly. Do not call get_last_error for this result.",
+    RegCreateKeyExW: "Returns ERROR_SUCCESS on success or a Win32 error code directly. The disposition output distinguishes creation from opening.",
+    RegDeleteKeyW: "Returns ERROR_SUCCESS on success or a Win32 error code directly. A key with subkeys is not deleted by this call.",
+    RegEnumKeyExW: "Returns ERROR_SUCCESS for one item, ERROR_NO_MORE_ITEMS at the end, or another Win32 error code directly.",
+    RegEnumValueW: "Returns ERROR_SUCCESS for one item, ERROR_NO_MORE_ITEMS at the end, ERROR_MORE_DATA for a short buffer, or another error code directly.",
+    RegQueryValueExW: "Returns ERROR_SUCCESS on success, ERROR_MORE_DATA for a short buffer, or another Win32 error code directly.",
+    RegSetValueExW: "Returns ERROR_SUCCESS on success or a Win32 error code directly. The function does not use the ordinary BOOL failure convention.",
     GetLastError: "Returns the calling thread's last-error code. Read it only when the failed API explicitly documents that it sets last error.",
     RegOpenKeyExW: "Returns ERROR_SUCCESS on success or a Win32 error code directly. Do not call get_last_error for this result.",
     RegOpenKeyExA: "Returns ERROR_SUCCESS on success or a Win32 error code directly. Do not call get_last_error for this result.",
@@ -680,6 +708,40 @@
   };
 
   const examplesByName = {
+    AdjustTokenPrivileges: `ctypes.set_last_error(0)
+ok = AdjustTokenPrivileges(token, False, ctypes.byref(new_state), 0, None, None)
+if not ok:
+    raise ctypes.WinError(ctypes.get_last_error())
+status = ctypes.get_last_error()
+if status == ERROR_NOT_ALL_ASSIGNED:
+    raise PermissionError("the token does not hold every requested privilege")`,
+    CreateFileW: `handle = CreateFileW(path, desired_access, share_mode, None, disposition, flags, None)
+if handle == ctypes.c_void_p(-1).value:  # INVALID_HANDLE_VALUE
+    raise ctypes.WinError(ctypes.get_last_error())`,
+    GetStdHandle: `handle = GetStdHandle(STD_OUTPUT_HANDLE)
+if handle == ctypes.c_void_p(-1).value:  # INVALID_HANDLE_VALUE
+    raise ctypes.WinError(ctypes.get_last_error())
+if not handle:
+    raise RuntimeError("this process has no standard output handle")
+# The configured standard handle is borrowed process state.`,
+    RegCreateKeyExW: `key = wintypes.HKEY()
+disposition = wintypes.DWORD()
+status = RegCreateKeyExW(parent, subkey, 0, None, options, desired_access, None, ctypes.byref(key), ctypes.byref(disposition))
+if status != 0:  # ERROR_SUCCESS
+    raise ctypes.WinError(status)`,
+    RegQueryValueExW: `data_bytes = wintypes.DWORD()
+value_type = wintypes.DWORD()
+status = RegQueryValueExW(key, value_name, None, ctypes.byref(value_type), None, ctypes.byref(data_bytes))
+if status not in (ERROR_SUCCESS, ERROR_MORE_DATA):
+    raise ctypes.WinError(status)
+# Allocate a type-appropriate buffer, then repeat because the value can change.`,
+    RegSetValueExW: `status = RegSetValueExW(key, value_name, 0, value_type, data, data_size)
+if status != 0:  # ERROR_SUCCESS
+    raise ctypes.WinError(status)`,
+    RegCloseKey: `status = RegCloseKey(key)
+if status != 0:  # ERROR_SUCCESS
+    raise ctypes.WinError(status)
+key = None`,
     OpenProcess: `process_handle = OpenProcess(
     PROCESS_QUERY_INFORMATION | PROCESS_VM_OPERATION | PROCESS_VM_WRITE,
     False,

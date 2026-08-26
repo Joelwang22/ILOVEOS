@@ -12,7 +12,7 @@ const root = path.resolve(scriptsDirectory, "..");
 globalThis.window = {};
 for (const filename of [
   "reference-data.js", "api-signatures.js", "api-signatures-stage3.js", "api-signatures-stage4.js",
-  "api-signatures-stage6.js", "windows-api-families.js", "windows-api-data.js",
+  "api-signatures-stage6.js", "windows-api-families.js", "course-api-coverage.js", "windows-api-data.js",
   "reference-overview-view.js", "windows-api-view.js",
 ]) vm.runInThisContext(fs.readFileSync(path.join(root, filename), "utf8"), { filename });
 

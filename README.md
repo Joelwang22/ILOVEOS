@@ -23,8 +23,9 @@ Then open `http://localhost:8000`.
 - Windows-specific explanations, API connections, and primary documentation for every lesson.
 - Interactive knowledge checks and guided investigations throughout the curriculum.
 - Integrated investigation workspaces inside the lessons, plus downloadable starter files where a runnable artifact is useful.
-- Purpose-first pywin32 module guide with filtering.
-- Windows API guide that groups represented operations into families and provides approachable native declarations, Python translations, contextual parameter choices, result rules, and cleanup guidance.
+- Purpose-first pywin32 module guide with 386 searchable wrapper, constant, structure, and native-companion entries.
+- Windows API guide with 135 callable variants grouped into 106 represented-operation families, including the process, thread, handle, synchronization, pipe, service, security, heap, file, and Registry APIs named by the supplied course materials.
+- A course-source coverage manifest and regression test mapping 58 explicit pywin32 references and 92 native API references from the supplied decks, notes, textbook documents, and exercise files to visible guide content.
 - Sysinternals toolbox integrated with the curriculum.
 - Search across lessons, their concepts and APIs, pywin32 modules, and tools.
 - Static architecture suitable for GitHub Pages.

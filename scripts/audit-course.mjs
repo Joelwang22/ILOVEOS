@@ -26,6 +26,7 @@ const dataFiles = [
   "api-signatures-stage4.js",
   "api-signatures-stage6.js",
   "windows-api-families.js",
+  "course-api-coverage.js",
   "windows-api-data.js",
   "assessment-data.js",
 ];
