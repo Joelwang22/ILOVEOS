@@ -413,7 +413,7 @@ window.ILOVEOS_LESSON_DEPTH = {
       },
       {
         type: "comparison",
-        title: "Audit prime_threads.py as a CPU-bound workload",
+        title: "Audit the supplied prime-number program as a CPU-bound workload",
         prompt: "The supplied script partitions candidate integers across Python threads and later sorts the combined prime results.",
         columns: [
           { title: "What the script does well", rows: [["Partition", "Striped ranges avoid checking the same integer twice"], ["Result ownership", "Each worker appends to its own list"], ["Completion", "Main joins every worker before combining"], ["Correctness", "Sorting restores numeric order"]] },
@@ -478,7 +478,7 @@ window.ILOVEOS_LESSON_DEPTH = {
     checks: [
       ["What is the scheduler's direct unit of dispatch?", ["Executable file", "Thread", "Handle table", "DLL"], 1, "Ready threads are selected for logical processors."],
       ["Why is there no single best thread count for every workload?", ["Windows changes all thread IDs at 101", "The best count depends on the workload, machine, runtime, and measurement conditions", "A process can open only 100 files", "Every CPU has exactly 100 cores"], 1, "A result from one experiment does not become a universal setting. Available parallelism, waiting time, and overhead all change the useful range."],
-      ["Why may prime_threads.py fail to speed up with more threads?", ["Primes cannot be partitioned", "The pure Python CPU loop is constrained by the CPython GIL and adds overhead", "Windows cannot schedule Python threads", "join deletes results"], 1, "The workers are native threads, but ordinary Python bytecode execution is generally serialized within one interpreter."]
+      ["Why may the prime-number program fail to speed up with more threads?", ["Primes cannot be partitioned", "The pure Python CPU loop is constrained by the CPython GIL and adds overhead", "Windows cannot schedule Python threads", "join deletes results"], 1, "The workers are native threads, but ordinary Python bytecode execution is generally serialized within one interpreter."]
     ]
   },
 

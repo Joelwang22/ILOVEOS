@@ -408,7 +408,7 @@ window.ILOVEOS_LESSON_DEPTH = {
         ]
       },
       {
-        title: "The supplied hidden_process.py is a useful draft, not the final reference",
+        title: "The supplied process-creation draft is useful, but it is not the final reference",
         paragraphs: [
           "The supplied script correctly defines the full structures, sets cb, uses a writable command line, and closes the two returned handles. It also demonstrates that STARTF_USESHOWWINDOW and SW_HIDE concern window presentation. The process remains visible to Process Explorer and enumeration APIs.",
           "For a robust reference, declare argtypes and restype, use WinDLL with use_last_error, raise a precise WinError, use an explicit executable path, and keep the process handle long enough to observe or wait. Calling through ctypes.windll without a declared signature relies on defaults that are unsafe for many pointer-sized APIs."

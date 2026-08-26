@@ -6,14 +6,14 @@ window.ILOVEOS_LESSON_DEPTH = {
       learn: ["Understand the machine", "Connect instructions, number systems, processor topology, and address width to form a common foundation."],
       windows: ["Decode Windows values", "Use Win32 types and the Python process's ABI to interpret the values Windows exposes."],
       investigation: ["Inspect the machine", "Compare the simplified architecture model with the system Windows reports."],
-      review: ["Check the foundations", "Test the calculations and distinctions that later lessons rely on."]
+      review: ["Check the foundations", "Test the calculations and distinctions used to reason about Windows behavior."]
     },
     learning: [
       {
         title: "A computer changes state by executing instructions",
         paragraphs: [
           "At the lowest useful level, a processor repeatedly fetches an instruction, decodes what it means, and performs it. An instruction may add two values, compare them, copy bytes, or change which instruction runs next. The values closest to the execution units live in registers. Registers are tiny compared with RAM, but they are where a running thread keeps immediate operands, addresses, flags, and its next instruction position.",
-          "RAM holds far more code and data, but the processor does not treat it as a uniformly fast pool. Caches retain recently used blocks near each core. If the required bytes are not in a nearby cache, the core waits longer while the memory hierarchy supplies them. Storage sits further away and preserves data after power is removed. This model of registers, caches, RAM, and storage explains why later lessons distinguish CPU time, memory residency, and file I/O."
+          "RAM holds far more code and data, but the processor does not treat it as a uniformly fast pool. Caches retain recently used blocks near each core. If the required bytes are not in a nearby cache, the core waits longer while the memory hierarchy supplies them. Storage sits further away and preserves data after power is removed. This model of registers, caches, RAM, and storage explains the difference between CPU time, memory residency, and file I/O."
         ],
         callout: { label: "Distinguish the terms", text: "A program is passive code. A process is a protected running container. A thread is the execution state a processor can schedule. A core is hardware that can run a thread." }
       },
@@ -200,7 +200,7 @@ window.ILOVEOS_LESSON_DEPTH = {
         title: "pywin32 exposes the operating system; it does not replace it",
         paragraphs: [
           "pywin32 maps many Windows operations into Python-friendly calls. A function such as GetCurrentProcessId returns the identity assigned by the OS, while GetUserName reports the user associated with the current security context. The wrapper may convert a native structure or raise pywintypes.error, but the underlying Windows contract still defines what is being requested.",
-          "ctypes operates closer to the C boundary and can call exported functions that pywin32 does not cover. That flexibility transfers responsibility to your code: declare types, preserve errors, allocate buffers, and release resources correctly. Later lessons choose pywin32 first and use ctypes when the lower-level details provide a useful lesson or fill a real coverage gap."
+          "ctypes operates closer to the C boundary and can call exported functions that pywin32 does not cover. That flexibility transfers responsibility to your code: declare types, preserve errors, allocate buffers, and release resources correctly. Prefer pywin32 when it covers the required operation clearly; use ctypes when the lower-level details are the subject or fill a real coverage gap."
         ]
       }
     ],
@@ -440,7 +440,7 @@ window.ILOVEOS_LESSON_DEPTH = {
         title: "Observe security context without confusing it with mode",
         paragraphs: [
           "Process Explorer can display integrity level, user, virtualization state, and token details for user-mode processes. These are observable security attributes. It cannot show that an application permanently runs in kernel mode because ordinary application execution does not. Kernel stacks may appear when a thread is sampled during a system service or wait, but that is a moment in a controlled transition.",
-          "For later debugging, remember that a user-mode crash usually produces a process-scoped exception, while a fatal kernel error may produce a bug check. Protected Process Light and virtualization-based security add further restrictions, but they build on rather than erase the basic boundary."
+          "For debugging, remember that a user-mode crash usually produces a process-scoped exception, while a fatal kernel error may produce a bug check. Protected Process Light and virtualization-based security add further restrictions, but they build on rather than erase the basic boundary."
         ]
       }
     ],
@@ -677,7 +677,7 @@ window.ILOVEOS_LESSON_DEPTH = {
         title: "Recognize what changes when a binding is introduced",
         paragraphs: [
           "A Python binding can convert the representation without changing the contract. It may accept str instead of LPCWSTR, return an output buffer as bytes, turn a HANDLE into a PyHANDLE, or raise an exception after detecting a native failure sentinel. Those are binding behaviors layered over the same Windows operation.",
-          "Keep those layers separate in your notes. The native page tells you what Windows promises. The binding documentation tells you how Python supplies inputs, receives outputs, and reports native failures. The next lesson uses this contract to choose pywin32 or ctypes and construct the call safely."
+          "Keep those layers separate in your notes. The native page tells you what Windows promises. The binding documentation tells you how Python supplies inputs, receives outputs, and reports native failures. Use both parts of the contract to choose pywin32 or ctypes and construct the call safely."
         ]
       }
     ],
@@ -755,10 +755,10 @@ window.ILOVEOS_LESSON_DEPTH = {
       {
         title: "The native contract comes before the binding",
         paragraphs: [
-          "Begin with the contract card from the previous lesson. It defines the Windows operation, access requirements, native parameter meanings, possible results, error-detail rule, and resource lifetime. Only then compare the Python interfaces. This order prevents convenient wrapper syntax from hiding a right, failure value, or cleanup requirement.",
+          "Begin by writing a contract card for the Windows operation. Record its access requirements, native parameter meanings, possible results, error-detail rule, and resource lifetime. Only then compare the Python interfaces. This order prevents convenient wrapper syntax from hiding a right, failure value, or cleanup requirement.",
           "A binding may legitimately change representation. pywin32 can accept a Python str for LPCWSTR, allocate output storage, return several outputs as a tuple, and represent a native handle with PyHANDLE. ctypes stays closer to the C declaration. Neither binding may change what access Windows checks, what the operation does, or which resource lifetime Windows defines."
         ],
-        callout: { label: "Apply the earlier example", text: "Earlier lessons used CreateFileW to explain abstraction, Windows layers, and API contracts. The question here is narrower: which Python binding should express that already-understood contract, and which safety requirements must the code still handle explicitly?" }
+        callout: { label: "Apply the CreateFileW example", text: "For CreateFileW, the native contract defines the path representation, access and sharing flags, failure value, error-detail rule, and handle lifetime. The question here is which Python binding should express that contract, and which safety requirements the code must still handle explicitly." }
       },
       {
         title: "Prefer pywin32 when it communicates the task clearly",

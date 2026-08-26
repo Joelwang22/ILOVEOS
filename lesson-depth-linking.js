@@ -285,14 +285,14 @@ window.ILOVEOS_LESSON_DEPTH = {
       {
         title: "Machine and Magic together identify the architecture",
         paragraphs: [
-          "The supplied how_to_load report correctly used Machine 0x014C and Magic 0x010B to establish an x86 PE32 DLL and matched it to an x86 PE32 executable. Machine identifies the target processor family, while Magic selects the optional-header format. One field reinforces but does not replace the other.",
+          "In the controlled import-table scenario, Machine 0x014C and Magic 0x010B establish an x86 PE32 DLL and match it to an x86 PE32 executable. Machine identifies the target processor family, while Magic selects the optional-header format. One field reinforces but does not replace the other.",
           "Other compatibility conditions still matter, including the exported-symbol ABI, subsystem expectations, dependencies, and process mitigation policy. A matching architecture is necessary for an in-process native DLL, but it is not sufficient for correct behavior."
         ]
       },
       {
         title: "Static inspection should not execute the target",
         paragraphs: [
-          "pe_inspector_lab.py opens the file as bytes, validates bounds, and reports a limited set of fields. CFF Explorer supplies a second interpretation, while Sigcheck adds hashes, signature, version, and entropy-related metadata. None requires launching the target.",
+          "The supplied PE inspector opens the file as bytes, validates bounds, and reports a limited set of fields. CFF Explorer supplies a second interpretation, while Sigcheck adds hashes, signature, version, and entropy-related metadata. None requires launching the target.",
           "Do not use LoadLibrary as a general PE parser. Loading executes loader behavior and can run DLL initialization code. Data-file loading flags exist for specialized resource use, but ordinary structural analysis should read the file format."
         ]
       }
@@ -410,7 +410,7 @@ window.ILOVEOS_LESSON_DEPTH = {
       {
         title: "Tools expose each coordinate system separately",
         paragraphs: [
-          "CFF Explorer and pe_inspector_lab.py expose raw pointers, RVAs, sizes, and characteristics. Process Explorer reports module bases. VMMap shows live image ranges and protections. HxD can verify the calculated raw file offset, while WinDbg can inspect the calculated live VA in a process you own.",
+          "CFF Explorer and the supplied PE inspector expose raw pointers, RVAs, sizes, and characteristics. Process Explorer reports module bases. VMMap shows live image ranges and protections. HxD can verify the calculated raw file offset, while WinDbg can inspect the calculated live VA in a process you own.",
           "Relocations can change address-bearing bytes after mapping, so not every live byte must equal the raw file byte. Choose ordinary instruction or constant bytes for a simple comparison and explain relocation as a limitation."
         ]
       }
@@ -488,7 +488,7 @@ window.ILOVEOS_LESSON_DEPTH = {
           "GetProcAddress returns an address. It does not tell Python the parameter count, scalar widths, pointer levels, string encoding, calling convention, or return type. Constructing the wrong callable prototype can truncate pointers, corrupt the stack on affected architectures, pass invalid text, or misread the result.",
           "The callable remains valid only while the module is loaded and the export contract remains applicable. Do not FreeLibrary while function pointers, callbacks, worker threads, or returned module-owned data can still be used."
         ],
-        callout: { label: "Correction to open_the_box.py", text: "The supplied script uses private _ctypes.call_function without a declared MessageBox signature and never releases its LoadLibrary reference. The revised path uses WINFUNCTYPE, MessageBoxW, exact types, and FreeLibrary in a finally block." }
+        callout: { label: "Correct the dynamic-loading draft", text: "The supplied script uses private _ctypes.call_function without a declared MessageBox signature and never releases its LoadLibrary reference. The revised path uses WINFUNCTYPE, MessageBoxW, exact types, and FreeLibrary in a finally block." }
       }
     ],
     visuals: [
@@ -570,7 +570,7 @@ window.ILOVEOS_LESSON_DEPTH = {
     phases: {
       learn: ["Trace process loader initialization", "Follow the mapping of the main image, dependency loading, relocations, imports, TLS, initialization, and transfer to the entry point."],
       windows: ["Control module selection", "Understand loader constraints, dependency graphs, API sets, secure paths, and live evidence."],
-      investigation: ["Prove one startup dependency", "Revisit how_to_load as a controlled import-table experiment with clearer safety limits and stronger evidence."],
+      investigation: ["Prove one startup dependency", "Analyze a controlled import-table scenario with clear safety limits and several independent forms of evidence."],
       review: ["Check the loader path", "Test ordering, dependency types, DllMain constraints, architecture, search, and evidence."]
     },
     learning: [
@@ -615,7 +615,7 @@ window.ILOVEOS_LESSON_DEPTH = {
     workedExamples: [
       {
         type: "trace",
-        title: "Interpret the supplied how_to_load results",
+        title: "Interpret a controlled import-table scenario",
         prompt: "A disposable x86 cmd copy is modified to import one export from an x86 msgbox.dll placed beside it.",
         steps: [
           { title: "Establish compatibility", action: "CFF Explorer shows Machine 0x014C and Magic 0x010B for both files.", why: "An x86 process requires an x86 in-process native DLL.", result: "Architecture is compatible, but behavior is not yet proven." },
