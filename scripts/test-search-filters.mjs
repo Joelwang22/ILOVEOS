@@ -22,10 +22,28 @@ const checks = {};
 
 try {
   await withBrowser(async (client) => {
-    await setViewport(client, 390, 844, true);
+    await setViewport(client, 900, 800, false);
     await navigate(client, `${baseUrl}#/`);
 
     await evaluate(client, `document.querySelector('#search-trigger').click()`);
+    await delay(40);
+    Object.assign(checks, await evaluate(client, `(() => {
+      const body = document.querySelector('.search-body');
+      const filters = document.querySelector('#search-filters');
+      const results = document.querySelector('#search-results');
+      const filterRect = filters.getBoundingClientRect();
+      const resultRect = results.getBoundingClientRect();
+      const cardStyle = getComputedStyle(filters);
+      const labels = [...filters.querySelectorAll('.search-filter')];
+      return {
+        filterCardPrecedesResults: body?.firstElementChild === filters && body?.lastElementChild === results,
+        filterCardIsLeftOfResults: filterRect.right < resultRect.left && Math.abs(filterRect.top - resultRect.top) < 2,
+        filterCardIsVisuallySeparate: cardStyle.borderTopWidth !== '0px' && parseFloat(cardStyle.borderTopLeftRadius) > 0 && cardStyle.backgroundColor !== 'rgba(0, 0, 0, 0)',
+        desktopFiltersStackVertically: labels.length === 5 && labels[1].getBoundingClientRect().top > labels[0].getBoundingClientRect().bottom,
+      };
+    })()`));
+
+    await setViewport(client, 390, 844, true);
     await delay(40);
     Object.assign(checks, await evaluate(client, `(() => {
       const filters = [...document.querySelectorAll('[data-search-filter]')];
