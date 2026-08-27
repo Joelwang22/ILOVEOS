@@ -65,9 +65,10 @@ const probe = `<script>
 
       await visit("#/assessment/final");
       checks.finalRoute = document.querySelector("h1")?.textContent === "Final operating systems assessment"
-        && document.querySelectorAll(".assessment-stack fieldset.assessment-activity").length === 20
+        && document.querySelectorAll(".assessment-stack fieldset.assessment-activity").length === 4
+        && document.querySelectorAll(".assessment-case-link").length === 5
         && !document.querySelector(".assessment-activity.unavailable")
-        && Boolean(document.querySelector(".assessment-practical"));
+        && !document.querySelector(".assessment-practical");
 
       await visit("#/");
       document.querySelector("#search-trigger").click();

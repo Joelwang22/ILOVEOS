@@ -94,20 +94,24 @@ if (assessments) {
   const finalMultipleSets = finalQuestions.filter((activity) => activity.kind === "multiple").map((activity) => [...activity.answers].sort((left, right) => left - right).join(","));
   requireCondition(new Set(finalMultipleSets).size >= 3, "final multiple-selection answer positions are predictable");
 
-  const practical = assessments.finalAssessment?.practical;
-  const requiredPrompts = ["contract", "compatibility", "outcomes", "evidence", "ownership", "cleanup"];
-  requireCondition(practical?.id === "final-owned-target-investigation", "final practical has the wrong or missing stable ID");
-  requireCondition(typeof practical?.scenario === "string" && practical.scenario.length >= 180, "final practical needs a developed controlled scenario");
-  requireCondition(requiredPrompts.every((id) => practical?.prompts?.some((prompt) => prompt.id === id && prompt.prompt.length >= 50)), "final practical is missing a required structured prompt");
-  requireCondition(Array.isArray(practical?.evidenceExpectations) && practical.evidenceExpectations.length >= 4, "final practical needs evidence expectations");
-  requireCondition(Array.isArray(practical?.modelReasoning) && practical.modelReasoning.length >= 6, "final practical needs a complete model-reasoning checklist");
-  requireCondition(new Set((practical?.prompts || []).map((prompt) => prompt.id)).size === practical?.prompts?.length, "final practical repeats a prompt ID");
-  requireCondition(practical?.prompts?.every((prompt) => typeof prompt.label === "string" && prompt.label.length >= 8), "final practical has a weak prompt label");
-  requireCondition(new Set((practical?.modelReasoning || []).map((item) => item.id)).size === practical?.modelReasoning?.length, "final practical repeats a model-reasoning ID");
-  requireCondition(practical?.modelReasoning?.every((item) => item.title.length >= 8 && item.body.length >= 90), "final practical has a weak model-reasoning item");
-  const safetyText = `${practical?.scenario || ""} ${(practical?.modelReasoning || []).map((item) => item.body).join(" ")}`.toLowerCase();
-  requireCondition((safetyText.includes("owned") || safetyText.includes("you own")) && safetyText.includes("read-only"), "final practical does not establish learner-controlled, read-only scope");
-  requireCondition(safetyText.includes("remote") && safetyText.includes("without modifying"), "final practical does not explicitly exclude mutation and remote execution");
+  const finalCases = assessments.finalAssessment?.cases || [];
+  requireCondition(assessments.finalAssessment?.version === 2, "integrated final assessment needs content version 2");
+  requireCondition(finalCases.length === 5, `final assessment must contain five integrated cases, found ${finalCases.length}`);
+  requireCondition(new Set(finalCases.map((caseFile) => caseFile.id)).size === 5, "final assessment repeats a case ID");
+  requireCondition(finalCases.flatMap((caseFile) => caseFile.modules || []).length === 10, "final cases must declare ten module placements");
+  requireCondition(new Set(finalCases.flatMap((caseFile) => caseFile.modules || [])).size === 10, "final cases do not cover every module exactly once");
+  for (const [caseIndex, caseFile] of finalCases.entries()) {
+    requireCondition(typeof caseFile.title === "string" && caseFile.title.length >= 20, `final case ${caseIndex + 1} needs a substantive title`);
+    requireCondition(typeof caseFile.summary === "string" && caseFile.summary.length >= 80, `final case ${caseIndex + 1} needs a developed summary`);
+    requireCondition(typeof caseFile.scenario === "string" && caseFile.scenario.length >= 150, `final case ${caseIndex + 1} needs a developed scenario`);
+    requireCondition(Array.isArray(caseFile.modules) && caseFile.modules.length === 2 && caseFile.modules.every((module) => moduleIds.includes(module)), `final case ${caseIndex + 1} needs two valid module tags`);
+    requireCondition(Array.isArray(caseFile.artifacts) && caseFile.artifacts.length >= 2 && caseFile.artifacts.every((artifact) => artifact.label?.length >= 5 && artifact.content?.length >= 70), `final case ${caseIndex + 1} needs two substantive artifacts`);
+    requireCondition(Array.isArray(caseFile.questions) && caseFile.questions.length === 4, `final case ${caseIndex + 1} must contain four questions`);
+    requireCondition(caseFile.questions.every((question) => caseFile.modules.includes(question.module)), `final case ${caseIndex + 1} contains a question outside its module pair`);
+    requireCondition(caseFile.modules.every((module) => caseFile.questions.filter((question) => question.module === module).length === 2), `final case ${caseIndex + 1} must assign two questions to each paired module`);
+    requireCondition(caseFile.questions.every((question) => finalQuestions.some((flat) => flat.id === question.id && flat.caseId === caseFile.id)), `final case ${caseIndex + 1} is not represented correctly in the flat question index`);
+  }
+  requireCondition(!assessments.finalAssessment?.practical, "outdated ungraded practical must not remain in the final assessment");
 }
 
 console.log(`module reviews: ${assessments?.moduleReviews?.length || 0}`);

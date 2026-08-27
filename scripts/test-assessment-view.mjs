@@ -98,19 +98,23 @@ if (view) {
   state = view.reduceState(review, state, { type: "select-single", id: "single-contract", option: 0 });
   requireCondition(!state.activities["single-contract"].completed, "incorrect single choice completes the activity");
   requireCondition(state.activities["single-contract"].incorrect.includes(0), "incorrect single choice is not recorded");
+  requireCondition(state.activities["single-contract"].latestAttemptCorrect === false && state.activities["single-contract"].attempts === 1, "incorrect attempt is not reflected in the latest-attempt score");
   let rendered = view.renderReview(review, state);
   requireCondition(rendered.includes("Try another option") && rendered.includes(review.activities[0].explanation), "incorrect single choice does not expose retry feedback and reasoning");
   requireCondition(!rendered.includes('data-activity="single-contract" data-option="1" disabled'), "remaining single-choice options are disabled after an incorrect attempt");
 
   state = view.reduceState(review, state, { type: "select-single", id: "single-contract", option: 1 });
   requireCondition(state.activities["single-contract"].completed, "correct single choice does not complete the activity");
+  requireCondition(state.activities["single-contract"].latestAttemptCorrect === true && state.activities["single-contract"].attempts === 2, "correct retry does not update the latest-attempt score");
   requireCondition(view.progress(review, state).completed === 1, "single-choice completion does not update progress");
+  requireCondition(view.progress(review, state).latestAttemptCorrect === 1 && view.progress(review, state).latestAttemptScored === 1, "progress reports the wrong latest-attempt score");
   rendered = view.renderReview(review, state);
   requireCondition(rendered.includes("Correct. Activity complete."), "correct single choice does not render completion feedback");
 
   let emptyMultiple = view.reduceState(review, state, { type: "check-multiple", id: "multiple-cleanup" });
   requireCondition(emptyMultiple.activities["multiple-cleanup"].feedback === "Choose at least one option before checking.", "empty multiple selection has no inline prompt");
   requireCondition(!emptyMultiple.activities["multiple-cleanup"].attempted, "empty multiple selection counts as an attempt");
+  requireCondition(emptyMultiple.activities["multiple-cleanup"].latestAttemptCorrect === null && emptyMultiple.activities["multiple-cleanup"].attempts === 0, "empty multiple selection changes latest-attempt scoring");
   state = view.reduceState(review, state, { type: "toggle-multiple", id: "multiple-cleanup", option: 0 });
   state = view.reduceState(review, state, { type: "check-multiple", id: "multiple-cleanup" });
   requireCondition(!state.activities["multiple-cleanup"].completed && state.activities["multiple-cleanup"].attempted, "incorrect multiple selection cannot be retried");

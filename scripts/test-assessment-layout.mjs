@@ -38,7 +38,7 @@ const errors = [];
 const sizeMetrics = [];
 const releaseAssets = ["styles.css", "course-api-coverage.js", "windows-api-data.js", "reference-overview-view.js", "windows-api-view.js", "assessment-data.js", "assessment-view.js", "app.js"];
 const releaseVersions = releaseAssets.map((asset) => indexSource.match(new RegExp(`${asset.replace(".", "\\.")}\\?v=([^\"']+)`))?.[1]);
-if (releaseVersions.some((version) => version !== "search-filter-card-1")) errors.push(`Release assets must use search-filter-card-1: ${JSON.stringify(releaseVersions)}`);
+if (releaseVersions.some((version) => version !== "integrated-cases-2")) errors.push(`Release assets must use integrated-cases-2: ${JSON.stringify(releaseVersions)}`);
 
 try {
   for (const scenario of scenarios) {
@@ -69,8 +69,12 @@ try {
         const pageRect = main.getBoundingClientRect();
         const overflowers = visibleElements.filter((element) => {
           const rect = element.getBoundingClientRect();
-          return rect.width > 0 && (rect.right > pageRect.right + 1 || rect.left < pageRect.left - 1);
+          const horizontalScroller = element.closest('.assessment-case-rail nav');
+          return !horizontalScroller && rect.width > 0 && (rect.right > pageRect.right + 1 || rect.left < pageRect.left - 1);
         }).map((element) => element.className || element.tagName).slice(0, 5);
+        const longTextOverflowers = [...main.querySelectorAll(".assessment-page p, .assessment-activity legend, .assessment-option, .assessment-checkbox, .assessment-order-list strong, .assessment-practical-prompts label")]
+          .filter((element) => element.scrollWidth > element.clientWidth + 1)
+          .map((element) => element.tagName + ":" + (element.className || "") + ":" + element.textContent.trim().slice(0, 45)).slice(0, 5);
         const moveButtons = [...main.querySelectorAll('[data-assessment-action="move"]')];
         const activityStyle = activity ? getComputedStyle(activity) : null;
         const result = {
@@ -90,7 +94,8 @@ try {
           optionsColumns: firstOptions ? getComputedStyle(firstOptions).gridTemplateColumns.split(" ").length : 0,
           controlsFit: [...main.querySelectorAll("button, textarea")].every((control) => control.scrollWidth <= control.clientWidth + 1),
           orderingTargets: moveButtons.length === 0 || moveButtons.every((button) => button.getBoundingClientRect().height >= 40),
-          longTextWraps: [...main.querySelectorAll(".assessment-page p, .assessment-activity legend, .assessment-option, .assessment-checkbox, .assessment-order-list strong, .assessment-practical-prompts label")].every((element) => element.scrollWidth <= element.clientWidth + 1),
+          longTextWraps: longTextOverflowers.length === 0,
+          longTextOverflowers,
           noVerticalClipping: [...main.querySelectorAll("button, textarea, .assessment-activity, .assessment-practical-prompts label")].every((element) => element.scrollHeight <= element.clientHeight + 1),
           practicalTextarea: !main.querySelector("textarea") || main.querySelector("textarea").getBoundingClientRect().width <= main.querySelector("textarea").parentElement.getBoundingClientRect().width + 1,
           diagnostics: {
@@ -128,20 +133,30 @@ try {
     const match = run.stdout.match(/<pre id="layout-result">(\{.*?\})<\/pre>/);
     if (!match) throw new Error(`${scenario.name}: browser did not return layout metrics (exit ${run.status}): ${run.stderr.trim()}`);
     const result = JSON.parse(match[1].replaceAll("&quot;", '"').replaceAll("&amp;", "&"));
-    console.log(`${scenario.name}: ${JSON.stringify(result)}`);
+    console.log(`${scenario.name}: ${JSON.stringify({
+      pageRendered: result.pageRendered,
+      noDocumentOverflow: result.noDocumentOverflow,
+      noMainOverflow: result.noMainOverflow,
+      noElementOverflow: result.noElementOverflow,
+      overflowers: result.overflowers,
+      longTextWraps: result.longTextWraps,
+      longTextOverflowers: result.longTextOverflowers,
+      controlsFit: result.controlsFit,
+      optionsColumns: result.optionsColumns,
+    })}`);
     for (const [name, passed] of Object.entries(result)) {
-      if (["overflowers", "optionsColumns", "heroSize", "optionSize", "heroHeadingSize", "practicalHeadingSize", "orderingSize", "textareaSize", "continuationSize", "diagnostics"].includes(name)) continue;
+      if (["overflowers", "longTextOverflowers", "optionsColumns", "heroSize", "optionSize", "heroHeadingSize", "practicalHeadingSize", "orderingSize", "textareaSize", "continuationSize", "diagnostics"].includes(name)) continue;
       if (passed !== true) errors.push(`${scenario.name} ${name}: ${JSON.stringify(passed)}`);
     }
     if (scenario.name === "desktop" && result.optionsColumns < 2) errors.push("desktop assessment options do not use the available horizontal space");
     if (scenario.name === "narrow" && result.optionsColumns !== 1) errors.push("narrow assessment options do not collapse to one column");
-    if (scenario.fontProbe) sizeMetrics.push({ name: scenario.name, lead: result.heroSize, heroHeading: result.heroHeadingSize, practicalHeading: result.practicalHeadingSize, option: result.optionSize, ordering: result.orderingSize, textarea: result.textareaSize, continuation: result.continuationSize });
+    if (scenario.fontProbe) sizeMetrics.push({ name: scenario.name, lead: result.heroSize, heroHeading: result.heroHeadingSize, option: result.optionSize, ordering: result.orderingSize, continuation: result.continuationSize });
   }
 } finally {
   if (tempDirectory.startsWith(`${tempRoot}${path.sep}`)) fs.rmSync(tempDirectory, { recursive: true, force: true });
 }
 
-for (const key of ["lead", "heroHeading", "practicalHeading", "option", "ordering", "textarea", "continuation"]) {
+for (const key of ["lead", "heroHeading", "option", "ordering", "continuation"]) {
   if (!(sizeMetrics[0][key] < sizeMetrics[1][key] && sizeMetrics[1][key] < sizeMetrics[2][key])) errors.push(`assessment ${key} does not scale small/default/large: ${JSON.stringify(sizeMetrics)}`);
 }
 

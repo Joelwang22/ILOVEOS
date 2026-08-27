@@ -132,7 +132,8 @@ try {
       });
       const overflowers = visible.filter((element) => {
         const rect = element.getBoundingClientRect();
-        return rect.width > 0 && (rect.left < mainRect.left - 1 || rect.right > mainRect.right + 1);
+        const horizontalScroller = element.closest('.assessment-case-rail nav');
+        return !horizontalScroller && rect.width > 0 && (rect.left < mainRect.left - 1 || rect.right > mainRect.right + 1);
       });
       const verticallyClipped = [...main.querySelectorAll("button, textarea, .assessment-activity, .assessment-practical-prompts label")]
         .filter((element) => element.scrollHeight > element.clientHeight + 1);

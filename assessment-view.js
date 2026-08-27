@@ -47,7 +47,7 @@
   }
 
   function initialActivityState(activity) {
-    const common = { completed: false, attempted: false, feedback: "", status: "neutral" };
+    const common = { completed: false, attempted: false, attempts: 0, latestAttemptCorrect: null, feedback: "", status: "neutral" };
     if (activity.kind === "single") return { ...common, selected: null, incorrect: [] };
     if (activity.kind === "multiple") return { ...common, selected: [] };
     if (activity.kind === "ordering") return { ...common, order: (activity.items || []).map((item) => item.id) };
@@ -57,6 +57,7 @@
   function createState(page) {
     return {
       activities: Object.fromEntries(activitiesFor(page).filter(validActivity).map((activity) => [activity.id, initialActivityState(activity)])),
+      activeCaseId: Array.isArray(page?.cases) ? page.cases[0]?.id || "" : "",
       practicalReviewed: false,
       notes: {}
     };
@@ -70,6 +71,7 @@
         selected: Array.isArray(activity.selected) ? [...activity.selected] : activity.selected,
         order: activity.order ? [...activity.order] : undefined
       }])),
+      activeCaseId: String(state.activeCaseId || ""),
       practicalReviewed: Boolean(state.practicalReviewed),
       notes: { ...(state.notes || {}) }
     };
@@ -82,9 +84,64 @@
     return sortedLeft.every((value, index) => value === sortedRight[index]);
   }
 
+  function restoreState(page, storageKey) {
+    const fresh = createState(page);
+    if (!storageKey) return fresh;
+    try {
+      const record = JSON.parse(localStorage.getItem(storageKey));
+      if (![1, 2].includes(record?.version) || record.contentVersion !== (page?.version || 1) || !record.state || typeof record.state !== "object") return fresh;
+      const saved = record.state;
+      if (page?.cases?.some((caseFile) => caseFile.id === saved.activeCaseId)) fresh.activeCaseId = saved.activeCaseId;
+      for (const activity of activitiesFor(page).filter(validActivity)) {
+        const source = saved.activities?.[activity.id];
+        const target = fresh.activities[activity.id];
+        if (!source || typeof source !== "object") continue;
+        target.attempts = Number.isInteger(source.attempts) && source.attempts >= 0 ? source.attempts : 0;
+        target.attempted = Boolean(source.attempted || target.attempts);
+        target.feedback = typeof source.feedback === "string" ? source.feedback : "";
+        target.status = ["neutral", "incorrect", "correct"].includes(source.status) ? source.status : "neutral";
+        if (activity.kind === "single") {
+          target.incorrect = [...new Set((Array.isArray(source.incorrect) ? source.incorrect : []).filter((index) => Number.isInteger(index) && index >= 0 && index < activity.options.length && index !== activity.answer))];
+          target.selected = Number.isInteger(source.selected) && source.selected >= 0 && source.selected < activity.options.length ? source.selected : null;
+          target.completed = Boolean(source.completed && target.selected === activity.answer);
+        } else if (activity.kind === "multiple") {
+          target.selected = [...new Set((Array.isArray(source.selected) ? source.selected : []).filter((index) => Number.isInteger(index) && index >= 0 && index < activity.options.length))];
+          target.completed = Boolean(source.completed && sameValues(target.selected, activity.answers));
+        } else if (activity.kind === "ordering") {
+          const itemIds = activity.items.map((item) => item.id);
+          const savedOrder = Array.isArray(source.order) ? source.order : [];
+          target.order = savedOrder.length === itemIds.length && sameValues(savedOrder, itemIds) ? [...savedOrder] : [...itemIds];
+          target.completed = Boolean(source.completed && target.order.every((item, index) => item === activity.answer[index]));
+        }
+        if (target.completed) target.status = "correct";
+        target.latestAttemptCorrect = typeof source.latestAttemptCorrect === "boolean"
+          ? source.latestAttemptCorrect
+          : target.attempted
+            ? target.completed || target.status === "correct"
+            : null;
+      }
+      return fresh;
+    } catch (_) {
+      return fresh;
+    }
+  }
+
+  function persistState(page, state, storageKey) {
+    if (!storageKey) return;
+    try {
+      localStorage.setItem(storageKey, JSON.stringify({ version: 2, contentVersion: page?.version || 1, state: cloneState(state) }));
+    } catch (_) {
+      // The assessment remains usable for the current visit when storage is unavailable.
+    }
+  }
+
   function reduceState(page, currentState, action) {
     if (action?.type === "reset-page") return createState(page);
     const state = cloneState(currentState);
+    if (action?.type === "select-case") {
+      if (page?.cases?.some((caseFile) => caseFile.id === action.caseId)) state.activeCaseId = action.caseId;
+      return state;
+    }
     if (action?.type === "update-note") {
       state.notes[action.prompt] = String(action.value ?? "");
       return state;
@@ -103,6 +160,8 @@
       if (!Number.isInteger(option) || option < 0 || option >= activity.options.length || activityState.incorrect.includes(option)) return state;
       activityState.selected = option;
       activityState.attempted = true;
+      activityState.attempts += 1;
+      activityState.latestAttemptCorrect = option === activity.answer;
       if (option === activity.answer) {
         activityState.completed = true;
         activityState.status = "correct";
@@ -131,6 +190,8 @@
         return state;
       }
       activityState.attempted = true;
+      activityState.attempts += 1;
+      activityState.latestAttemptCorrect = sameValues(activityState.selected, activity.answers);
       if (sameValues(activityState.selected, activity.answers)) {
         activityState.completed = true;
         activityState.status = "correct";
@@ -152,6 +213,8 @@
 
     if (action.type === "check-ordering" && activity.kind === "ordering") {
       activityState.attempted = true;
+      activityState.attempts += 1;
+      activityState.latestAttemptCorrect = activityState.order.every((item, index) => item === activity.answer[index]);
       if (activityState.order.every((item, index) => item === activity.answer[index])) {
         activityState.completed = true;
         activityState.status = "correct";
@@ -168,7 +231,9 @@
   function progress(page, state) {
     const total = activitiesFor(page).length;
     const completed = activitiesFor(page).filter((activity) => state.activities?.[activity.id]?.completed).length;
-    return { completed, total, practicalReviewed: Boolean(page?.practical && state.practicalReviewed) };
+    const latestAttemptScored = activitiesFor(page).filter((activity) => typeof state.activities?.[activity.id]?.latestAttemptCorrect === "boolean").length;
+    const latestAttemptCorrect = activitiesFor(page).filter((activity) => state.activities?.[activity.id]?.latestAttemptCorrect === true).length;
+    return { completed, total, latestAttemptScored, latestAttemptCorrect, practicalReviewed: Boolean(page?.practical && state.practicalReviewed) };
   }
 
   function renderFeedback(activity, state) {
@@ -276,8 +341,79 @@
     return renderPage(review, state, context, false);
   }
 
+  function renderCaseArtifact(artifact) {
+    return `
+      <article class="assessment-artifact">
+        <span>${escapeHtml(artifact.label)}</span>
+        <pre><code>${escapeHtml(artifact.content)}</code></pre>
+      </article>`;
+  }
+
   function renderFinalAssessment(assessment, state, context = {}) {
-    return renderPage(assessment, state, context, true);
+    const cases = Array.isArray(assessment?.cases) ? assessment.cases : [];
+    if (!cases.length) return renderPage(assessment, state, context, true);
+    const status = progress(assessment, state);
+    const activeCase = cases.find((caseFile) => caseFile.id === state.activeCaseId) || cases[0];
+    const activeIndex = cases.indexOf(activeCase);
+    const allActivities = activitiesFor(assessment);
+    const caseStatus = (caseFile) => {
+      const total = caseFile.questions.length;
+      const completed = caseFile.questions.filter((question) => state.activities?.[question.id]?.completed).length;
+      return { completed, total };
+    };
+    return `
+      <div class="content-wrap assessment-width assessment-page final-assessment-page">
+        <div class="breadcrumb"><span><a href="#/">Course</a></span><span>Final assessment</span></div>
+        <header class="assessment-hero final-assessment-hero">
+          <span class="assessment-kicker">Course assessment · five integrated cases</span>
+          <h1>${escapeHtml(assessment.title)}</h1>
+          <p>${escapeHtml(assessment.summary)}</p>
+          <div class="assessment-progress" aria-live="polite">
+            <strong>${status.completed} of ${status.total} mastered</strong>
+            <span>${status.latestAttemptCorrect} of ${status.total} latest-attempt score</span>
+            <span>${status.latestAttemptScored} submitted</span>
+          </div>
+          <p class="assessment-score-note">Your most recently checked answer determines the score. Correcting an answer updates it, and your progress is saved on this device.</p>
+          <button class="assessment-reset" type="button" data-assessment-action="reset">Reset final assessment</button>
+        </header>
+
+        <div class="assessment-case-layout">
+          <aside class="assessment-case-rail" aria-label="Assessment cases">
+            <div>
+              <span class="assessment-kicker">Case files</span>
+              <nav>
+                ${cases.map((caseFile, index) => {
+                  const caseProgress = caseStatus(caseFile);
+                  const active = caseFile.id === activeCase.id;
+                  return `<button type="button" class="assessment-case-link${active ? " active" : ""}${caseProgress.completed === caseProgress.total ? " complete" : ""}" data-assessment-action="case" data-case="${escapeHtml(caseFile.id)}"${active ? ' aria-current="step"' : ""}><span>${String(index + 1).padStart(2, "0")}</span><strong>${escapeHtml(caseFile.title)}</strong><small>${caseProgress.completed} / ${caseProgress.total} mastered</small></button>`;
+                }).join("")}
+              </nav>
+              <div class="assessment-rail-score"><strong>${status.latestAttemptCorrect} / ${status.total}</strong><span>Latest-attempt score</span><small>${status.latestAttemptScored} questions submitted</small></div>
+            </div>
+          </aside>
+
+          <section class="assessment-case-workspace" data-assessment-case-workspace tabindex="-1">
+            <header class="assessment-case-head">
+              <span class="assessment-kicker">Case ${activeIndex + 1} of ${cases.length}</span>
+              <h2>${escapeHtml(activeCase.title)}</h2>
+              <p>${escapeHtml(activeCase.summary)}</p>
+              <div class="assessment-case-modules">${activeCase.modules.map((module) => `<span>${escapeHtml(module.replaceAll("-", " "))}</span>`).join("")}</div>
+            </header>
+            <section class="assessment-case-brief">
+              <div><span>Situation</span><p>${escapeHtml(activeCase.scenario)}</p></div>
+              <div class="assessment-artifacts">${activeCase.artifacts.map(renderCaseArtifact).join("")}</div>
+            </section>
+            <section class="assessment-stack" aria-label="${escapeHtml(activeCase.title)} questions">
+              ${activeCase.questions.map((activity) => renderActivity(activity, state.activities[activity.id], allActivities.findIndex((item) => item.id === activity.id) + 1)).join("")}
+            </section>
+            <nav class="assessment-case-pagination" aria-label="Case navigation">
+              ${activeIndex > 0 ? `<button type="button" data-assessment-action="case" data-case="${escapeHtml(cases[activeIndex - 1].id)}">Previous case</button>` : "<span></span>"}
+              ${activeIndex < cases.length - 1 ? `<button type="button" data-assessment-action="case" data-case="${escapeHtml(cases[activeIndex + 1].id)}">Next case</button>` : ""}
+            </nav>
+            ${status.completed === status.total ? `<section class="assessment-results" aria-label="Assessment results"><span class="assessment-kicker">Assessment mastered</span><h2>${status.latestAttemptCorrect} / ${status.total} latest-attempt score</h2><p>You mastered all ${status.total} questions. This score reflects the latest checked answer for each question, including successful corrections.</p></section>` : ""}
+          </section>
+        </div>
+      </div>`;
   }
 
   function renderUnavailable(id) {
@@ -285,7 +421,7 @@
   }
 
   function mount(container, page, options = {}) {
-    let state = createState(page);
+    let state = restoreState(page, options.storageKey || "");
     container.innerHTML = '<div data-assessment-render></div><div class="assessment-announcer sr-only" data-assessment-announcer aria-live="polite" aria-atomic="true"></div>';
     const renderRoot = container.querySelector("[data-assessment-render]");
     const announcer = container.querySelector("[data-assessment-announcer]");
@@ -298,6 +434,8 @@
       const activityState = state.activities[action?.id];
       if (action?.type === "reset-page") {
         target = renderRoot.querySelector('[data-assessment-action="reset"]');
+      } else if (action?.type === "select-case") {
+        target = renderRoot.querySelector("[data-assessment-case-workspace]");
       } else if (action?.type === "select-single") {
         target = activityState?.completed
           ? [...renderRoot.querySelectorAll("[data-assessment-feedback]")].find((control) => control.dataset.assessmentFeedback === action.id)
@@ -324,6 +462,10 @@
 
     const announcementFor = (action) => {
       if (action?.type === "reset-page") return "Review reset.";
+      if (action?.type === "select-case") {
+        const caseFile = page?.cases?.find((item) => item.id === action.caseId);
+        return caseFile ? `${caseFile.title} opened.` : "Case opened.";
+      }
       if (action?.type === "reveal-practical") return "Model reasoning revealed.";
       if (action?.type === "toggle-multiple") return "Selection updated.";
       if (action?.type === "move-ordering") {
@@ -335,6 +477,7 @@
     };
 
     const draw = (action) => {
+      if (action) persistState(page, state, options.storageKey || "");
       renderRoot.innerHTML = Array.isArray(page?.questions) ? renderFinalAssessment(page, state, options.context) : renderReview(page, state, options.context);
       if (action) {
         announcer.textContent = announcementFor(action);
@@ -351,6 +494,10 @@
         const confirmReset = options.confirmReset || (() => window.confirm("Reset this review and clear the current page's answers and notes?"));
         if (!confirmReset()) return;
         const stateAction = { type: "reset-page" };
+        state = reduceState(page, state, stateAction);
+        draw(stateAction);
+      } else if (action === "case") {
+        const stateAction = { type: "select-case", caseId: control.dataset.case };
         state = reduceState(page, state, stateAction);
         draw(stateAction);
       } else if (action === "single") {
@@ -390,6 +537,7 @@
       const control = event.target.closest('[data-assessment-action="note"]');
       if (!control) return;
       state = reduceState(page, state, { type: "update-note", prompt: control.dataset.prompt, value: control.value });
+      persistState(page, state, options.storageKey || "");
     };
 
     return { getState: () => cloneState(state), reset: () => { state = createState(page); draw({ type: "reset-page" }); } };

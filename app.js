@@ -34,6 +34,15 @@
   const searchFilterStorageKey = "iloveos-search-filters";
   const searchFilterVersion = 1;
   const defaultSearchScopes = searchFilterInputs.map((input) => input.dataset.searchFilter);
+  const currentLessonNav = document.querySelector('[data-route="lesson"]');
+  const lessonProgressStorageKey = "iloveos-lesson-progress";
+  const lessonProgressVersion = 1;
+  const validLessonIds = new Set(lessons.map((lesson) => lesson.id));
+  let lessonProgress = {
+    currentLessonId: lessons[0]?.id || "",
+    completedLessonIds: []
+  };
+  let lessonProgressCleanup = null;
 
   const icons = {
     arrow: '<svg aria-hidden="true" viewBox="0 0 24 24"><path d="M5 12h14m-5-5 5 5-5 5"/></svg>',
@@ -50,6 +59,63 @@
 
   function findLesson(id) {
     return lessons.find((lesson) => lesson.id === id || (lesson.aliases || []).includes(id)) || lessons[0];
+  }
+
+  function restoreLessonProgress() {
+    try {
+      const stored = JSON.parse(localStorage.getItem(lessonProgressStorageKey));
+      if (stored?.version !== lessonProgressVersion) return;
+      const currentLessonId = validLessonIds.has(stored.currentLessonId) ? stored.currentLessonId : lessonProgress.currentLessonId;
+      const completedLessonIds = Array.isArray(stored.completedLessonIds)
+        ? [...new Set(stored.completedLessonIds.filter((id) => validLessonIds.has(id)))]
+        : [];
+      lessonProgress = { currentLessonId, completedLessonIds };
+    } catch (_) {
+      // The default progress record remains available when storage is unavailable or malformed.
+    }
+  }
+
+  function persistLessonProgress() {
+    try {
+      localStorage.setItem(lessonProgressStorageKey, JSON.stringify({
+        version: lessonProgressVersion,
+        currentLessonId: lessonProgress.currentLessonId,
+        completedLessonIds: lessonProgress.completedLessonIds
+      }));
+    } catch (_) {
+      // Progress still works for the current visit when storage is unavailable.
+    }
+  }
+
+  function updateCurrentLessonNav() {
+    if (!currentLessonNav) return;
+    const lesson = lessons.find((item) => item.id === lessonProgress.currentLessonId) || lessons[0];
+    if (!lesson) return;
+    currentLessonNav.href = `#/lesson/${lesson.id}`;
+    currentLessonNav.title = `Current lesson: ${lesson.title}`;
+    currentLessonNav.setAttribute("aria-label", `Current lesson: ${lesson.title}`);
+  }
+
+  function setCurrentLesson(lesson) {
+    if (!lesson || lessonProgress.currentLessonId === lesson.id) {
+      updateCurrentLessonNav();
+      return;
+    }
+    lessonProgress.currentLessonId = lesson.id;
+    persistLessonProgress();
+    updateCurrentLessonNav();
+  }
+
+  function isLessonCompleted(id) {
+    return lessonProgress.completedLessonIds.includes(id);
+  }
+
+  function setLessonCompleted(id, completed) {
+    const completedSet = new Set(lessonProgress.completedLessonIds);
+    if (completed) completedSet.add(id);
+    else completedSet.delete(id);
+    lessonProgress.completedLessonIds = lessons.filter((lesson) => completedSet.has(lesson.id)).map((lesson) => lesson.id);
+    persistLessonProgress();
   }
 
   function firstLessonId(moduleId) {
@@ -145,12 +211,13 @@ handle = <span class="code-function">win32process.GetCurrentProcess</span>()
                 ${module.lessonTitles.map((title, index) => {
                   const lesson = moduleLessons(module.id)[index];
                   const href = lesson ? `#/lesson/${lesson.id}` : `#/module/${module.id}`;
+                  const completed = lesson ? isLessonCompleted(lesson.id) : false;
                   return `
                     <li>
-                      <a class="lesson-index-row${lesson ? " is-available" : ""}" href="${href}">
+                      <a class="lesson-index-row${completed ? " is-completed" : ""}" href="${href}">
                         <span class="lesson-sequence">${module.number}.${String(index + 1).padStart(2, "0")}</span>
                         <strong>${title}</strong>
-                        <span class="lesson-availability${lesson ? " available" : ""}">${lesson ? "Read lesson" : "Module outline"}</span>
+                        <span class="lesson-availability${completed ? " completed" : ""}">${completed ? "Completed" : lesson ? "Read lesson" : "Module outline"}</span>
                         <span class="lesson-row-arrow" aria-hidden="true">→</span>
                       </a>
                     </li>`;
@@ -590,6 +657,7 @@ handle = <span class="code-function">win32process.GetCurrentProcess</span>()
 
   function renderLesson(id) {
     const lesson = findLesson(id);
+    setCurrentLesson(lesson);
     const module = data.modules.find((item) => item.id === lesson.module) || data.modules[0];
     const moduleLessonList = moduleLessons(module.id);
     const moduleIndex = moduleLessonList.indexOf(lesson);
@@ -650,7 +718,7 @@ handle = <span class="code-function">win32process.GetCurrentProcess</span>()
 
             <nav class="lesson-footer-nav" aria-label="Lesson navigation">
               ${previous ? `<a class="lesson-nav-card" href="#/lesson/${previous.id}">Previous lesson<strong>${escapeHtml(previous.title)}</strong></a>` : `<a class="lesson-nav-card" href="#/module/${module.id}">Module overview<strong>${escapeHtml(module.title)}</strong></a>`}
-              ${next ? `<a class="lesson-nav-card" href="#/lesson/${next.id}">Next lesson<strong>${escapeHtml(next.title)}</strong></a>` : `<a class="lesson-nav-card" href="#/review/${module.id}">Module review<strong>${escapeHtml(module.title)}</strong></a>`}
+              ${next ? `<a class="lesson-nav-card" href="#/lesson/${next.id}" data-complete-current-lesson>Next lesson<strong>${escapeHtml(next.title)}</strong></a>` : `<a class="lesson-nav-card" href="#/review/${module.id}" data-complete-current-lesson>Module review<strong>${escapeHtml(module.title)}</strong></a>`}
             </nav>
           </article>
 
@@ -666,6 +734,7 @@ handle = <span class="code-function">win32process.GetCurrentProcess</span>()
     wireQuizzes();
     wirePracticeCommands();
     wirePracticeCheckpoints(normalizedPractice(lesson));
+    wireLessonCompletion(lesson);
   }
 
   function renderLegacyLesson() {
@@ -816,6 +885,30 @@ user = <span class="code-function">win32api.GetUserName</span>()
     });
   }
 
+  function wireLessonCompletion(lesson) {
+    let completed = isLessonCompleted(lesson.id);
+    const advance = document.querySelector("[data-complete-current-lesson]");
+    const complete = () => {
+      if (completed) return;
+      completed = true;
+      setLessonCompleted(lesson.id, true);
+    };
+    const checkBottom = () => {
+      const root = document.documentElement;
+      if (window.scrollY + window.innerHeight >= root.scrollHeight - 4) complete();
+    };
+    const completeOnAdvance = () => complete();
+    window.addEventListener("scroll", checkBottom, { passive: true });
+    window.addEventListener("resize", checkBottom);
+    advance?.addEventListener("click", completeOnAdvance);
+    lessonProgressCleanup = () => {
+      window.removeEventListener("scroll", checkBottom);
+      window.removeEventListener("resize", checkBottom);
+      advance?.removeEventListener("click", completeOnAdvance);
+    };
+    window.requestAnimationFrame(checkBottom);
+  }
+
   function wirePracticeCommands() {
     document.querySelectorAll("[data-copy-practice-command]").forEach((button) => {
       const command = button.closest("[data-practice-command]")?.querySelector("[data-practice-command-code]");
@@ -896,7 +989,10 @@ user = <span class="code-function">win32api.GetUserName</span>()
   }
 
   function renderFinalAssessment() {
-    assessmentView.mount(main, assessments.finalAssessment, { context: {} });
+    assessmentView.mount(main, assessments.finalAssessment, {
+      context: {},
+      storageKey: "iloveos-assessment-progress:final-assessment"
+    });
   }
 
   function moduleSearchText(module) {
@@ -1094,6 +1190,8 @@ user = <span class="code-function">win32api.GetUserName</span>()
   }
 
   function route() {
+    lessonProgressCleanup?.();
+    lessonProgressCleanup = null;
     if (apiDialog.open) apiDialog.close();
     const hash = window.location.hash || "#/";
     const [path, queryString = ""] = hash.replace(/^#\//, "").split("?");
@@ -1461,7 +1559,7 @@ except pywintypes.error as error:
       ...(assessments.finalAssessment ? [{
         title: assessments.finalAssessment.title,
         detail: assessments.finalAssessment.summary,
-        searchText: JSON.stringify({ questions: assessments.finalAssessment.questions, practical: assessments.finalAssessment.practical }),
+        searchText: JSON.stringify({ questions: assessments.finalAssessment.questions, cases: assessments.finalAssessment.cases }),
         kind: "Final assessment",
         scope: "assessments",
         href: "#/assessment/final"
@@ -1737,5 +1835,7 @@ except pywintypes.error as error:
     setContentSize("default", false);
   }
   restoreSearchFilters();
+  restoreLessonProgress();
+  updateCurrentLessonNav();
   route();
 })();

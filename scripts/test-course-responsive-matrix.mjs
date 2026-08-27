@@ -36,7 +36,9 @@ await withBrowser(async (client) => {
           const controls = [...document.querySelectorAll('#main-content button, #main-content input, #main-content textarea, #main-content .button, #main-content .download-button')].filter(visible);
           const clipped = controls.filter((element) => {
             const rect = element.getBoundingClientRect();
-            return rect.left < -1 || rect.right > innerWidth + 1 || element.scrollWidth > element.clientWidth + 1 || element.scrollHeight > element.clientHeight + 1;
+            const horizontalScroller = element.closest('.assessment-case-rail nav');
+            const outsideViewport = rect.left < -1 || rect.right > innerWidth + 1;
+            return (!horizontalScroller && outsideViewport) || element.scrollWidth > element.clientWidth + 1 || element.scrollHeight > element.clientHeight + 1;
           }).map((element) => element.className || element.tagName).slice(0, 4);
           const reversed = [...document.querySelectorAll('#main-content *')].filter(visible).filter((element) => {
             const style = getComputedStyle(element);
