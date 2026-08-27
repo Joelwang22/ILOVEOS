@@ -19,6 +19,8 @@
   const sidebarToggle = document.querySelector("#sidebar-toggle");
   const searchDialog = document.querySelector("#search-dialog");
   const searchInput = document.querySelector("#search-input");
+  const searchFilters = document.querySelector("#search-filters");
+  const searchFilterInputs = [...document.querySelectorAll("[data-search-filter]")];
   const searchResults = document.querySelector("#search-results");
   const mobileDrawerBackground = [document.querySelector(".skip-link"), main, document.querySelector("#search-trigger"), document.querySelector(".settings-control")];
   const apiDialog = document.querySelector("#api-detail-dialog");
@@ -29,6 +31,9 @@
   const settingsClose = document.querySelector("#settings-close");
   const sizeOptions = [...document.querySelectorAll("[data-content-size]")];
   let apiDialogInvoker = null;
+  const searchFilterStorageKey = "iloveos-search-filters";
+  const searchFilterVersion = 1;
+  const defaultSearchScopes = searchFilterInputs.map((input) => input.dataset.searchFilter);
 
   const icons = {
     arrow: '<svg aria-hidden="true" viewBox="0 0 24 24"><path d="M5 12h14m-5-5 5 5-5 5"/></svg>',
@@ -1441,7 +1446,7 @@ except pywintypes.error as error:
 
   function allSearchItems() {
     return [
-      ...data.modules.map((item) => ({ title: item.title, detail: item.description, kind: "Module", href: `#/module/${item.id}` })),
+      ...data.modules.map((item) => ({ title: item.title, detail: item.description, kind: "Module", scope: "lessons", href: `#/module/${item.id}` })),
       ...assessments.moduleReviews.map((review) => {
         const module = data.modules.find((item) => item.id === review.module);
         return {
@@ -1449,6 +1454,7 @@ except pywintypes.error as error:
           detail: `${module?.title || review.module} \u00b7 ${review.summary}`,
           searchText: JSON.stringify(review.activities),
           kind: "Module review",
+          scope: "assessments",
           href: `#/review/${review.module}`
         };
       }),
@@ -1457,6 +1463,7 @@ except pywintypes.error as error:
         detail: assessments.finalAssessment.summary,
         searchText: JSON.stringify({ questions: assessments.finalAssessment.questions, practical: assessments.finalAssessment.practical }),
         kind: "Final assessment",
+        scope: "assessments",
         href: "#/assessment/final"
       }] : []),
       ...lessons.map((lesson) => {
@@ -1476,14 +1483,16 @@ except pywintypes.error as error:
           }),
           detail: `${module.title} · Lesson ${index + 1} · ${lesson.lead} ${lesson.keys.join(" ")} ${lesson.apis.join(" ")}`,
           kind: "Lesson",
+          scope: "lessons",
           href: `#/lesson/${lesson.id}`
         };
       }),
-      ...referenceData.pywin32Modules.map((item) => ({ title: item.name, detail: `${item.label} · ${item.useWhen}`, kind: "pywin32 module", href: `#/reference/pywin32?q=${encodeURIComponent(item.name)}` })),
+      ...referenceData.pywin32Modules.map((item) => ({ title: item.name, detail: `${item.label} · ${item.useWhen}`, kind: "pywin32 module", scope: "pywin32", href: `#/reference/pywin32?q=${encodeURIComponent(item.name)}` })),
       ...referenceData.pywin32Modules.flatMap((module) => module.features.map((feature) => ({
         title: feature.name,
         detail: `${module.name} · ${feature.task} · ${feature.detail}`,
         kind: "pywin32 API",
+        scope: "pywin32",
         href: `#/reference/pywin32?q=${encodeURIComponent(feature.name)}&api=${encodeURIComponent(feature.name)}`
       }))),
       ...windowsApiGuide.families.flatMap((family) => family.variants.map((entry) => ({
@@ -1491,21 +1500,53 @@ except pywintypes.error as error:
         detail: `${family.name} · ${entry.category} · ${entry.dll} · ${entry.summary}`,
         searchText: `${family.aliases.map((alias) => `${alias.name} ${alias.note}`).join(" ")} ${entry.nativeSignature} ${entry.python} ${entry.parameters.map((parameter) => `${parameter.name} ${parameter.native} ${parameter.python} ${parameter.explanation}`).join(" ")}`,
         kind: "Windows API",
+        scope: "windows-api",
         href: `#/reference/windows-api?q=${encodeURIComponent(entry.name)}`
       }))),
-      ...referenceData.sysinternalsTools.map((item) => ({ title: item.name, detail: `${item.short} · ${item.description}`, kind: "Tool", href: `#/toolbox?q=${encodeURIComponent(item.name)}` })),
+      ...referenceData.sysinternalsTools.map((item) => ({ title: item.name, detail: `${item.short} · ${item.description}`, kind: "Tool", scope: "tools", href: `#/toolbox?q=${encodeURIComponent(item.name)}` })),
       ...referenceData.sysinternalsTools.flatMap((tool) => tool.capabilities.map(([name, detail]) => ({
         title: name,
         detail: `${tool.name} · ${detail}`,
         kind: "Tool capability",
+        scope: "tools",
         href: `#/toolbox?q=${encodeURIComponent(name)}`
       })))
     ];
   }
 
+  function selectedSearchScopes() {
+    return new Set(searchFilterInputs.filter((input) => input.checked).map((input) => input.dataset.searchFilter));
+  }
+
+  function restoreSearchFilters() {
+    let selected = defaultSearchScopes;
+    try {
+      const stored = JSON.parse(localStorage.getItem(searchFilterStorageKey));
+      if (stored?.version === searchFilterVersion && Array.isArray(stored.scopes) && stored.scopes.every((scope) => defaultSearchScopes.includes(scope))) {
+        selected = stored.scopes;
+      }
+    } catch (_) {
+      // All categories remain enabled when storage is unavailable or malformed.
+    }
+    const selectedSet = new Set(selected);
+    searchFilterInputs.forEach((input) => { input.checked = selectedSet.has(input.dataset.searchFilter); });
+  }
+
+  function persistSearchFilters() {
+    try {
+      localStorage.setItem(searchFilterStorageKey, JSON.stringify({
+        version: searchFilterVersion,
+        scopes: [...selectedSearchScopes()]
+      }));
+    } catch (_) {
+      // Filtering still works for the current visit when storage is unavailable.
+    }
+  }
+
   function updateSearch(query = "") {
     const term = query.trim().toLowerCase();
     const tokens = term.split(/\s+/).filter(Boolean);
+    const selectedScopes = selectedSearchScopes();
     const score = (item) => {
       const title = item.title.toLowerCase();
       const kind = item.kind.toLowerCase();
@@ -1523,15 +1564,20 @@ except pywintypes.error as error:
     };
     const items = allSearchItems()
       .map((item, index) => ({ item, index }))
+      .filter(({ item }) => selectedScopes.has(item.scope))
       .filter(({ item }) => !term || containsEveryToken(`${item.title} ${item.detail} ${item.kind} ${item.searchText || ""}`, term))
       .sort((left, right) => score(right.item) - score(left.item) || left.index - right.index)
       .slice(0, 10)
       .map(({ item }) => item);
+    if (selectedScopes.size === 0) {
+      searchResults.innerHTML = '<div class="search-empty">Select at least one category to search.</div>';
+      return;
+    }
     searchResults.innerHTML = items.length ? items.map((item) => `
       <a class="search-result" href="${item.href}">
         <span><strong>${item.title}</strong><small>${item.detail}</small></span>
         <span class="search-kind">${item.kind}</span>
-      </a>`).join("") : '<div class="search-empty">No matching lesson, module, or tool.</div>';
+      </a>`).join("") : '<div class="search-empty">No matches in the selected categories.</div>';
   }
 
   function openSearch() {
@@ -1556,6 +1602,11 @@ except pywintypes.error as error:
     if (option) setContentSize(option.dataset.contentSize);
   });
   searchInput.addEventListener("input", () => updateSearch(searchInput.value));
+  searchFilters.addEventListener("change", (event) => {
+    if (!event.target.matches("[data-search-filter]")) return;
+    persistSearchFilters();
+    updateSearch(searchInput.value);
+  });
   searchResults.addEventListener("click", () => searchDialog.close());
   main.addEventListener("click", (event) => {
     const overviewTrigger = event.target.closest("[data-reference-overview]");
@@ -1685,5 +1736,6 @@ except pywintypes.error as error:
   } catch (_) {
     setContentSize("default", false);
   }
+  restoreSearchFilters();
   route();
 })();

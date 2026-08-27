@@ -159,7 +159,7 @@ for (const selector of [".api-family-alias-picker", ".api-family-variants", ".ap
 }
 
 const versions = [...indexHtml.matchAll(/(?:href|src)="[^"]+\?v=([^"]+)"/g)];
-requireCondition(versions.length > 0 && versions.every((match) => match[1] === "course-api-coverage-1"), "every tied asset must use the course-api-coverage-1 release key");
+requireCondition(versions.length > 0 && versions.every((match) => match[1] === "search-filters-1"), "every tied asset must use the search-filters-1 release key");
 
 console.log(`family matches: ${exaMatches.length}`);
 console.log(`errors: ${errors.length}`);

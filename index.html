@@ -9,7 +9,7 @@
     />
     <meta name="theme-color" content="#080b10" />
     <title>ILOVEOS, Windows internals made clear</title>
-    <link rel="stylesheet" href="styles.css?v=course-api-coverage-1" />
+    <link rel="stylesheet" href="styles.css?v=search-filters-1" />
   </head>
   <body>
     <a class="skip-link" href="#main-content">Skip to content</a>
@@ -103,36 +103,46 @@
         <input id="search-input" type="search" aria-label="Search course content" placeholder="Try “handles”, “win32event”, or “VMMap”" autocomplete="off" />
         <button class="escape-key" id="search-close" type="button" aria-label="Close search">Esc</button>
       </div>
-      <div class="search-results" id="search-results"></div>
+      <div class="search-filters" id="search-filters">
+        <fieldset>
+          <legend>Include in results</legend>
+          <label class="search-filter"><input type="checkbox" data-search-filter="lessons" checked /><span>Lessons</span></label>
+          <label class="search-filter"><input type="checkbox" data-search-filter="assessments" checked /><span>Assessments</span></label>
+          <label class="search-filter"><input type="checkbox" data-search-filter="pywin32" checked /><span>pywin32</span></label>
+          <label class="search-filter"><input type="checkbox" data-search-filter="windows-api" checked /><span>Windows API</span></label>
+          <label class="search-filter"><input type="checkbox" data-search-filter="tools" checked /><span>Tools</span></label>
+        </fieldset>
+      </div>
+      <div class="search-results" id="search-results" aria-label="Search results" aria-live="polite"></div>
     </dialog>
 
     <dialog class="api-dialog" id="api-detail-dialog" aria-labelledby="api-detail-title">
       <div id="api-detail-content"></div>
     </dialog>
 
-    <script src="content.js?v=course-api-coverage-1" defer></script>
-    <script src="lesson-content.js?v=course-api-coverage-1" defer></script>
-    <script src="lesson-depth-foundations.js?v=course-api-coverage-1" defer></script>
-    <script src="lesson-depth-processes.js?v=course-api-coverage-1" defer></script>
-    <script src="lesson-depth-threads.js?v=course-api-coverage-1" defer></script>
-    <script src="lesson-depth-memory.js?v=course-api-coverage-1" defer></script>
-    <script src="lesson-depth-linking.js?v=course-api-coverage-1" defer></script>
-    <script src="lesson-depth-management.js?v=course-api-coverage-1" defer></script>
-    <script src="lesson-depth-security.js?v=course-api-coverage-1" defer></script>
-    <script src="lesson-depth-sync-ipc.js?v=course-api-coverage-1" defer></script>
-    <script src="lesson-depth-hooking.js?v=course-api-coverage-1" defer></script>
-    <script src="reference-data.js?v=course-api-coverage-1" defer></script>
-    <script src="api-signatures.js?v=course-api-coverage-1" defer></script>
-    <script src="api-signatures-stage3.js?v=course-api-coverage-1" defer></script>
-    <script src="api-signatures-stage4.js?v=course-api-coverage-1" defer></script>
-    <script src="api-signatures-stage6.js?v=course-api-coverage-1" defer></script>
-    <script src="windows-api-families.js?v=course-api-coverage-1" defer></script>
-    <script src="course-api-coverage.js?v=course-api-coverage-1" defer></script>
-    <script src="windows-api-data.js?v=course-api-coverage-1" defer></script>
-    <script src="reference-overview-view.js?v=course-api-coverage-1" defer></script>
-    <script src="windows-api-view.js?v=course-api-coverage-1" defer></script>
-    <script src="assessment-data.js?v=course-api-coverage-1" defer></script>
-    <script src="assessment-view.js?v=course-api-coverage-1" defer></script>
-    <script src="app.js?v=course-api-coverage-1" defer></script>
+    <script src="content.js?v=search-filters-1" defer></script>
+    <script src="lesson-content.js?v=search-filters-1" defer></script>
+    <script src="lesson-depth-foundations.js?v=search-filters-1" defer></script>
+    <script src="lesson-depth-processes.js?v=search-filters-1" defer></script>
+    <script src="lesson-depth-threads.js?v=search-filters-1" defer></script>
+    <script src="lesson-depth-memory.js?v=search-filters-1" defer></script>
+    <script src="lesson-depth-linking.js?v=search-filters-1" defer></script>
+    <script src="lesson-depth-management.js?v=search-filters-1" defer></script>
+    <script src="lesson-depth-security.js?v=search-filters-1" defer></script>
+    <script src="lesson-depth-sync-ipc.js?v=search-filters-1" defer></script>
+    <script src="lesson-depth-hooking.js?v=search-filters-1" defer></script>
+    <script src="reference-data.js?v=search-filters-1" defer></script>
+    <script src="api-signatures.js?v=search-filters-1" defer></script>
+    <script src="api-signatures-stage3.js?v=search-filters-1" defer></script>
+    <script src="api-signatures-stage4.js?v=search-filters-1" defer></script>
+    <script src="api-signatures-stage6.js?v=search-filters-1" defer></script>
+    <script src="windows-api-families.js?v=search-filters-1" defer></script>
+    <script src="course-api-coverage.js?v=search-filters-1" defer></script>
+    <script src="windows-api-data.js?v=search-filters-1" defer></script>
+    <script src="reference-overview-view.js?v=search-filters-1" defer></script>
+    <script src="windows-api-view.js?v=search-filters-1" defer></script>
+    <script src="assessment-data.js?v=search-filters-1" defer></script>
+    <script src="assessment-view.js?v=search-filters-1" defer></script>
+    <script src="app.js?v=search-filters-1" defer></script>
   </body>
 </html>
