@@ -163,7 +163,7 @@ for (const selector of [".api-family-alias-picker", ".api-family-variants", ".ap
 }
 
 const versions = [...indexHtml.matchAll(/(?:href|src)="[^"]+\?v=([^"]+)"/g)];
-requireCondition(versions.length > 0 && versions.every((match) => match[1] === "constant-generator-1"), "every tied asset must use the constant-generator-1 release key");
+requireCondition(versions.length > 0 && versions.every((match) => match[1] === "pywin32-catalog-1"), "every tied asset must use the pywin32-catalog-1 release key");
 
 console.log(`family matches: ${exaMatches.length}`);
 console.log(`errors: ${errors.length}`);

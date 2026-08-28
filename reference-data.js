@@ -425,6 +425,7 @@ handle = win32file.CreateFile(path, access, 0, None,
         { name: "ShowWindow", task: "Change show/minimise/maximise state", detail: "Uses SW_* constants; this is a request interpreted by the windowing system." },
         { name: "SendMessage", task: "Send a synchronous window message", detail: "The call waits for handling and can hang if the target is unresponsive; avoid arbitrary pointer-bearing messages cross-process." },
         { name: "PostMessage", task: "Queue an asynchronous window message", detail: "Returns after queuing and does not report the target's processing result." },
+        { name: "GetMessage", task: "Wait for and retrieve the next message", detail: "Reads a message from the calling thread's queue. It can block until a matching message arrives, returns a quit indication for WM_QUIT, and must normally be paired with TranslateMessage and DispatchMessage in a message loop." },
         { name: "SetForegroundWindow", task: "Request foreground activation", detail: "Windows restricts foreground stealing; failure may be policy rather than an API bug." },
         { name: "GetWindowLong", task: "Read style or window metadata", detail: "Use the pointer-sized variants/appropriate wrappers on 64-bit systems." },
         { name: "SetWindowLong", task: "Change style or callback-related metadata", detail: "Advanced operation; incorrect values can destabilise the target window." }

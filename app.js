@@ -1085,17 +1085,18 @@ user = <span class="code-function">win32api.GetUserName</span>()
       </details>`;
   }
 
-  function renderPywin32(filter = "", openFeature = "") {
+  function renderPywin32(filter = "", openFeature = "", openModule = "") {
     const query = filter.trim().toLowerCase();
     const modules = referenceData.pywin32Modules.filter((module) => matchingFeatures(module, query).length);
     const featureCount = modules.reduce((count, module) => count + matchingFeatures(module, query).length, 0);
+    const catalogStats = window.ILOVEOS_PYWIN32_CATALOG_STATS;
 
     main.innerHTML = `
       <div class="content-wrap reference-width">
         <div class="breadcrumb"><span><a href="#/">Course</a></span><span>pywin32 guide</span></div>
         <header class="reference-hero compact-reference-hero">
           <h1>Find the Windows capability you need.</h1>
-          <span class="source-note">Cross-checked with <a href="https://timgolden.me.uk/pywin32-docs/win32_modules.html" target="_blank" rel="noreferrer">the pywin32 module reference ↗</a></span>
+          <span class="source-note">${catalogStats ? `Complete indexed catalogue: ${catalogStats.publishedModules} modules · ${catalogStats.unionMethods.toLocaleString()} public callables (${catalogStats.publishedMethods.toLocaleString()} published methods plus ${catalogStats.runtimeOnlyMethods} additional callables in pywin32 ${catalogStats.runtimeVersion}). ` : ""}<a href="https://timgolden.me.uk/pywin32-docs/win32_modules.html" target="_blank" rel="noreferrer">Open the pywin32 module reference ↗</a></span>
         </header>
         ${referenceOverviewView.renderButton({
           kind: "pywin32-essentials",
@@ -1112,7 +1113,10 @@ user = <span class="code-function">win32api.GetUserName</span>()
       </div>`;
     document.querySelector("#module-filter").addEventListener("input", (event) => updatePywin32Results(event.target.value));
     if (openFeature) {
-      const match = referenceData.pywin32Modules.flatMap((module) => module.features.map((feature) => ({ module, feature }))).find((item) => item.feature.name.toLowerCase() === openFeature.toLowerCase());
+      const match = referenceData.pywin32Modules
+        .filter((module) => !openModule || module.name.toLowerCase() === openModule.toLowerCase())
+        .flatMap((module) => module.features.map((feature) => ({ module, feature })))
+        .find((item) => item.feature.name.toLowerCase() === openFeature.toLowerCase());
       if (match) window.setTimeout(() => openApiDetails(match.module.name, match.feature.name), 0);
     }
   }
@@ -1208,7 +1212,7 @@ user = <span class="code-function">win32api.GetUserName</span>()
     else if (root === "lesson") renderLesson(parts[1]);
     else if (root === "review") renderModuleReview(parts[1]);
     else if (root === "assessment" && parts[1] === "final") renderFinalAssessment();
-    else if (root === "reference" && parts[1] === "pywin32") renderPywin32(params.get("q") || "", params.get("api") || "");
+    else if (root === "reference" && parts[1] === "pywin32") renderPywin32(params.get("q") || "", params.get("api") || "", params.get("module") || "");
     else if (root === "reference" && parts[1] === "windows-api") renderWindowsApiGuide(params.get("q") || "");
     else if (root === "toolbox") renderToolbox(params.get("q") || "");
     else renderHome();
@@ -1504,7 +1508,7 @@ except pywintypes.error as error:
             <div class="return-card"><code>${escapeHtml(conceptType(module, feature))}</code><span>This entry is a concept, constant, attribute, structure, or wrapper rather than a directly callable function, so function parameters and a return value do not apply.</span></div>
           </section>`}
         ${resultHandlingGuide(module, feature, Boolean(signatures.length))}
-        ${detail?.sources?.length ? `<div class="api-source-links">${detail.sources.map((source, index) => `<a href="${source}" target="_blank" rel="noreferrer">${index ? "Additional type source" : "Type signature source"} ↗</a>`).join("")}</div>` : ""}
+        ${detail?.sources?.length ? `<div class="api-source-links">${detail.sources.map((source, index) => `<a href="${source}" target="_blank" rel="noreferrer">${index ? "Additional documentation" : "Documentation source"} ↗</a>`).join("")}</div>` : ""}
       </div>`;
     showApiDialog();
   }
@@ -1654,7 +1658,7 @@ except pywintypes.error as error:
         detail: `${module.name} · ${feature.task} · ${feature.detail}`,
         kind: "pywin32 API",
         scope: "pywin32",
-        href: `#/reference/pywin32?q=${encodeURIComponent(feature.name)}&api=${encodeURIComponent(feature.name)}`
+        href: `#/reference/pywin32?q=${encodeURIComponent(feature.name)}&module=${encodeURIComponent(module.name)}&api=${encodeURIComponent(feature.name)}`
       }))),
       ...windowsApiGuide.families.flatMap((family) => family.variants.map((entry) => ({
         title: entry.name,
