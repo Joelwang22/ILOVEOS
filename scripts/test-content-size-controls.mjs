@@ -1,4 +1,4 @@
-import { delay, evaluate, filePage, navigate, reportChecks, withBrowser } from "./browser-test-helpers.mjs";
+import { delay, evaluate, filePage, navigate, reportChecks, waitFor, withBrowser } from "./browser-test-helpers.mjs";
 
 const checks = await withBrowser(async (client) => {
   await navigate(client, filePage("#/lesson/cpu-architecture-data"));
@@ -24,14 +24,18 @@ const checks = await withBrowser(async (client) => {
   const controls = { initial, small, normal, large, stored: await evaluate(client, `localStorage.getItem('iloveos-content-size')`) };
 
   await client.send("Page.reload", { ignoreCache: true });
-  await delay(150);
+  await waitFor(client, `document.readyState === 'complete'
+    && document.documentElement.dataset.contentSize === 'large'
+    && document.querySelectorAll('[data-content-size][aria-pressed="true"]').length === 1`, "persisted content-size reload", 20_000);
   const persisted = await evaluate(client, `({
     size: document.documentElement.dataset.contentSize,
     pressed: [...document.querySelectorAll('[data-content-size][aria-pressed="true"]')].map((item) => item.dataset.contentSize)
   })`);
   await evaluate(client, `localStorage.setItem('iloveos-content-size', 'enormous')`);
   await client.send("Page.reload", { ignoreCache: true });
-  await delay(150);
+  await waitFor(client, `document.readyState === 'complete'
+    && document.documentElement.dataset.contentSize === 'default'
+    && document.querySelectorAll('[data-content-size][aria-pressed="true"]').length === 1`, "invalid content-size fallback reload", 20_000);
   const invalidFallback = await evaluate(client, `({
     size: document.documentElement.dataset.contentSize,
     pressed: [...document.querySelectorAll('[data-content-size][aria-pressed="true"]')].map((item) => item.dataset.contentSize)
