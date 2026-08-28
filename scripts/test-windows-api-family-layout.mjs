@@ -213,7 +213,7 @@ try {
           longestChoiceCount: longest.resolved.values.length,
           longestChoiceOwner: `${longest.variant.name}.${longest.parameter.name}`,
           choicesWithinViewport: withinViewport(choices) && [...choices.querySelectorAll(".api-choice-row")].every(withinViewport),
-          choiceTargetsAtLeast40: [...choices.querySelectorAll(".api-choice-copy")].every((button) => button.getBoundingClientRect().height >= 39.5),
+          choiceTargetsAtLeast40: [...choices.querySelectorAll(".api-choice-row")].every((row) => row.getBoundingClientRect().height >= 39.5),
           longestCodeContained: [...choices.querySelectorAll("code")].every((code) => code.scrollWidth <= code.clientWidth + 1 || getComputedStyle(code).overflowWrap === "anywhere"),
         };
         dialog.scrollTop = dialog.scrollHeight;

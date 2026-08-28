@@ -83,21 +83,79 @@
   function renderParameterChoices(resolved, copyIdPrefix) {
     if (!resolved) return "";
     const prefix = String(copyIdPrefix || "api-choice").replace(/[^A-Za-z0-9_-]+/g, "-");
-    const renderRow = (value, index, example = false) => {
-      const statusId = `${prefix}-${example ? "example" : `value-${index}`}-status`;
-      return `<div class="api-choice-row${example ? " api-choice-example" : ""}">
-        <code data-api-value-code>${escapeHtml(value.code)}</code>
+    const renderRow = (value, index) => {
+      const inputId = `${prefix}-value-${index}`;
+      const groupName = `${prefix}-${value.group || value.name}`;
+      const displayCode = resolved.surface === "native" ? value.name : value.code;
+      return `<label class="api-choice-row" for="${escapeHtml(inputId)}">
+        <input id="${escapeHtml(inputId)}" type="${value.control}" name="${escapeHtml(groupName)}" value="${escapeHtml(value.name)}" data-api-choice-select data-choice-name="${escapeHtml(value.name)}" data-choice-code="${escapeHtml(value.code)}" data-choice-definition="${escapeHtml(value.definition)}" data-choice-surface="${escapeHtml(resolved.surface)}" data-choice-zero="${value.zero ? "true" : "false"}" data-choice-standalone="${value.standalone ? "true" : "false"}" />
+        <span class="api-choice-control" aria-hidden="true"></span>
+        <span class="api-choice-code"><code>${escapeHtml(displayCode)}</code>${resolved.surface === "native" ? `<small>Python definition: ${escapeHtml(value.definition)}</small>` : ""}</span>
         <span>${escapeHtml(value.useWhen)}</span>
-        <button class="api-choice-copy" type="button" data-copy-api-value data-api-value-code="${escapeHtml(value.code)}" aria-describedby="${escapeHtml(statusId)}">Copy</button>
-        <span class="api-choice-status" id="${escapeHtml(statusId)}" data-api-value-status role="status" aria-live="polite"></span>
-      </div>`;
+      </label>`;
     };
+    const preset = resolved.example?.names?.length
+      ? `<div class="api-choice-preset"><span><strong>Suggested combination</strong><code>${escapeHtml(resolved.example.code)}</code><small>${escapeHtml(resolved.example.useWhen)}</small></span><button type="button" data-api-choice-preset="${escapeHtml(resolved.example.names.join("|"))}">Select</button></div>`
+      : "";
     return `<section class="api-parameter-choices" aria-label="${escapeHtml(resolved.id)} choices">
-      <strong>Common ${escapeHtml(resolved.kind === "bitmask" ? "flags" : "values")}</strong>
-      ${resolved.values.map((value, index) => renderRow(value, index)).join("")}
-      ${resolved.example ? renderRow(resolved.example, 0, true) : ""}
+      <strong>Select common ${escapeHtml(resolved.kind === "bitmask" ? "flags" : "values")}</strong>
+      ${resolved.values.map(renderRow).join("")}
+      ${preset}
+      <div class="api-choice-generator">
+        <span data-api-choice-count aria-live="polite">0 selected</span>
+        <button type="button" data-clear-api-choices disabled>Clear</button>
+        <button type="button" class="button primary" data-generate-api-choices data-choice-set="${escapeHtml(resolved.id)}" data-choice-surface="${escapeHtml(resolved.surface)}" data-choice-parameter="${escapeHtml(resolved.parameter)}" disabled>Generate code</button>
+      </div>
       <a href="${escapeHtml(resolved.source)}" target="_blank" rel="noreferrer">Full list on Microsoft Learn &#8599;</a>
     </section>`;
+  }
+
+  function formatUsage(expressions) {
+    if (expressions.length <= 2) return expressions.join(" | ");
+    return `(\n    ${expressions.join("\n    | ")}\n)`;
+  }
+
+  function nativePrelude(values) {
+    const names = new Set(values.map((value) => value.name));
+    if (names.has("WINTRUST_ACTION_GENERIC_VERIFY_V2")) {
+      return `import ctypes
+from ctypes import wintypes
+
+class GUID(ctypes.Structure):
+    _fields_ = [
+        ("Data1", wintypes.DWORD),
+        ("Data2", wintypes.WORD),
+        ("Data3", wintypes.WORD),
+        ("Data4", wintypes.BYTE * 8),
+    ]`;
+    }
+    return names.has("PAGE_FILE_BACKING") ? "import ctypes" : "";
+  }
+
+  function buildGeneratedCode(surface, parameter, values) {
+    const selected = Array.isArray(values) ? values.filter((value) => value?.name && value?.code) : [];
+    const expressions = selected.map((value) => surface === "native" ? value.name : value.code);
+    const usage = formatUsage(expressions);
+    let definitions = "";
+    let definitionsLabel = "Definitions";
+    if (surface === "native") {
+      const prelude = nativePrelude(selected);
+      const constants = selected.map((value) => `${value.name} = ${value.definition}`).join("\n");
+      definitions = [prelude, constants].filter(Boolean).join("\n\n");
+    } else {
+      definitionsLabel = "Required imports";
+      const modules = [...new Set(selected.map((value) => value.code.match(/^([A-Za-z_]\w*)\./)?.[1]).filter(Boolean))].sort();
+      definitions = modules.map((module) => `import ${module}`).join("\n");
+    }
+    const parameterNote = parameter ? `# Use for ${parameter}` : "# Use as the argument value";
+    return {
+      surface,
+      parameter,
+      definitionsLabel,
+      definitions,
+      usage,
+      complete: [definitions, `${parameterNote}\n${usage}`].filter(Boolean).join("\n\n"),
+    };
   }
 
   function selectedVariant(match) {
@@ -202,5 +260,5 @@
     </div>`;
   }
 
-  window.ILOVEOS_WINDOWS_API_VIEW = { filterFamilies, render, renderDialog, renderEntries, renderParameterChoices };
+  window.ILOVEOS_WINDOWS_API_VIEW = { buildGeneratedCode, filterFamilies, render, renderDialog, renderEntries, renderParameterChoices };
 })();

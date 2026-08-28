@@ -129,20 +129,24 @@ for (const family of guide.families) {
 const escapedChoices = view.renderParameterChoices?.({
   id: "unsafe-choice",
   kind: "enum",
+  surface: "native",
+  parameter: "unsafe",
   source: "https://learn.microsoft.com/example?x=<unsafe>",
-  values: [{ name: "unsafe", code: '<VALUE & "quote">', useWhen: "Escape this value." }],
-  example: { code: "A < B & C", useWhen: "Escape this example." },
+  values: [{ name: "unsafe", code: '<VALUE & "quote">', definition: "0x00000001", control: "radio", group: "single-value", zero: false, standalone: false, useWhen: "Escape this value." }],
+  example: { code: "A < B & C", names: ["unsafe"], useWhen: "Escape this example." },
 }, "unsafe") || "";
-requireCondition(!escapedChoices.includes('<VALUE & "quote">') && escapedChoices.includes("&lt;VALUE &amp; &quot;quote&quot;&gt;"), "choice copy expression is not HTML escaped");
-requireCondition(escapedChoices.includes('data-api-value-code="&lt;VALUE &amp; &quot;quote&quot;&gt;"'), "escaped copy expression is missing from its control");
+requireCondition(!escapedChoices.includes('<VALUE & "quote">') && escapedChoices.includes("&lt;VALUE &amp; &quot;quote&quot;&gt;"), "choice usage expression is not HTML escaped");
+requireCondition(escapedChoices.includes('data-choice-code="&lt;VALUE &amp; &quot;quote&quot;&gt;"'), "escaped usage expression is missing from its selection control");
 
 const bitmaskChoices = view.renderParameterChoices?.({
   id: "creation-flags",
   kind: "bitmask",
+  surface: "native",
+  parameter: "flags",
   source: "https://learn.microsoft.com/en-us/windows/win32/example",
-  values: [{ name: "CREATE_ONE", code: "CREATE_ONE", useWhen: "Select this creation behavior." }],
+  values: [{ name: "CREATE_ONE", code: "CREATE_ONE", definition: "0x00000001", control: "checkbox", group: "", zero: false, standalone: false, useWhen: "Select this creation behavior." }],
 }, "bitmask") || "";
-requireCondition(bitmaskChoices.includes("<strong>Common flags</strong>"), "bitmask choice heading must use neutral flag wording");
+requireCondition(bitmaskChoices.includes("<strong>Select common flags</strong>"), "bitmask choice heading must use neutral flag wording");
 requireCondition(!bitmaskChoices.includes("Common access values"), "bitmask choice heading incorrectly implies every flag is an access right");
 
 const html = view.render?.(guide, "CreateEventExA") || "";
@@ -159,7 +163,7 @@ for (const selector of [".api-family-alias-picker", ".api-family-variants", ".ap
 }
 
 const versions = [...indexHtml.matchAll(/(?:href|src)="[^"]+\?v=([^"]+)"/g)];
-requireCondition(versions.length > 0 && versions.every((match) => match[1] === "integrated-cases-2"), "every tied asset must use the integrated-cases-2 release key");
+requireCondition(versions.length > 0 && versions.every((match) => match[1] === "constant-generator-1"), "every tied asset must use the constant-generator-1 release key");
 
 console.log(`family matches: ${exaMatches.length}`);
 console.log(`errors: ${errors.length}`);

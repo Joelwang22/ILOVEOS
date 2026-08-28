@@ -39,6 +39,32 @@ const checks = await withBrowser(async (client) => {
   const windowsReturnsFocus = await evaluate(client, `!document.querySelector('#api-detail-dialog').open && document.activeElement.matches('.api-detail-trigger')`);
   const windowsActive = await evaluate(client, `document.activeElement.outerHTML?.slice(0, 180) || document.activeElement.tagName`);
 
+  await evaluate(client, `location.hash = '#/reference/windows-api?q=CreateNamedPipeW'`);
+  await delay(100);
+  await evaluate(client, `(() => {
+    const section = [...document.querySelectorAll('.parameter-list > div')].find((row) => row.firstElementChild?.textContent.trim() === 'dwOpenMode')?.querySelector('.api-parameter-choices');
+    section?.querySelector('[data-choice-name="PIPE_ACCESS_DUPLEX"]')?.click();
+    const generate = section?.querySelector('[data-generate-api-choices]');
+    generate?.focus();
+    generate?.click();
+  })()`);
+  await delay(60);
+  const generated = await evaluate(client, `(() => {
+    const dialog = document.querySelector('#api-generated-dialog');
+    const label = document.getElementById(dialog.getAttribute('aria-labelledby'))?.textContent.trim();
+    return {
+      named: label === 'Generated code',
+      openAboveApi: dialog.open && dialog.matches(':modal') && document.querySelector('#api-detail-dialog').open,
+      initialCloseFocus: document.activeElement.matches('[data-close-generated-code]'),
+    };
+  })()`);
+  await pressKey(client, "Tab");
+  const generatedTabContained = await evaluate(client, `document.querySelector('#api-generated-dialog').contains(document.activeElement)`);
+  await pressKey(client, "Escape");
+  await delay(40);
+  const generatedEscapeReturnsToApi = await evaluate(client, `!document.querySelector('#api-generated-dialog').open && document.querySelector('#api-detail-dialog').open && document.activeElement.matches('[data-generate-api-choices]')`);
+  await pressKey(client, "Escape");
+
   await evaluate(client, `location.hash = '#/reference/pywin32'`);
   await delay(100);
   const pywin32 = await openAndInspect("[data-reference-overview]", "#api-detail-dialog", ".api-dialog-close");
@@ -66,6 +92,11 @@ const checks = await withBrowser(async (client) => {
     windowsApiTabContained: windowsTabContained,
     windowsApiScrollReachable: windowsScrollReachable,
     windowsApiEscapeReturnsFocus: windowsReturnsFocus || { active: windowsActive },
+    generatedCodeNamed: generated.named,
+    generatedCodeLayered: generated.openAboveApi,
+    generatedCodeInitialFocus: generated.initialCloseFocus,
+    generatedCodeTabContained: generatedTabContained,
+    generatedCodeEscapeReturnsToApi: generatedEscapeReturnsToApi,
     pywin32OverviewNamed: Boolean(pywin32.name),
     pywin32OverviewInitialFocus: pywin32.initialInside && pywin32.expectedInitial,
     pywin32OverviewTabContained: pywin32TabContained,

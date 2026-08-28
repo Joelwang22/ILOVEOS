@@ -25,12 +25,16 @@
   const mobileDrawerBackground = [document.querySelector(".skip-link"), main, document.querySelector("#search-trigger"), document.querySelector(".settings-control")];
   const apiDialog = document.querySelector("#api-detail-dialog");
   const apiDetailContent = document.querySelector("#api-detail-content");
+  const apiGeneratedDialog = document.querySelector("#api-generated-dialog");
+  const apiGeneratedContent = document.querySelector("#api-generated-content");
   let openWindowsApiFamilyId = "";
   const settingsTrigger = document.querySelector("#settings-trigger");
   const settingsPanel = document.querySelector("#settings-panel");
   const settingsClose = document.querySelector("#settings-close");
   const sizeOptions = [...document.querySelectorAll("[data-content-size]")];
   let apiDialogInvoker = null;
+  let apiGeneratedInvoker = null;
+  let generatedCodeBundle = null;
   const searchFilterStorageKey = "iloveos-search-filters";
   const searchFilterVersion = 1;
   const defaultSearchScopes = searchFilterInputs.map((input) => input.dataset.searchFilter);
@@ -1408,6 +1412,65 @@ except pywintypes.error as error:
     apiDetailContent.querySelector(".api-dialog-close")?.focus({ preventScroll: true });
   }
 
+  function selectedApiChoices(section) {
+    return [...section.querySelectorAll("[data-api-choice-select]:checked")].map((input) => ({
+      name: input.dataset.choiceName,
+      code: input.dataset.choiceCode,
+      definition: input.dataset.choiceDefinition,
+    }));
+  }
+
+  function updateApiChoiceSection(section) {
+    const selected = selectedApiChoices(section);
+    const count = section.querySelector("[data-api-choice-count]");
+    const generate = section.querySelector("[data-generate-api-choices]");
+    const clear = section.querySelector("[data-clear-api-choices]");
+    if (count) count.textContent = `${selected.length} selected`;
+    if (generate) generate.disabled = selected.length === 0;
+    if (clear) clear.disabled = selected.length === 0;
+  }
+
+  function applyApiChoiceConstraints(input) {
+    if (input.type !== "checkbox" || !input.checked) return;
+    const section = input.closest(".api-parameter-choices");
+    if (!section) return;
+    const checkboxes = [...section.querySelectorAll('[data-api-choice-select][type="checkbox"]')];
+    if (input.dataset.choiceZero === "true" || input.dataset.choiceStandalone === "true") {
+      checkboxes.filter((candidate) => candidate !== input).forEach((candidate) => { candidate.checked = false; });
+    } else {
+      checkboxes.filter((candidate) => candidate.dataset.choiceZero === "true" || candidate.dataset.choiceStandalone === "true").forEach((candidate) => { candidate.checked = false; });
+    }
+  }
+
+  function renderGeneratedCodeDialog(bundle, selectedCount) {
+    generatedCodeBundle = bundle;
+    const definitionsAvailable = Boolean(bundle.definitions);
+    apiGeneratedContent.innerHTML = `
+      <header class="api-dialog-head api-generated-head">
+        <div><span>${bundle.surface === "native" ? "Native Windows API" : "pywin32"} · ${selectedCount} selected</span><h2 id="api-generated-title">Generated code</h2><p>Copy the setup, the argument expression, or both together.</p></div>
+        <button class="api-dialog-close" type="button" data-close-generated-code aria-label="Close generated code">×</button>
+      </header>
+      <div class="api-generated-body">
+        <section class="api-generated-block">
+          <div><span>01</span><h3>${escapeHtml(bundle.definitionsLabel)}</h3><button type="button" data-copy-generated="definitions"${definitionsAvailable ? "" : " disabled"}>Copy ${bundle.surface === "native" ? "definitions" : "imports"}</button></div>
+          ${definitionsAvailable ? `<pre><code data-generated-code="definitions">${escapeHtml(bundle.definitions)}</code></pre>` : `<p class="api-generated-empty">No imports are required for the selected literal value.</p>`}
+          <span data-generated-copy-status="definitions" role="status" aria-live="polite"></span>
+        </section>
+        <section class="api-generated-block">
+          <div><span>02</span><h3>Usage expression</h3><button type="button" data-copy-generated="usage">Copy usage</button></div>
+          <pre><code data-generated-code="usage">${escapeHtml(bundle.usage)}</code></pre>
+          <span data-generated-copy-status="usage" role="status" aria-live="polite"></span>
+        </section>
+        <section class="api-generated-block api-generated-complete">
+          <div><span>03</span><h3>Complete selection</h3><button type="button" class="button primary" data-copy-generated="complete">Copy all</button></div>
+          <pre><code data-generated-code="complete">${escapeHtml(bundle.complete)}</code></pre>
+          <span data-generated-copy-status="complete" role="status" aria-live="polite"></span>
+        </section>
+      </div>`;
+    apiGeneratedDialog.showModal();
+    apiGeneratedContent.querySelector("[data-close-generated-code]")?.focus({ preventScroll: true });
+  }
+
   function renderPywin32ParameterChoices(moduleName, signature, signatureIndex, parameter, parameterIndex) {
     const bindingKey = `${moduleName}::${signature.name}#${signatureIndex}.${parameter.name}`;
     const resolved = window.ILOVEOS_WINDOWS_API_FAMILY_DATA.resolveParameterChoices(bindingKey, "pywin32");
@@ -1719,30 +1782,54 @@ except pywintypes.error as error:
     if (trigger.dataset.windowsApiFamily) openWindowsApiDetails(trigger.dataset.windowsApiFamily, trigger.dataset.windowsApiVariant);
     else openApiDetails(trigger.dataset.apiModule, trigger.dataset.apiFeature);
   });
-  async function copyApiValue(button) {
-    const row = button.closest(".api-choice-row");
-    const status = row?.querySelector("[data-api-value-status]");
-    const code = row?.querySelector("[data-api-value-code]");
-    if (!status || !code) return;
+  async function copyGeneratedCode(button) {
+    const kind = button.dataset.copyGenerated;
+    const text = generatedCodeBundle?.[kind];
+    const status = apiGeneratedContent.querySelector(`[data-generated-copy-status="${CSS.escape(kind)}"]`);
+    const code = apiGeneratedContent.querySelector(`[data-generated-code="${CSS.escape(kind)}"]`);
+    if (!text || !status || !code) return;
     status.textContent = "";
     try {
       if (!navigator.clipboard?.writeText) throw new Error("clipboard unavailable");
-      await navigator.clipboard.writeText(button.dataset.apiValueCode);
-      status.textContent = "Copied";
+      await navigator.clipboard.writeText(text);
+      status.textContent = "Copied to clipboard.";
     } catch (_) {
       const range = document.createRange();
       range.selectNodeContents(code);
       const selection = window.getSelection();
       selection.removeAllRanges();
       selection.addRange(range);
-      status.textContent = "Value selected. Press Ctrl+C to copy.";
+      status.textContent = "Code selected. Press Ctrl+C to copy.";
     }
   }
+  apiDialog.addEventListener("change", (event) => {
+    const input = event.target.closest("[data-api-choice-select]");
+    if (!input) return;
+    applyApiChoiceConstraints(input);
+    updateApiChoiceSection(input.closest(".api-parameter-choices"));
+  });
   apiDialog.addEventListener("click", (event) => {
     if (event.target === apiDialog) apiDialog.close();
-    const copyControl = event.target.closest("[data-copy-api-value]");
-    if (copyControl) {
-      copyApiValue(copyControl);
+    const section = event.target.closest(".api-parameter-choices");
+    const preset = event.target.closest("[data-api-choice-preset]");
+    if (preset && section) {
+      const selectedNames = new Set(preset.dataset.apiChoicePreset.split("|").filter(Boolean));
+      section.querySelectorAll("[data-api-choice-select]").forEach((input) => { input.checked = selectedNames.has(input.dataset.choiceName); });
+      updateApiChoiceSection(section);
+      return;
+    }
+    if (event.target.closest("[data-clear-api-choices]") && section) {
+      section.querySelectorAll("[data-api-choice-select]").forEach((input) => { input.checked = false; });
+      updateApiChoiceSection(section);
+      return;
+    }
+    const generate = event.target.closest("[data-generate-api-choices]");
+    if (generate && section) {
+      const selected = selectedApiChoices(section);
+      if (!selected.length) return;
+      generate.focus({ preventScroll: true });
+      apiGeneratedInvoker = generate;
+      renderGeneratedCodeDialog(windowsApiView.buildGeneratedCode(generate.dataset.choiceSurface, generate.dataset.choiceParameter, selected), selected.length);
       return;
     }
     const variant = event.target.closest("[data-api-variant]");
@@ -1757,9 +1844,45 @@ except pywintypes.error as error:
     if (invoker?.isConnected) invoker.focus({ preventScroll: true });
   });
   apiDialog.addEventListener("close", () => {
+    if (apiGeneratedDialog.open) apiGeneratedDialog.close();
     const invoker = apiDialogInvoker;
     if (invoker?.isConnected) window.setTimeout(() => invoker.focus({ preventScroll: true }), 0);
     apiDialogInvoker = null;
+  });
+  apiGeneratedDialog.addEventListener("click", (event) => {
+    if (event.target === apiGeneratedDialog || event.target.closest("[data-close-generated-code]")) {
+      apiGeneratedDialog.close();
+      return;
+    }
+    const copy = event.target.closest("[data-copy-generated]");
+    if (copy) copyGeneratedCode(copy);
+  });
+  apiGeneratedDialog.addEventListener("cancel", (event) => {
+    event.preventDefault();
+    apiGeneratedDialog.close();
+  });
+  apiGeneratedDialog.addEventListener("close", () => {
+    const invoker = apiGeneratedInvoker;
+    if (invoker?.isConnected) invoker.focus({ preventScroll: true });
+    apiGeneratedInvoker = null;
+    generatedCodeBundle = null;
+  });
+  apiGeneratedDialog.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
+      event.preventDefault();
+      event.stopPropagation();
+      apiGeneratedDialog.close();
+      return;
+    }
+    if (event.key !== "Tab") return;
+    const focusable = [...apiGeneratedDialog.querySelectorAll('button:not([disabled]), a[href], input:not([disabled]), [tabindex]:not([tabindex="-1"])')]
+      .filter((element) => element.getClientRects().length);
+    const first = focusable[0];
+    const last = focusable.at(-1);
+    if (first && (focusable.length === 1 || (event.shiftKey && document.activeElement === first) || (!event.shiftKey && document.activeElement === last))) {
+      event.preventDefault();
+      (event.shiftKey ? last : first).focus();
+    }
   });
   apiDialog.addEventListener("keydown", (event) => {
     if (event.key === "Escape") {
@@ -1795,6 +1918,11 @@ except pywintypes.error as error:
     if (family) renderWindowsApiDetails(family, tabs[nextIndex].dataset.apiVariant, true);
   });
   document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && apiGeneratedDialog.open) {
+      event.preventDefault();
+      apiGeneratedDialog.close();
+      return;
+    }
     if (event.key === "Escape" && apiDialog.open) {
       event.preventDefault();
       const invoker = apiDialogInvoker;

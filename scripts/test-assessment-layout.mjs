@@ -38,7 +38,7 @@ const errors = [];
 const sizeMetrics = [];
 const releaseAssets = ["styles.css", "course-api-coverage.js", "windows-api-data.js", "reference-overview-view.js", "windows-api-view.js", "assessment-data.js", "assessment-view.js", "app.js"];
 const releaseVersions = releaseAssets.map((asset) => indexSource.match(new RegExp(`${asset.replace(".", "\\.")}\\?v=([^\"']+)`))?.[1]);
-if (releaseVersions.some((version) => version !== "integrated-cases-2")) errors.push(`Release assets must use integrated-cases-2: ${JSON.stringify(releaseVersions)}`);
+if (releaseVersions.some((version) => version !== "constant-generator-1")) errors.push(`Release assets must use constant-generator-1: ${JSON.stringify(releaseVersions)}`);
 
 try {
   for (const scenario of scenarios) {

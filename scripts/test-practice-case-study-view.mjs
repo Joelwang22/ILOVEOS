@@ -104,8 +104,8 @@ const probe = `<script>
 
 const indexSource = fs.readFileSync(path.join(root, "index.html"), "utf8");
 const tiedAssets = [...indexSource.matchAll(/(?:href|src)="[^"]+\?v=([^"]+)"/g)];
-if (!tiedAssets.length || tiedAssets.some((match) => match[1] !== "integrated-cases-2")) {
-  console.error("ERROR every tied asset must use the integrated-cases-2 release key");
+if (!tiedAssets.length || tiedAssets.some((match) => match[1] !== "constant-generator-1")) {
+  console.error("ERROR every tied asset must use the constant-generator-1 release key");
   process.exit(1);
 }
 const source = indexSource

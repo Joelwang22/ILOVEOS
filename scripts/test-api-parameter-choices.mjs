@@ -35,11 +35,31 @@ for (const [surface, bindings] of [
     assert.ok(resolved?.values.length, `${surface} ${key} must resolve at least one contextual value`);
     const markup = view.renderParameterChoices(resolved, `${surface}-${key}`);
     for (const value of resolved.values) {
-      assert.ok(value.code.trim(), `${surface} ${key} has an empty copy expression`);
+      assert.ok(value.code.trim(), `${surface} ${key} has an empty usage expression`);
+      if (surface === "native") assert.ok(value.definition.trim(), `${surface} ${key}.${value.name} has no Python definition`);
       assert.ok(markup.includes(value.code.replaceAll("&", "&amp;").replaceAll('"', "&quot;").replaceAll("<", "&lt;").replaceAll(">", "&gt;")), `${surface} ${key} omits an escaped expression`);
+      assert.ok(markup.includes("data-api-choice-select"), `${surface} ${key} omits selection controls`);
+      assert.ok(!markup.includes("data-copy-api-value"), `${surface} ${key} still exposes per-value Copy controls`);
+    }
+    const generated = view.buildGeneratedCode(surface, resolved.parameter, resolved.values);
+    assert.ok(generated.usage && generated.complete && !generated.complete.includes("undefined"), `${surface} ${key} does not generate complete code`);
+    if (surface === "native") {
+      for (const value of resolved.values) assert.ok(generated.definitions.includes(`${value.name} = ${value.definition}`), `${surface} ${key}.${value.name} is absent from generated definitions`);
+    } else {
+      const requiredModules = [...new Set(resolved.values.map((value) => value.code.match(/^([A-Za-z_]\w*)\./)?.[1]).filter(Boolean))];
+      for (const module of requiredModules) assert.ok(generated.definitions.includes(`import ${module}`), `${surface} ${key} omits import ${module}`);
     }
   }
 }
+
+const nativePipeChoices = window.ILOVEOS_WINDOWS_API_FAMILY_DATA.resolveParameterChoices("CreateNamedPipeW.dwOpenMode", "native");
+const nativePipeCode = view.buildGeneratedCode("native", "dwOpenMode", nativePipeChoices.values.filter((value) => ["PIPE_ACCESS_DUPLEX", "FILE_FLAG_OVERLAPPED"].includes(value.name)));
+assert.equal(nativePipeCode.definitions, "PIPE_ACCESS_DUPLEX = 0x00000003\nFILE_FLAG_OVERLAPPED = 0x40000000", "native generator definitions are not paste-ready");
+assert.equal(nativePipeCode.usage, "PIPE_ACCESS_DUPLEX | FILE_FLAG_OVERLAPPED", "native generator does not compose the selected flags");
+const pyPipeChoices = window.ILOVEOS_WINDOWS_API_FAMILY_DATA.resolveParameterChoices("win32pipe::CreateNamedPipe#0.openMode", "pywin32");
+const pyPipeCode = view.buildGeneratedCode("pywin32", "openMode", pyPipeChoices.values.filter((value) => ["PIPE_ACCESS_DUPLEX", "FILE_FLAG_OVERLAPPED"].includes(value.name)));
+assert.equal(pyPipeCode.definitions, "import win32file\nimport win32pipe", "pywin32 generator does not deduplicate and sort required imports");
+assert.equal(pyPipeCode.usage, "win32pipe.PIPE_ACCESS_DUPLEX | win32file.FILE_FLAG_OVERLAPPED", "pywin32 generator does not retain owning modules");
 
 const representedPywin32Parameters = new Map();
 for (const module of window.ILOVEOS_REFERENCE.pywin32Modules) {
@@ -87,7 +107,7 @@ expectOnly(renderNative("OpenProcessToken"), ["TOKEN_QUERY", "TOKEN_DUPLICATE", 
 expectOnly(renderNative("DuplicateToken"), ["SecurityAnonymous", "SecurityIdentification", "SecurityImpersonation", "SecurityDelegation"], ["TOKEN_QUERY", "TokenPrimary"], "native DuplicateToken");
 assert.ok(!renderNative("CloseHandle").includes("api-parameter-choices"), "CloseHandle must not render a contextual-choice section");
 const nativeWow64Markup = renderNative("IsWow64Process2");
-assert.ok(!nativeWow64Markup.includes("data-copy-api-value"), "native IsWow64Process2 output pointers must not render Copy controls");
+assert.ok(!nativeWow64Markup.includes("data-api-choice-select"), "native IsWow64Process2 output pointers must not render selection controls");
 assert.ok(nativeWow64Markup.includes("IMAGE_FILE_MACHINE_UNKNOWN") && nativeWow64Markup.includes("IMAGE_FILE_MACHINE_*"), "native IsWow64Process2 outcome must explain returned machine constants");
 
 const browserCandidates = [
@@ -124,6 +144,50 @@ const probe = `<script>
         "CloseHandle",
       ).includes("api-parameter-choices");
 
+      await changeRoute("#/reference/windows-api?q=CreateNamedPipeW");
+      const nativeOpenMode = choiceSection(parameterRow("dwOpenMode"));
+      const nativeChoice = (name) => nativeOpenMode?.querySelector('[data-choice-name="' + name + '"]');
+      nativeChoice("PIPE_ACCESS_DUPLEX")?.click();
+      nativeChoice("FILE_FLAG_OVERLAPPED")?.click();
+      await wait();
+      const nativeGenerate = nativeOpenMode?.querySelector("[data-generate-api-choices]");
+      const apiScrollBeforeGenerate = document.querySelector("#api-detail-dialog").scrollTop;
+      nativeGenerate?.click();
+      await wait();
+      checks.nativeSelectionsReplaceCopyButtons = nativeOpenMode?.querySelectorAll("[data-api-choice-select]").length === 5
+        && !nativeOpenMode?.querySelector("[data-copy-api-value]")
+        && nativeOpenMode?.querySelector("[data-api-choice-count]")?.textContent === "2 selected";
+      checks.apiStaysOpenUnderGeneratedDialog = document.querySelector("#api-detail-dialog").open;
+      checks.generatedDialogOpens = document.querySelector("#api-generated-dialog").open;
+      checks.generatedDialogUsesModalLayer = document.querySelector("#api-generated-dialog").matches(":modal");
+      checks.nativeDefinitionsGenerated = document.querySelector('[data-generated-code="definitions"]')?.textContent.split(String.fromCharCode(10)).join("|") === "PIPE_ACCESS_DUPLEX = 0x00000003|FILE_FLAG_OVERLAPPED = 0x40000000";
+      checks.nativeUsageGenerated = document.querySelector('[data-generated-code="usage"]')?.textContent === "PIPE_ACCESS_DUPLEX | FILE_FLAG_OVERLAPPED";
+      let copied = "";
+      Object.defineProperty(navigator, "clipboard", { configurable: true, value: { writeText: async (value) => { copied = value; } } });
+      document.querySelector('[data-copy-generated="complete"]')?.click();
+      await wait();
+      checks.completeNativeSelectionCopies = copied.includes("PIPE_ACCESS_DUPLEX = 0x00000003")
+        && copied.includes("FILE_FLAG_OVERLAPPED = 0x40000000")
+        && copied.endsWith("PIPE_ACCESS_DUPLEX | FILE_FLAG_OVERLAPPED");
+      document.querySelector("[data-close-generated-code]")?.click();
+      await wait();
+      checks.generatedCloseKeepsApiOpen = document.querySelector("#api-detail-dialog").open && !document.querySelector("#api-generated-dialog").open;
+      checks.generatedCloseReturnsFocus = document.activeElement === nativeGenerate;
+      checks.generatedClosePreservesSelections = nativeChoice("PIPE_ACCESS_DUPLEX")?.checked && nativeChoice("FILE_FLAG_OVERLAPPED")?.checked;
+      checks.generatedClosePreservesApiScroll = document.querySelector("#api-detail-dialog").scrollTop === apiScrollBeforeGenerate;
+      nativeChoice("PIPE_ACCESS_OUTBOUND")?.click();
+      checks.exclusivePipeDirectionEnforced = nativeChoice("PIPE_ACCESS_OUTBOUND")?.checked && !nativeChoice("PIPE_ACCESS_DUPLEX")?.checked && nativeChoice("FILE_FLAG_OVERLAPPED")?.checked;
+
+      await changeRoute("#/reference/windows-api?q=VirtualAlloc");
+      const allocationSection = choiceSection(parameterRow("flAllocationType"));
+      const allocationChoice = (name) => allocationSection?.querySelector('[data-choice-name="' + name + '"]');
+      allocationChoice("MEM_RESERVE")?.click();
+      allocationChoice("MEM_COMMIT")?.click();
+      allocationChoice("MEM_RESET")?.click();
+      checks.standaloneFlagClearsCombinedFlags = allocationChoice("MEM_RESET")?.checked && !allocationChoice("MEM_RESERVE")?.checked && !allocationChoice("MEM_COMMIT")?.checked;
+      allocationChoice("MEM_RESERVE")?.click();
+      checks.combinableFlagClearsStandaloneFlag = allocationChoice("MEM_RESERVE")?.checked && !allocationChoice("MEM_RESET")?.checked;
+
       await changeRoute("#/reference/pywin32?api=OpenProcessToken");
       const renderedMain = document.querySelector("main");
       const pywin32ModuleCards = [...document.querySelectorAll("#reference-list .api-module")];
@@ -134,22 +198,26 @@ const probe = `<script>
       checks.pywin32PopupCategoryTagsRemoved = Boolean(pywin32Summary?.querySelector("p")) && !pywin32Summary.querySelector(":scope > span");
       const pyRow = parameterRow("desiredAccess");
       checks.pywin32OpenProcessTokenAssociation = hasOnly(choiceSection(pyRow), ["win32security.TOKEN_QUERY", "win32security.TOKEN_DUPLICATE", "win32security.TOKEN_ADJUST_PRIVILEGES"], ["win32security.SecurityAnonymous", "win32security.TokenPrimary"]);
-      let copied = "";
-      Object.defineProperty(navigator, "clipboard", { configurable: true, value: { writeText: async (value) => { copied = value; } } });
-      const queryRow = [...pyRow.querySelectorAll(".api-choice-row")].find((row) => row.querySelector("[data-api-value-code]")?.textContent === "win32security.TOKEN_QUERY");
-      queryRow?.querySelector("[data-copy-api-value]")?.click();
+      const pySection = choiceSection(pyRow);
+      pySection?.querySelector('[data-choice-name="TOKEN_QUERY"]')?.click();
+      pySection?.querySelector('[data-choice-name="TOKEN_DUPLICATE"]')?.click();
+      pySection?.querySelector("[data-generate-api-choices]")?.click();
       await wait();
-      checks.copiesModuleQualifiedValue = copied === "win32security.TOKEN_QUERY" && queryRow?.querySelector("[data-api-value-status]")?.textContent === "Copied";
-      const exampleRow = pyRow.querySelector(".api-choice-example");
-      exampleRow?.querySelector("[data-copy-api-value]")?.click();
+      checks.pywin32ImportsGenerated = document.querySelector('[data-generated-code="definitions"]')?.textContent === "import win32security";
+      checks.pywin32QualifiedUsageGenerated = document.querySelector('[data-generated-code="usage"]')?.textContent === "win32security.TOKEN_QUERY | win32security.TOKEN_DUPLICATE";
+      document.querySelector('[data-copy-generated="usage"]')?.click();
       await wait();
       checks.copiesExactCombination = copied === "win32security.TOKEN_QUERY | win32security.TOKEN_DUPLICATE";
       Object.defineProperty(navigator, "clipboard", { configurable: true, value: { writeText: async () => { throw new Error("blocked"); } } });
-      queryRow?.querySelector("[data-copy-api-value]")?.click();
+      document.querySelector('[data-copy-generated="usage"]')?.click();
       await wait();
-      checks.rejectionSelectsOnlyLocalValue = window.getSelection()?.toString() === "win32security.TOKEN_QUERY"
-        && queryRow?.querySelector("[data-api-value-status]")?.textContent === "Value selected. Press Ctrl+C to copy."
-        && exampleRow?.querySelector("[data-api-value-status]")?.textContent === "Copied";
+      checks.rejectionSelectsOnlyGeneratedBlock = window.getSelection()?.toString() === "win32security.TOKEN_QUERY | win32security.TOKEN_DUPLICATE"
+        && document.querySelector('[data-generated-copy-status="usage"]')?.textContent === "Code selected. Press Ctrl+C to copy.";
+      document.querySelector("[data-close-generated-code]")?.click();
+      await wait();
+      pySection?.querySelector("[data-clear-api-choices]")?.click();
+      pySection?.querySelector("[data-api-choice-preset]")?.click();
+      checks.suggestedCombinationSelectsExactValues = [...pySection.querySelectorAll("[data-api-choice-select]:checked")].map((input) => input.dataset.choiceName).join("|") === "TOKEN_QUERY|TOKEN_DUPLICATE";
 
       await changeRoute("#/reference/pywin32?api=DuplicateTokenEx");
       const duplicateRows = [...document.querySelectorAll(".parameter-list > div")];
@@ -159,9 +227,9 @@ const probe = `<script>
 
       await changeRoute("#/reference/pywin32?api=IsWow64Process2");
       const wow64OutputRows = ["pProcessMachine", "pNativeMachine"].map(parameterRow);
-      checks.referenceWow64OutputPointersHaveNoCopyControls = wow64OutputRows.every((row) => Boolean(row)
+      checks.referenceWow64OutputPointersHaveNoSelectionControls = wow64OutputRows.every((row) => Boolean(row)
         && !choiceSection(row)
-        && !row.querySelector("[data-copy-api-value]"));
+        && !row.querySelector("[data-api-choice-select]"));
 
       await changeRoute("#/reference/pywin32?q=win32con.GENERIC_READ");
       checks.pywin32ChoiceConstantIsSearchable = [...document.querySelectorAll("[data-api-feature]")]
@@ -191,7 +259,8 @@ const probe = `<script>
       checks.switchingVariantRemovesOtherChoices = firstHasChoices && host.querySelector(".api-parameter-choices") === null;
 
       await changeRoute("#/reference/pywin32?api=OpenProcessToken");
-      checks.reopeningPywin32ResetsCopyStatuses = [...document.querySelectorAll("[data-api-value-status]")].every((status) => status.textContent === "");
+      checks.reopeningPywin32ResetsSelections = !document.querySelector("[data-api-choice-select]:checked")
+        && document.querySelector("[data-api-choice-count]")?.textContent === "0 selected";
     } catch (error) {
       checks.exception = error.message;
     }
