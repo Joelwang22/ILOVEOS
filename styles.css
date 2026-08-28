@@ -2379,6 +2379,34 @@ html[data-content-size="large"] .practice-command [data-copy-status] { font-size
 .api-variant-tab[aria-selected="true"] { border-color: var(--reference-color, var(--violet)); color: var(--text); background: color-mix(in srgb, var(--reference-color, var(--violet)) 13%, var(--panel)); box-shadow: inset 0 -2px 0 var(--reference-color, var(--violet)); }
 .api-variant-tab:focus-visible { outline: 2px solid var(--text); outline-offset: 2px; }
 .api-key-behaviors ul { display: grid; gap: 7px; margin: 0; padding-left: 18px; color: var(--muted); font-size: 11px; line-height: 1.55; }
+.windows-guided-results:not(:empty) { margin-bottom: 42px; }
+.sdk-catalog-section { min-width: 0; margin-top: 28px; }
+.sdk-catalog-head { display: flex; align-items: center; justify-content: space-between; gap: 24px; margin-bottom: 16px; padding: 20px 22px; border: 1px solid var(--line); border-radius: 12px; background: linear-gradient(135deg, rgba(77,215,228,.07), rgba(167,139,250,.035)); }
+.sdk-catalog-head > div:first-child { min-width: 0; }
+.sdk-catalog-head > div:first-child > span { color: var(--cyan); font: 700 9px/1.4 "Cascadia Code", Consolas, monospace; letter-spacing: .08em; text-transform: uppercase; }
+.sdk-catalog-head h2 { margin: 5px 0 3px; font-size: 20px; }
+.sdk-catalog-head p { color: var(--muted); font-size: 11px; line-height: 1.55; }
+.sdk-catalog-head > div:last-child { display: grid; flex: 0 0 auto; min-width: 100px; text-align: right; }
+.sdk-catalog-head > div:last-child strong { color: var(--cyan); font: 700 22px/1.2 "Cascadia Code", Consolas, monospace; }
+.sdk-catalog-head > div:last-child span { color: var(--muted-2); font-size: 9px; letter-spacing: .08em; text-transform: uppercase; }
+.sdk-namespace-list { display: grid; gap: 10px; }
+.sdk-namespace { --reference-color: var(--cyan); }
+.sdk-namespace .api-module-title code { font-size: 12px; overflow-wrap: anywhere; }
+.sdk-namespace-body { min-width: 0; }
+.sdk-namespace-prompt, .sdk-all-loaded { color: var(--muted-2); font-size: 10px; text-align: center; }
+.sdk-function-table { min-width: 0; }
+.sdk-function-row strong { color: var(--cyan); font-family: "Cascadia Code", Consolas, monospace; overflow-wrap: anywhere; }
+.sdk-load-more { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; min-height: 44px; margin-top: 12px; cursor: pointer; }
+.sdk-load-more span { color: var(--muted-2); font-size: 9px; }
+.sdk-all-loaded { margin-top: 12px; }
+.sdk-dialog-body .caution-box { margin-bottom: 22px; }
+.sdk-dialog-body .caution-box p { margin-top: 6px; color: var(--muted); font-size: 10px; }
+.sdk-metadata-list { border: 1px solid var(--line); border-radius: 9px; overflow: hidden; }
+.sdk-metadata-list > div { display: grid; grid-template-columns: minmax(170px, .7fr) minmax(280px, 1.5fr); }
+.sdk-metadata-list > div + div { border-top: 1px solid var(--line); }
+.sdk-metadata-list strong, .sdk-metadata-list span { padding: 11px 13px; font-size: 10px; }
+.sdk-metadata-list strong { color: var(--muted-2); }
+.sdk-metadata-list span { border-left: 1px solid var(--line); color: var(--text); font-family: "Cascadia Code", Consolas, monospace; overflow-wrap: anywhere; }
 .api-parameter-choices { display: grid; width: 100%; max-width: 100%; min-width: 0; gap: 7px; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--line); }
 .api-parameter-choices > strong { color: var(--muted-2); font-size: 9px; letter-spacing: .07em; text-transform: uppercase; }
 .api-parameter-choices > a { color: var(--reference-color, var(--violet)); font-size: 10px; }
@@ -2419,6 +2447,11 @@ html[data-content-size="large"] .practice-command [data-copy-status] { font-size
 .api-generated-complete { border-color: color-mix(in srgb, var(--green) 30%, var(--line)); }
 
 @media (max-width: 520px) {
+  .sdk-catalog-head { align-items: flex-start; flex-direction: column; padding: 16px; }
+  .sdk-catalog-head > div:last-child { text-align: left; }
+  .sdk-metadata-list > div { grid-template-columns: 1fr; padding: 11px 13px; gap: 3px; }
+  .sdk-metadata-list strong, .sdk-metadata-list span { padding: 0; }
+  .sdk-metadata-list span { border-left: 0; }
   .api-choice-row { grid-template-columns: 24px minmax(0, 1fr); align-items: start; }
   .api-choice-row > span:last-child { grid-column: 2; }
   .api-choice-generator { grid-template-columns: 1fr 1fr; }

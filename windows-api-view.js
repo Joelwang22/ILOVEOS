@@ -249,14 +249,17 @@ class GUID(ctypes.Structure):
 
   function render(guide, query = "") {
     const matches = filterFamilies(guide.families, query);
+    const sdkView = window.ILOVEOS_WINDOWS_SDK_VIEW;
+    const sdkMatches = query && sdkView ? sdkView.filter(query).total : sdkView?.catalog.functionCount || 0;
     return `<div class="content-wrap reference-width">
       <div class="breadcrumb"><span><a href="#/">Course</a></span><span>Windows API guide</span></div>
       <header class="reference-hero compact-reference-hero"><h1>Find the native Windows API you need.</h1>
-        <span class="source-note">Cross-checked with <a href="https://learn.microsoft.com/windows/win32/apiindex/windows-api-list" target="_blank" rel="noreferrer">the Microsoft Windows API index ↗</a></span></header>
+        <span class="source-note">${sdkView ? `Complete Win32 metadata inventory: ${sdkView.catalog.functionCount.toLocaleString()} P/Invoke functions from package ${escapeHtml(sdkView.catalog.packageVersion)}. ` : ""}<a href="https://github.com/microsoft/win32metadata" target="_blank" rel="noreferrer">Open the Microsoft metadata source ↗</a></span></header>
       ${query ? "" : renderTypeMappings()}
       <div class="reference-filter sticky-filter"><input id="windows-api-filter" type="search" value="${escapeHtml(query)}" placeholder="Try: VirtualAllocEx, SIZE_T, output pointer, Kernel32…" aria-label="Search the Windows API guide" autocomplete="off" />
-        <span class="reference-count" id="windows-api-count">${matches.length} ${matches.length === 1 ? "Family" : "Families"}</span></div>
-      <section class="reference-list" id="windows-api-results" aria-live="polite">${renderEntries(matches, Boolean(query))}</section>
+        <span class="reference-count" id="windows-api-count">${matches.length} guided ${matches.length === 1 ? "family" : "families"} · ${sdkMatches.toLocaleString()} SDK ${sdkMatches === 1 ? "function" : "functions"}</span></div>
+      <section class="reference-list windows-guided-results" id="windows-api-results" aria-live="polite">${matches.length || !query ? renderEntries(matches, Boolean(query)) : ""}</section>
+      <div id="windows-sdk-results">${sdkView ? (query ? sdkView.renderSearch(query) : sdkView.renderOverview()) : ""}</div>
     </div>`;
   }
 

@@ -124,7 +124,7 @@ const probe = `<script>
   });
 <\/script>`;
 
-const appTag = '<script src="app.js?v=pywin32-catalog-1" defer></script>';
+const appTag = '<script src="app.js?v=windows-sdk-catalog-1" defer></script>';
 const source = fs.readFileSync(path.join(root, "index.html"), "utf8")
   .replace("<head>", `<head><base href="${baseUrl}">`)
   .replace(appTag, `<script src="${pathToFileURL(fixturePath).href}" defer></script>\n    ${appTag}`)

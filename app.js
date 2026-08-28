@@ -9,6 +9,8 @@
   const apiSignatures = window.ILOVEOS_API_SIGNATURES || {};
   const windowsApiGuide = window.ILOVEOS_WINDOWS_API_GUIDE;
   const windowsApiView = window.ILOVEOS_WINDOWS_API_VIEW;
+  const windowsSdkView = window.ILOVEOS_WINDOWS_SDK_VIEW;
+  const windowsSdkSearchItems = windowsSdkView?.searchItems() || [];
   const referenceOverviewView = window.ILOVEOS_REFERENCE_OVERVIEW_VIEW;
   const assessments = window.ILOVEOS_ASSESSMENTS || { moduleReviews: [], finalAssessment: null };
   const assessmentView = window.ILOVEOS_ASSESSMENT_VIEW;
@@ -1129,13 +1131,37 @@ user = <span class="code-function">win32api.GetUserName</span>()
     document.querySelector(".reference-count").textContent = `${modules.length} modules · ${featureCount} entries`;
   }
 
-  function renderWindowsApiGuide(filter = "") {
-    main.innerHTML = windowsApiView.render(windowsApiGuide, filter);
-    document.querySelector("#windows-api-filter").addEventListener("input", (event) => {
-      const matches = windowsApiView.filterFamilies(windowsApiGuide.families, event.target.value);
-      document.querySelector("#windows-api-results").innerHTML = windowsApiView.renderEntries(matches, Boolean(event.target.value.trim()));
-      document.querySelector("#windows-api-count").textContent = `${matches.length} ${matches.length === 1 ? "Family" : "Families"}`;
+  function wireWindowsSdkNamespaces() {
+    document.querySelectorAll("[data-sdk-namespace]").forEach((details) => {
+      details.addEventListener("toggle", () => {
+        if (!details.open || details.dataset.sdkLoaded === "true") return;
+        const body = details.querySelector("[data-sdk-namespace-body]");
+        if (body) body.innerHTML = windowsSdkView.renderNamespace(details.dataset.sdkNamespace);
+        details.dataset.sdkLoaded = "true";
+      });
     });
+  }
+
+  function updateWindowsApiResults(filter) {
+    const query = filter.trim();
+    const matches = windowsApiView.filterFamilies(windowsApiGuide.families, query);
+    const sdkMatches = query && windowsSdkView ? windowsSdkView.filter(query).total : windowsSdkView?.catalog.functionCount || 0;
+    document.querySelector("#windows-api-results").innerHTML = matches.length || !query ? windowsApiView.renderEntries(matches, Boolean(query)) : "";
+    document.querySelector("#windows-sdk-results").innerHTML = windowsSdkView ? (query ? windowsSdkView.renderSearch(query) : windowsSdkView.renderOverview()) : "";
+    document.querySelector("#windows-api-count").textContent = `${matches.length} guided ${matches.length === 1 ? "family" : "families"} · ${sdkMatches.toLocaleString()} SDK ${sdkMatches === 1 ? "function" : "functions"}`;
+    wireWindowsSdkNamespaces();
+  }
+
+  function renderWindowsApiGuide(filter = "", openSdkKey = "") {
+    main.innerHTML = windowsApiView.render(windowsApiGuide, filter);
+    wireWindowsSdkNamespaces();
+    document.querySelector("#windows-api-filter").addEventListener("input", (event) => {
+      updateWindowsApiResults(event.target.value);
+    });
+    if (openSdkKey && windowsSdkView?.get(openSdkKey)) {
+      window.setTimeout(() => openWindowsSdkDetails(openSdkKey), 0);
+      return;
+    }
     const normalized = filter.trim().toLowerCase();
     const exact = windowsApiView.filterFamilies(windowsApiGuide.families, filter).find(({ family, selectedVariant }) => (
       selectedVariant.toLowerCase() === normalized || family.aliases.some((alias) => alias.name.toLowerCase() === normalized)
@@ -1213,7 +1239,7 @@ user = <span class="code-function">win32api.GetUserName</span>()
     else if (root === "review") renderModuleReview(parts[1]);
     else if (root === "assessment" && parts[1] === "final") renderFinalAssessment();
     else if (root === "reference" && parts[1] === "pywin32") renderPywin32(params.get("q") || "", params.get("api") || "", params.get("module") || "");
-    else if (root === "reference" && parts[1] === "windows-api") renderWindowsApiGuide(params.get("q") || "");
+    else if (root === "reference" && parts[1] === "windows-api") renderWindowsApiGuide(params.get("q") || "", params.get("sdk") || "");
     else if (root === "toolbox") renderToolbox(params.get("q") || "");
     else renderHome();
 
@@ -1528,6 +1554,14 @@ except pywintypes.error as error:
     renderWindowsApiDetails(family, window.ILOVEOS_WINDOWS_API_FAMILY_DATA.resolveSelection(family, variantName));
   }
 
+  function openWindowsSdkDetails(key) {
+    const item = windowsSdkView?.get(key);
+    if (!item) return;
+    openWindowsApiFamilyId = "";
+    apiDetailContent.innerHTML = windowsSdkView.renderDialog(item);
+    showApiDialog();
+  }
+
   function openReferenceOverview(kind) {
     apiDetailContent.innerHTML = referenceOverviewView.renderDialog(kind, {
       mappings: windowsApiGuide.typeMappings,
@@ -1668,6 +1702,7 @@ except pywintypes.error as error:
         scope: "windows-api",
         href: `#/reference/windows-api?q=${encodeURIComponent(entry.name)}`
       }))),
+      ...windowsSdkSearchItems,
       ...referenceData.sysinternalsTools.map((item) => ({ title: item.name, detail: `${item.short} · ${item.description}`, kind: "Tool", scope: "tools", href: `#/toolbox?q=${encodeURIComponent(item.name)}` })),
       ...referenceData.sysinternalsTools.flatMap((tool) => tool.capabilities.map(([name, detail]) => ({
         title: name,
@@ -1774,6 +1809,13 @@ except pywintypes.error as error:
   });
   searchResults.addEventListener("click", () => searchDialog.close());
   main.addEventListener("click", (event) => {
+    const loadMore = event.target.closest("[data-sdk-load-more]");
+    if (loadMore) {
+      const details = loadMore.closest("[data-sdk-namespace]");
+      const body = details?.querySelector("[data-sdk-namespace-body]");
+      if (body) body.innerHTML = windowsSdkView.renderNamespace(loadMore.dataset.sdkLoadMore, Number(loadMore.dataset.sdkNextLimit));
+      return;
+    }
     const overviewTrigger = event.target.closest("[data-reference-overview]");
     if (overviewTrigger) {
       apiDialogInvoker = overviewTrigger;
@@ -1783,7 +1825,8 @@ except pywintypes.error as error:
     const trigger = event.target.closest(".api-detail-trigger");
     if (!trigger) return;
     apiDialogInvoker = trigger;
-    if (trigger.dataset.windowsApiFamily) openWindowsApiDetails(trigger.dataset.windowsApiFamily, trigger.dataset.windowsApiVariant);
+    if (trigger.dataset.windowsSdkKey) openWindowsSdkDetails(trigger.dataset.windowsSdkKey);
+    else if (trigger.dataset.windowsApiFamily) openWindowsApiDetails(trigger.dataset.windowsApiFamily, trigger.dataset.windowsApiVariant);
     else openApiDetails(trigger.dataset.apiModule, trigger.dataset.apiFeature);
   });
   async function copyGeneratedCode(button) {

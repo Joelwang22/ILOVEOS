@@ -150,7 +150,7 @@ requireCondition(bitmaskChoices.includes("<strong>Select common flags</strong>")
 requireCondition(!bitmaskChoices.includes("Common access values"), "bitmask choice heading incorrectly implies every flag is an access right");
 
 const html = view.render?.(guide, "CreateEventExA") || "";
-requireCondition(html.includes('id="windows-api-count">1 Family'), "family guide count does not use family terminology");
+requireCondition(html.includes('id="windows-api-count">1 guided family'), "family guide count does not use guided-family terminology");
 requireCondition(!html.includes("CreateEventExA.argtypes"), "filtered family guide renders contract details inline");
 for (const expected of [
   "windowsApiView.filterFamilies(windowsApiGuide.families",
@@ -163,7 +163,7 @@ for (const selector of [".api-family-alias-picker", ".api-family-variants", ".ap
 }
 
 const versions = [...indexHtml.matchAll(/(?:href|src)="[^"]+\?v=([^"]+)"/g)];
-requireCondition(versions.length > 0 && versions.every((match) => match[1] === "pywin32-catalog-1"), "every tied asset must use the pywin32-catalog-1 release key");
+requireCondition(versions.length > 0 && versions.every((match) => match[1] === "windows-sdk-catalog-1"), "every tied asset must use the windows-sdk-catalog-1 release key");
 
 console.log(`family matches: ${exaMatches.length}`);
 console.log(`errors: ${errors.length}`);
